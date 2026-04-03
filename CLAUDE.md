@@ -1,0 +1,152 @@
+# CalTrack Pro — Project Master Reference
+
+## What This Project Is
+CalTrack Pro is an industrial instrument calibration management web application.
+It is a full-stack application with a React frontend and a Python FastAPI backend,
+using a PostgreSQL database (via Supabase).
+
+## Tech Stack
+- Frontend: React 18 + Vite + Tailwind CSS
+- Backend: Python 3.11 + FastAPI
+- Database: PostgreSQL via Supabase (supabase.com)
+- Auth: Supabase Auth (JWT-based)
+- Charts: Recharts
+- Deployment: Local development first, then Railway.app
+
+## Project Structure
+caltrack-pro/
+  backend/          # FastAPI Python backend
+    main.py         # App entry point
+    models.py       # SQLAlchemy database models
+    schemas.py      # Pydantic schemas for API
+    routes/         # API route files
+    auth.py         # Authentication logic
+    database.py     # DB connection
+  frontend/         # React frontend
+    src/
+      components/   # Reusable UI components
+      pages/        # Full page components
+      hooks/        # Custom React hooks
+      utils/        # Helper functions
+  CLAUDE.md         # This file
+
+## Core Data Models
+
+### Instrument Record (instruments table)
+- id (UUID, primary key)
+- tag_number (string, unique) — e.g. PT-1023A
+- description (string) — service description
+- area (string) — plant area / location
+- unit (string) — plant unit
+- instrument_type (enum) — pressure/temperature/flow/level/analyser/switch/valve/other
+- manufacturer (string)
+- model (string)
+- serial_number (string)
+- measurement_lrv (float) — lower range value
+- measurement_urv (float) — upper range value
+- engineering_units (string) — e.g. kPa, degC, m3/h
+- output_type (string) — e.g. 4-20mA, HART, Digital
+- calibration_interval_days (integer)
+- tolerance_type (enum) — percent_span / percent_reading / absolute
+- tolerance_value (float)
+- num_test_points (integer, default 5)
+- test_point_values (JSON array of floats) — expected input values
+- criticality (enum) — safety_critical / process_critical / standard / non_critical
+- status (enum) — active / spare / out_of_service / decommissioned
+- procedure_reference (string)
+- last_calibration_date (date)
+- last_calibration_result (enum) — pass / fail / marginal / not_calibrated
+- calibration_due_date (date, calculated)
+- created_at (timestamp)
+- updated_at (timestamp)
+- created_by (string)
+
+### Calibration Record (calibration_records table)
+- id (UUID, primary key)
+- instrument_id (UUID, FK to instruments)
+- calibration_date (date)
+- calibration_type (enum) — routine / corrective / post_repair / initial
+- technician_name (string)
+- technician_id (UUID, FK to users)
+- reference_standard_description (string)
+- reference_standard_serial (string)
+- reference_standard_cert_number (string)
+- reference_standard_cert_expiry (date)
+- procedure_used (string)
+- adjustment_made (boolean)
+- adjustment_type (string)
+- adjustment_notes (text)
+- technician_notes (text)
+- defect_found (boolean)
+- defect_description (text)
+- return_to_service (boolean)
+- as_found_result (enum) — pass / fail / marginal
+- as_left_result (enum) — pass / fail / marginal / not_required
+- max_as_found_error_pct (float)
+- max_as_left_error_pct (float)
+- record_status (enum) — draft / submitted / approved / rejected
+- work_order_reference (string)
+- created_at (timestamp)
+- approved_by (string)
+- approved_at (timestamp)
+
+### Calibration Test Points (cal_test_points table)
+- id (UUID, primary key)
+- calibration_record_id (UUID, FK to calibration_records)
+- point_number (integer)
+- nominal_input (float) — the stimulus applied
+- expected_output (float) — ideal instrument output
+- as_found_output (float) — actual reading before adjustment
+- as_left_output (float) — actual reading after adjustment (nullable)
+- as_found_error_abs (float, calculated)
+- as_found_error_pct (float, calculated) — % of span
+- as_left_error_abs (float, calculated)
+- as_left_error_pct (float, calculated)
+- as_found_result (enum) — pass / fail / marginal
+- as_left_result (enum) — pass / fail / marginal / not_required
+
+## Pass/Fail Calculation Rules (CRITICAL — implement exactly)
+
+### Span
+span = measurement_urv - measurement_lrv
+
+### Tolerance in output units (for 4-20mA: span = 16mA)
+if tolerance_type == "percent_span":
+    tolerance_abs = (tolerance_value / 100) * output_span
+if tolerance_type == "percent_reading":
+    tolerance_abs = (tolerance_value / 100) * expected_output
+if tolerance_type == "absolute":
+    tolerance_abs = tolerance_value
+
+### Per-point result
+error_abs = actual_output - expected_output
+error_pct = (error_abs / output_span) * 100
+marginal_threshold = tolerance_abs * 0.8
+if abs(error_abs) > tolerance_abs: result = "fail"
+elif abs(error_abs) > marginal_threshold: result = "marginal"
+else: result = "pass"
+
+### Overall record result
+if any point is "fail": overall = "fail"
+elif any point is "marginal": overall = "marginal"
+else: overall = "pass"
+
+## Alert Rules
+- OVERDUE: today > calibration_due_date
+- DUE_SOON: today > (calibration_due_date - 14 days) AND not overdue
+- FAILED: last_calibration_result == "fail"
+- CONSECUTIVE_FAILURES: last 2+ calibration records both have as_found_result == "fail"
+
+## UI Colour Conventions (use consistently throughout)
+- Red (#EF4444): overdue, failed, critical
+- Amber (#F59E0B): due soon, marginal, warning
+- Green (#22C55E): current, pass, healthy
+- Blue (#3B82F6): informational
+- Grey (#6B7280): decommissioned, inactive
+
+## User Roles (enforce in all routes)
+- admin: full access
+- supervisor: read/write + approve calibration records
+- technician: read + create/edit calibration records (own records only until submitted)
+- planner: read + edit scheduling fields
+- readonly: read only (operations/viewer)

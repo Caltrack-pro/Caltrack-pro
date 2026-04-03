@@ -1,0 +1,174 @@
+/**
+ * CalTrack Pro — API service layer
+ * All communication with the FastAPI backend goes through here.
+ * Base URL reads from the Vite proxy (dev) or an env variable (prod).
+ */
+
+const BASE_URL = '/api'
+
+// ---------------------------------------------------------------------------
+// Core fetch wrapper
+// ---------------------------------------------------------------------------
+
+export class ApiError extends Error {
+  constructor(message, status, detail) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.detail = detail
+  }
+}
+
+function toQueryString(params = {}) {
+  const q = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== '') q.append(k, String(v))
+  }
+  const s = q.toString()
+  return s ? `?${s}` : ''
+}
+
+async function request(path, options = {}) {
+  const url = `${BASE_URL}${path}`
+
+  let response
+  try {
+    response = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options,
+    })
+  } catch (networkErr) {
+    throw new ApiError(
+      'Cannot reach the server — is the backend running on port 8000?',
+      0,
+      networkErr.message,
+    )
+  }
+
+  // 204 No Content — DELETE etc.
+  if (response.status === 204) return null
+
+  if (!response.ok) {
+    let detail = response.statusText
+    try {
+      const body = await response.json()
+      detail = Array.isArray(body.detail)
+        ? body.detail.map((e) => e.msg).join('; ')
+        : body.detail ?? detail
+    } catch {
+      // keep statusText
+    }
+    throw new ApiError(`${response.status}: ${detail}`, response.status, detail)
+  }
+
+  return response.json()
+}
+
+function post(path, body) {
+  return request(path, { method: 'POST', body: JSON.stringify(body) })
+}
+function put(path, body) {
+  return request(path, { method: 'PUT', body: JSON.stringify(body) })
+}
+function del(path) {
+  return request(path, { method: 'DELETE' })
+}
+
+// ---------------------------------------------------------------------------
+// Instruments
+// ---------------------------------------------------------------------------
+
+export const instruments = {
+  /**
+   * List instruments with optional filters.
+   * @param {{ area?, type?, status?, calibration_status?, skip?, limit? }} params
+   */
+  list: (params = {}) =>
+    request(`/instruments${toQueryString(params)}`),
+
+  get: (id) =>
+    request(`/instruments/${id}`),
+
+  create: (data) =>
+    post('/instruments', data),
+
+  update: (id, data) =>
+    put(`/instruments/${id}`, data),
+
+  /** Soft-delete: sets status → decommissioned */
+  delete: (id) =>
+    del(`/instruments/${id}`),
+
+  calibrationStatus: (id) =>
+    request(`/instruments/${id}/calibration-status`),
+
+  /**
+   * @param {{ skip?, limit? }} params
+   */
+  calibrationHistory: (id, params = {}) =>
+    request(`/instruments/${id}/calibration-history${toQueryString(params)}`),
+}
+
+// ---------------------------------------------------------------------------
+// Calibration records
+// ---------------------------------------------------------------------------
+
+export const calibrations = {
+  /**
+   * @param {{ instrument_id?, result?, technician?, date_from?, date_to?, record_status?, skip?, limit? }} params
+   */
+  list: (params = {}) =>
+    request(`/calibrations${toQueryString(params)}`),
+
+  get: (id) =>
+    request(`/calibrations/${id}`),
+
+  create: (data) =>
+    post('/calibrations', data),
+
+  /** Only allowed while record_status === 'draft' */
+  update: (id, data) =>
+    put(`/calibrations/${id}`, data),
+
+  /** draft → submitted. Returns 422 if test points are incomplete. */
+  submit: (id) =>
+    post(`/calibrations/${id}/submit`, {}),
+
+  /** submitted → approved. Updates parent instrument. */
+  approve: (id, approvedBy) =>
+    post(`/calibrations/${id}/approve`, { approved_by: approvedBy }),
+
+  /** submitted → rejected. */
+  reject: (id, notes = null) =>
+    post(`/calibrations/${id}/reject`, { notes }),
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard
+// ---------------------------------------------------------------------------
+
+export const dashboard = {
+  stats: () =>
+    request('/dashboard/stats'),
+
+  alerts: () =>
+    request('/dashboard/alerts'),
+
+  complianceByArea: () =>
+    request('/dashboard/compliance-by-area'),
+
+  /** Instruments due in the next N days (default 30), sorted by due date. */
+  upcoming: (days = 30) =>
+    request(`/dashboard/upcoming${toQueryString({ days })}`),
+
+  /** Top-10 instruments by as-found failure count in the last 12 months. */
+  badActors: () =>
+    request('/dashboard/bad-actors'),
+}
+
+// ---------------------------------------------------------------------------
+// Convenience re-export for one-line imports
+// ---------------------------------------------------------------------------
+
+const api = { instruments, calibrations, dashboard }
+export default api

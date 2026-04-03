@@ -1,0 +1,17 @@
+# Nixpacks build config — tells Railway how to build a Python + Node monorepo.
+# Docs: https://nixpacks.com/docs/configuration/file
+
+[phases.setup]
+nixPkgs = ["python311", "nodejs_20", "nodePackages.npm"]
+
+[phases.install]
+cmds = [
+  "cd frontend && npm ci",
+  "pip install -r backend/requirements.txt"
+]
+
+[phases.build]
+cmds = ["cd frontend && npm run build"]
+
+[start]
+cmd = "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT --workers 2"
