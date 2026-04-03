@@ -245,7 +245,7 @@ def update_instrument(
 # DELETE /api/instruments/{id}  — soft delete
 # ---------------------------------------------------------------------------
 
-@router.delete("/{instrument_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{instrument_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_instrument(
     instrument_id: UUID,
     db: Session = Depends(get_db),
