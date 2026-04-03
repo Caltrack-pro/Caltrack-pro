@@ -1,5 +1,4 @@
 # Nixpacks build config — Python + Node monorepo for Railway.
-# npm is bundled with nodejs — do not add nodePackages.npm separately.
 
 [phases.setup]
 nixPkgs = ["python311", "nodejs"]
@@ -7,7 +6,7 @@ nixPkgs = ["python311", "nodejs"]
 [phases.install]
 cmds = [
   "cd frontend && npm install",
-  "pip install -r backend/requirements.txt"
+  "python3 -m pip install -r backend/requirements.txt"
 ]
 
 [phases.build]
