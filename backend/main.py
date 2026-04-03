@@ -72,6 +72,11 @@ if ENVIRONMENT == "production":
         name="static-assets",
     )
 
+    # Explicit root route — /{full_path:path} does not match bare "/"
+    @app.get("/", include_in_schema=False)
+    def serve_root():
+        return FileResponse(DIST / "index.html")
+
     @app.get("/{full_path:path}", include_in_schema=False)
     def serve_spa(full_path: str):
         """
