@@ -45,6 +45,23 @@ def health_check():
     return {"status": "ok", "environment": ENVIRONMENT}
 
 
+@app.get("/api/health/db")
+def health_check_db():
+    """Diagnose database connectivity — safe to expose (no sensitive data returned)."""
+    from database import engine
+    import sqlalchemy
+    try:
+        with engine.connect() as conn:
+            conn.execute(sqlalchemy.text("SELECT 1"))
+        return {"db": "ok"}
+    except Exception as e:
+        # Redact password from URL if present in error message
+        msg = str(e)
+        import re
+        msg = re.sub(r":[^:@]+@", ":***@", msg)
+        return {"db": "error", "detail": msg}
+
+
 # ---------------------------------------------------------------------------
 # Production: serve the React build from frontend/dist
 #
