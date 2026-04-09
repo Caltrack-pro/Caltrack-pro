@@ -95,7 +95,7 @@ class Instrument(Base):
     area          = Column(String(100))
     unit          = Column(String(100))
     instrument_type = Column(
-        SAEnum(InstrumentType, name="instrument_type_enum"),
+        SAEnum(InstrumentType, name="instrument_type_enum", values_callable=lambda obj: [e.value for e in obj]),
         nullable=False
     )
     manufacturer      = Column(String(100))
@@ -107,21 +107,21 @@ class Instrument(Base):
     output_type       = Column(String(50))
 
     calibration_interval_days = Column(Integer)
-    tolerance_type = Column(SAEnum(ToleranceType, name="tolerance_type_enum"))
+    tolerance_type = Column(SAEnum(ToleranceType, name="tolerance_type_enum", values_callable=lambda obj: [e.value for e in obj]))
     tolerance_value  = Column(Float)
     num_test_points  = Column(Integer, nullable=False, server_default="5")
     test_point_values = Column(JSONB)   # array of floats, e.g. [0.0, 25.0, 50.0, 75.0, 100.0]
 
-    criticality = Column(SAEnum(Criticality, name="criticality_enum"))
+    criticality = Column(SAEnum(Criticality, name="criticality_enum", values_callable=lambda obj: [e.value for e in obj]))
     status = Column(
-        SAEnum(InstrumentStatus, name="instrument_status_enum"),
+        SAEnum(InstrumentStatus, name="instrument_status_enum", values_callable=lambda obj: [e.value for e in obj]),
         nullable=False, server_default="active"
     )
 
     procedure_reference     = Column(String(100))
     last_calibration_date   = Column(Date)
     last_calibration_result = Column(
-        SAEnum(CalibrationResultStatus, name="calibration_result_status_enum"),
+        SAEnum(CalibrationResultStatus, name="calibration_result_status_enum", values_callable=lambda obj: [e.value for e in obj]),
         nullable=False, server_default="not_calibrated"
     )
     calibration_due_date = Column(Date)
@@ -148,7 +148,7 @@ class CalibrationRecord(Base):
     )
     calibration_date = Column(Date, nullable=False)
     calibration_type = Column(
-        SAEnum(CalibrationType, name="calibration_type_enum"),
+        SAEnum(CalibrationType, name="calibration_type_enum", values_callable=lambda obj: [e.value for e in obj]),
         nullable=False
     )
     technician_name = Column(String(100))
@@ -170,14 +170,14 @@ class CalibrationRecord(Base):
     defect_description = Column(Text)
     return_to_service  = Column(Boolean)
 
-    as_found_result = Column(SAEnum(AsFoundResult, name="as_found_result_enum"))
-    as_left_result  = Column(SAEnum(AsLeftResult,  name="as_left_result_enum"))
+    as_found_result = Column(SAEnum(AsFoundResult, name="as_found_result_enum", values_callable=lambda obj: [e.value for e in obj]))
+    as_left_result  = Column(SAEnum(AsLeftResult,  name="as_left_result_enum",  values_callable=lambda obj: [e.value for e in obj]))
 
     max_as_found_error_pct = Column(Float)
     max_as_left_error_pct  = Column(Float)
 
     record_status = Column(
-        SAEnum(RecordStatus, name="record_status_enum"),
+        SAEnum(RecordStatus, name="record_status_enum", values_callable=lambda obj: [e.value for e in obj]),
         nullable=False, server_default="draft"
     )
     work_order_reference = Column(String(100))
@@ -211,5 +211,5 @@ class CalTestPoint(Base):
     as_left_error_abs  = Column(Float)
     as_left_error_pct  = Column(Float)
 
-    as_found_result = Column(SAEnum(AsFoundResult, name="as_found_result_enum"))
-    as_left_result  = Column(SAEnum(AsLeftResult,  name="as_left_result_enum"))
+    as_found_result = Column(SAEnum(AsFoundResult, name="as_found_result_enum", values_callable=lambda obj: [e.value for e in obj]))
+    as_left_result  = Column(SAEnum(AsLeftResult,  name="as_left_result_enum",  values_callable=lambda obj: [e.value for e in obj]))

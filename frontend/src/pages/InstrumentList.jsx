@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { instruments as instrApi } from '../utils/api'
 import { CalStatusBadge, ResultBadge } from '../components/Badges'
 import { fmtDate, humanise } from '../utils/formatting'
+import { getUser, canEdit, canCalibrate } from '../utils/userContext'
 
 const INSTRUMENT_TYPES = ['pressure','temperature','flow','level','analyser','switch','valve','other']
 const CAL_STATUSES     = ['overdue','due_soon','current','not_calibrated']
@@ -32,8 +33,42 @@ function EmptyState({ filtered }) {
   )
 }
 
+// Sort comparator
+function applySort(items, key, dir) {
+  if (!key) return items
+  return [...items].sort((a, b) => {
+    let av = a[key], bv = b[key]
+    if (av == null) av = ''
+    if (bv == null) bv = ''
+    const cmp = typeof av === 'string' ? av.localeCompare(bv) : av - bv
+    return dir === 'asc' ? cmp : -cmp
+  })
+}
+
+// Sort indicator icon
+function SortIcon({ active, dir }) {
+  if (!active) return <span className="ml-1 opacity-30">↕</span>
+  return <span className="ml-1 text-blue-600">{dir === 'asc' ? '↑' : '↓'}</span>
+}
+
 export default function InstrumentList() {
   const navigate = useNavigate()
+  const currentUser = getUser()
+  const userCanEdit      = canEdit(currentUser)
+  const userCanCalibrate = canCalibrate(currentUser)
+
+  // ── Sort state ─────────────────────────────────────────────────────────────
+  const [sortKey, setSortKey] = useState('')
+  const [sortDir, setSortDir] = useState('asc')
+
+  function handleSort(key) {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
 
   // ── Server-side filter state ──────────────────────────────────────────────
   const [serverFilters, setServerFilters] = useState({
@@ -57,12 +92,22 @@ export default function InstrumentList() {
   // Reset to page 0 whenever server filters change
   useEffect(() => { setPage(0) }, [serverFilters])
 
+  // Re-fetch whenever the signed-in user (and therefore site) changes
+  const [userTick, setUserTick] = useState(0)
+  useEffect(() => {
+    function onUserChange() { setUserTick(t => t + 1); setPage(0) }
+    window.addEventListener('caltrack-user-change', onUserChange)
+    return () => window.removeEventListener('caltrack-user-change', onUserChange)
+  }, [])
+
   useEffect(() => {
     let cancelled = false
     setLoading(true)
 
+    const site = getUser()?.siteName ?? undefined
     instrApi.list({
       ...Object.fromEntries(Object.entries(serverFilters).filter(([, v]) => v !== '')),
+      site,
       skip:  page * PAGE_SIZE,
       limit: PAGE_SIZE,
     })
@@ -70,7 +115,7 @@ export default function InstrumentList() {
       .catch((err) => { if (!cancelled) { setError(err.message); setLoading(false) } })
 
     return () => { cancelled = true }
-  }, [serverFilters, page])
+  }, [serverFilters, page, userTick])
 
   // ── Derive unique areas for dropdown ──────────────────────────────────────
   // We always show all areas even when only one page is loaded; this is a known
@@ -80,16 +125,17 @@ export default function InstrumentList() {
     return [...set].sort()
   }, [response.results])
 
-  // ── Client-side filtering ─────────────────────────────────────────────────
+  // ── Client-side filtering + sorting ──────────────────────────────────────
   const displayed = useMemo(() => {
     const q = search.toLowerCase().trim()
-    return response.results.filter((inst) => {
+    const filtered = response.results.filter((inst) => {
       if (q && !inst.tag_number.toLowerCase().includes(q) &&
                !(inst.description ?? '').toLowerCase().includes(q)) return false
       if (lastResult && inst.last_calibration_result !== lastResult) return false
       return true
     })
-  }, [response.results, search, lastResult])
+    return applySort(filtered, sortKey, sortDir)
+  }, [response.results, search, lastResult, sortKey, sortDir])
 
   const totalPages = Math.ceil(response.total / PAGE_SIZE)
 
@@ -169,15 +215,17 @@ export default function InstrumentList() {
         </p>
 
         {/* Add button */}
-        <Link
-          to="/instruments/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Add Instrument
-        </Link>
+        {userCanEdit && (
+          <Link
+            to="/app/instruments/new"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add Instrument
+          </Link>
+        )}
       </div>
 
       {/* ── Error banner ─────────────────────────────────────────────────── */}
@@ -194,9 +242,24 @@ export default function InstrumentList() {
             <table className="w-full text-sm min-w-[800px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  {['Tag Number','Description','Area','Type','Due Date','Status','Last Result','Actions'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
-                      {h}
+                  {[
+                    { label: 'Tag Number',   key: 'tag_number'              },
+                    { label: 'Description',  key: 'description'             },
+                    { label: 'Area',         key: 'area'                    },
+                    { label: 'Type',         key: 'instrument_type'         },
+                    { label: 'Due Date',     key: 'calibration_due_date'    },
+                    { label: 'Status',       key: 'alert_status'            },
+                    { label: 'Last Result',  key: 'last_calibration_result' },
+                    { label: 'Actions',      key: null                      },
+                  ].map(({ label, key }) => (
+                    <th
+                      key={label}
+                      onClick={key ? () => handleSort(key) : undefined}
+                      className={`text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap
+                        ${key ? 'cursor-pointer select-none hover:text-slate-700 hover:bg-slate-100 transition-colors' : ''}`}
+                    >
+                      {label}
+                      {key && <SortIcon active={sortKey === key} dir={sortDir} />}
                     </th>
                   ))}
                 </tr>
@@ -207,7 +270,7 @@ export default function InstrumentList() {
                   : displayed.map(inst => (
                     <tr
                       key={inst.id}
-                      onClick={() => navigate(`/instruments/${inst.id}`)}
+                      onClick={() => navigate(`/app/instruments/${inst.id}`)}
                       className="hover:bg-slate-50 cursor-pointer transition-colors"
                     >
                       {/* Tag number */}
@@ -253,17 +316,27 @@ export default function InstrumentList() {
                       <td className="px-4 py-3 whitespace-nowrap" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center gap-2">
                           <Link
-                            to={`/instruments/${inst.id}`}
+                            to={`/app/instruments/${inst.id}`}
                             className="text-xs px-2.5 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-100 transition-colors"
                           >
                             View
                           </Link>
-                          <Link
-                            to={`/calibrations/new/${inst.id}`}
-                            className="text-xs px-2.5 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                          >
-                            Calibrate
-                          </Link>
+                          {userCanCalibrate && (
+                            <Link
+                              to={`/app/calibrations/new/${inst.id}`}
+                              className="text-xs px-2.5 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            >
+                              Calibrate
+                            </Link>
+                          )}
+                          {userCanEdit && (
+                            <Link
+                              to={`/app/instruments/${inst.id}/edit`}
+                              className="text-xs px-2.5 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-100 transition-colors"
+                            >
+                              Edit
+                            </Link>
+                          )}
                         </div>
                       </td>
                     </tr>

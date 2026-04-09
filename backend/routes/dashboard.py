@@ -19,7 +19,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional, Tuple
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -72,11 +72,12 @@ _PRIORITY = {
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-def _active_instruments_query(db: Session):
-    """Base query: non-decommissioned instruments."""
-    return db.query(Instrument).filter(
-        Instrument.status.in_(_ACTIVE_STATUSES)
-    )
+def _active_instruments_query(db: Session, site: Optional[str] = None):
+    """Base query: non-decommissioned instruments, optionally scoped to a site."""
+    q = db.query(Instrument).filter(Instrument.status.in_(_ACTIVE_STATUSES))
+    if site:
+        q = q.filter(Instrument.created_by == site)
+    return q
 
 
 def _to_midnight_utc(d: date) -> datetime:
@@ -122,14 +123,17 @@ def _consecutive_failure_info(
 # ---------------------------------------------------------------------------
 
 @router.get("/stats", response_model=DashboardStats)
-def get_stats(db: Session = Depends(get_db)) -> DashboardStats:
+def get_stats(
+    site: Optional[str] = Query(None, description="Filter by site/organisation"),
+    db: Session = Depends(get_db),
+) -> DashboardStats:
     today           = date.today()
     due_soon_cutoff = today + timedelta(days=_DUE_SOON_DAYS)
     thirty_days_ago = today - timedelta(days=30)
     seven_days_ago  = today - timedelta(days=7)
     one_year_ago    = today - timedelta(days=365)
 
-    base = _active_instruments_query(db)
+    base = _active_instruments_query(db, site)
 
     # --- total active instruments ---
     total_instruments = base.count()
@@ -150,25 +154,33 @@ def get_stats(db: Session = Depends(get_db)) -> DashboardStats:
     ).count()
 
     # --- failed in last 30 days (calibration events, not instrument count) ---
-    failed_last_30_days = (
+    failed_q = (
         db.query(CalibrationRecord)
         .filter(
             CalibrationRecord.as_found_result == AsFoundResult.FAIL.value,
             CalibrationRecord.calibration_date >= thirty_days_ago,
             CalibrationRecord.record_status.in_(_COUNTED_RECORD_STATUSES),
         )
-        .count()
     )
+    if site:
+        failed_q = failed_q.join(Instrument, CalibrationRecord.instrument_id == Instrument.id).filter(
+            Instrument.created_by == site
+        )
+    failed_last_30_days = failed_q.count()
 
     # --- calibrated this week ---
-    calibrated_this_week = (
+    week_q = (
         db.query(CalibrationRecord)
         .filter(
             CalibrationRecord.calibration_date >= seven_days_ago,
             CalibrationRecord.record_status == RecordStatus.APPROVED.value,
         )
-        .count()
     )
+    if site:
+        week_q = week_q.join(Instrument, CalibrationRecord.instrument_id == Instrument.id).filter(
+            Instrument.created_by == site
+        )
+    calibrated_this_week = week_q.count()
 
     # --- compliance rate ---
     # Denominator: instruments calibrated in the last 12 months (have a recent last_calibration_date)
@@ -188,7 +200,7 @@ def get_stats(db: Session = Depends(get_db)) -> DashboardStats:
         Instrument.calibration_due_date >= today,
     ).count()
 
-    compliance_rate = round((compliant / scheduled * 100), 1) if scheduled > 0 else 100.0
+    compliance_rate = round((compliant / scheduled * 100), 1) if scheduled > 0 else 0.0
 
     return DashboardStats(
         total_instruments=total_instruments,
@@ -205,13 +217,16 @@ def get_stats(db: Session = Depends(get_db)) -> DashboardStats:
 # ---------------------------------------------------------------------------
 
 @router.get("/alerts", response_model=List[Alert])
-def get_alerts(db: Session = Depends(get_db)) -> List[Alert]:
+def get_alerts(
+    site: Optional[str] = Query(None, description="Filter by site/organisation"),
+    db: Session = Depends(get_db),
+) -> List[Alert]:
     today           = date.today()
     due_soon_cutoff = today + timedelta(days=_DUE_SOON_DAYS)
     alerts: List[Alert] = []
 
     # Fetch all active instruments in one query to avoid N+1
-    instruments = _active_instruments_query(db).all()
+    instruments = _active_instruments_query(db, site).all()
 
     # Track which instruments need a consecutive-failures check
     # (only those whose last result is already FAIL — avoids extra DB calls)
@@ -325,10 +340,13 @@ def get_alerts(db: Session = Depends(get_db)) -> List[Alert]:
 # ---------------------------------------------------------------------------
 
 @router.get("/compliance-by-area", response_model=List[AreaCompliance])
-def compliance_by_area(db: Session = Depends(get_db)) -> List[AreaCompliance]:
+def compliance_by_area(
+    site: Optional[str] = Query(None, description="Filter by site/organisation"),
+    db: Session = Depends(get_db),
+) -> List[AreaCompliance]:
     today = date.today()
 
-    instruments = _active_instruments_query(db).all()
+    instruments = _active_instruments_query(db, site).all()
 
     area_totals:     dict[str, int] = {}
     area_compliant:  dict[str, int] = {}
@@ -377,12 +395,15 @@ def compliance_by_area(db: Session = Depends(get_db)) -> List[AreaCompliance]:
 # ---------------------------------------------------------------------------
 
 @router.get("/upcoming", response_model=InstrumentListResponse)
-def upcoming_calibrations(db: Session = Depends(get_db)) -> InstrumentListResponse:
+def upcoming_calibrations(
+    site: Optional[str] = Query(None, description="Filter by site/organisation"),
+    db: Session = Depends(get_db),
+) -> InstrumentListResponse:
     today          = date.today()
     thirty_days_on = today + timedelta(days=30)
 
     instruments = (
-        _active_instruments_query(db)
+        _active_instruments_query(db, site)
         .filter(
             Instrument.calibration_due_date.isnot(None),
             Instrument.calibration_due_date >= today,
@@ -404,10 +425,13 @@ def upcoming_calibrations(db: Session = Depends(get_db)) -> InstrumentListRespon
 # ---------------------------------------------------------------------------
 
 @router.get("/bad-actors", response_model=List[BadActor])
-def bad_actors(db: Session = Depends(get_db)) -> List[BadActor]:
+def bad_actors(
+    site: Optional[str] = Query(None, description="Filter by site/organisation"),
+    db: Session = Depends(get_db),
+) -> List[BadActor]:
     one_year_ago = date.today() - timedelta(days=365)
 
-    rows = (
+    bad_q = (
         db.query(
             CalibrationRecord.instrument_id,
             func.count(CalibrationRecord.id).label("failure_count"),
@@ -418,6 +442,13 @@ def bad_actors(db: Session = Depends(get_db)) -> List[BadActor]:
             CalibrationRecord.calibration_date >= one_year_ago,
             CalibrationRecord.record_status.in_(_COUNTED_RECORD_STATUSES),
         )
+    )
+    if site:
+        bad_q = bad_q.join(Instrument, CalibrationRecord.instrument_id == Instrument.id).filter(
+            Instrument.created_by == site
+        )
+    rows = (
+        bad_q
         .group_by(CalibrationRecord.instrument_id)
         .order_by(func.count(CalibrationRecord.id).desc())
         .limit(10)

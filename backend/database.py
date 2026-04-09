@@ -5,13 +5,21 @@ import os
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+
+# SQLAlchemy requires the postgresql+psycopg:// dialect prefix for psycopg v3.
+# Supabase connection strings use postgresql:// or postgres:// — translate here.
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
 # When using Supabase's PgBouncer pooler (transaction mode), prepared statements
 # are not supported. Disabling them here prevents StatementError at query time.
 connect_args = {}
-if DATABASE_URL and "pooler.supabase.com" in DATABASE_URL:
+if "pooler.supabase.com" in DATABASE_URL:
     connect_args["options"] = "-c statement_timeout=30000"
+    connect_args["prepare_threshold"] = None  # disable prepared statements for pgbouncer
 
 engine = create_engine(
     DATABASE_URL,

@@ -4,6 +4,8 @@ import { instruments as instrApi, calibrations as calApi } from '../utils/api'
 import { CalStatusBadge, ResultBadge, RecordStatusBadge } from '../components/Badges'
 import { fmtDate, fmtPct, fmtNum, humanise } from '../utils/formatting'
 import TrendCharts from '../components/TrendCharts'
+import { getUser, canApprove, canEdit, canCalibrate } from '../utils/userContext'
+import { generateSingleCalibrationCert, generateMultiCalibrationReport } from '../utils/reportGenerator'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared
@@ -32,17 +34,62 @@ function Field({ label, value, mono = false }) {
 // Slide-out calibration detail panel
 // ─────────────────────────────────────────────────────────────────────────────
 
-function SlidePanel({ recordId, onClose }) {
-  const [rec, setRec]     = useState(null)
-  const [loading, setLd]  = useState(true)
+function SlidePanel({ recordId, instrument, onClose, onRefresh }) {
+  const [rec, setRec]           = useState(null)
+  const [loading, setLd]        = useState(true)
+  const [actioning, setAct]     = useState(false)
+  const [actionErr, setActErr]  = useState('')
+  const [generating, setGenPdf] = useState(false)
+  const currentUser = getUser()
 
-  useEffect(() => {
-    if (!recordId) return
+  async function handleDownloadCert() {
+    if (!rec || !instrument) return
+    setGenPdf(true)
+    try {
+      await generateSingleCalibrationCert(instrument, rec)
+    } finally {
+      setGenPdf(false)
+    }
+  }
+
+  function loadRecord() {
     setLd(true)
     calApi.get(recordId)
       .then(r => { setRec(r); setLd(false) })
       .catch(() => setLd(false))
+  }
+
+  useEffect(() => {
+    if (!recordId) return
+    loadRecord()
   }, [recordId])
+
+  async function handleApprove() {
+    if (!currentUser) { setActErr('No user selected — click your name in the header to sign in.'); return }
+    if (!currentUser.userName) { setActErr('Your name is missing — please sign out and sign in again via the header.'); return }
+    setAct(true); setActErr('')
+    try {
+      await calApi.approve(recordId, currentUser.userName)
+      if (onRefresh) onRefresh()
+      onClose()
+    } catch (e) {
+      setActErr(e.message ?? 'Approval failed')
+      setAct(false)
+    }
+  }
+
+  async function handleReject() {
+    if (!currentUser) { setActErr('No user selected — click your name in the header to sign in.'); return }
+    setAct(true); setActErr('')
+    try {
+      await calApi.reject(recordId, null)
+      if (onRefresh) onRefresh()
+      onClose()
+    } catch (e) {
+      setActErr(e.message ?? 'Rejection failed')
+      setAct(false)
+    }
+  }
 
   return (
     <>
@@ -152,9 +199,78 @@ function SlidePanel({ recordId, onClose }) {
                   <p className="text-sm text-slate-700 whitespace-pre-wrap">{rec.technician_notes}</p>
                 </div>
               )}
+
+              {/* Approval info for approved/rejected records */}
+              {(rec.record_status === 'approved' || rec.record_status === 'rejected') && rec.approved_by && (
+                <div className={`rounded-lg border px-4 py-3 text-sm ${
+                  rec.record_status === 'approved'
+                    ? 'bg-green-50 border-green-200 text-green-700'
+                    : 'bg-red-50 border-red-200 text-red-700'
+                }`}>
+                  {rec.record_status === 'approved' ? '✓ Approved' : '✗ Rejected'} by{' '}
+                  <strong>{rec.approved_by}</strong>
+                  {rec.approved_at && ` on ${fmtDate(rec.approved_at)}`}
+                </div>
+              )}
             </div>
           )}
         </div>
+
+        {/* ── Approve / Reject footer (submitted records, approvers only) ── */}
+        {rec && rec.record_status === 'submitted' && canApprove(currentUser) && (
+          <div className="border-t border-slate-200 px-6 py-4 flex-shrink-0 bg-slate-50">
+            {actionErr && (
+              <p className="text-xs text-red-600 mb-3">{actionErr}</p>
+            )}
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-slate-500">
+                Approving as <strong>{currentUser?.userName}</strong>
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleReject}
+                  disabled={actioning}
+                  className="px-4 py-2 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                >
+                  Reject
+                </button>
+                <button
+                  onClick={handleApprove}
+                  disabled={actioning}
+                  className="px-4 py-2 text-sm bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  {actioning ? 'Approving…' : 'Approve'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Download Certificate footer (all records) ── */}
+        {rec && (
+          <div className="border-t border-slate-200 px-6 py-3 flex-shrink-0 bg-white">
+            <button
+              onClick={handleDownloadCert}
+              disabled={generating}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              {generating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  Generating PDF…
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+                  </svg>
+                  Download Calibration Certificate
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </>
   )
@@ -240,7 +356,7 @@ function TabOverview({ instrument, history }) {
 
 // ── Tab 2: Calibration History ────────────────────────────────────────────
 
-function TabHistory({ history, onView }) {
+function TabHistory({ history, onView, onCert }) {
   if (!history || history.total === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -253,7 +369,7 @@ function TabHistory({ history, onView }) {
     <div className="pt-6">
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[700px]">
+          <table className="w-full text-sm min-w-[800px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
                 {['Date','Technician','As Found','As Left','Max Error %','Adj.','Status',''].map(h => (
@@ -278,12 +394,25 @@ function TabHistory({ history, onView }) {
                   </td>
                   <td className="px-4 py-3"><RecordStatusBadge status={rec.record_status} /></td>
                   <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
                     <button
                       onClick={() => onView(rec.id)}
                       className="text-xs px-2.5 py-1 border border-blue-200 text-blue-600 rounded hover:bg-blue-50 transition-colors"
                     >
                       View
                     </button>
+                    <button
+                      onClick={() => onCert(rec.id)}
+                      className="text-xs px-2.5 py-1 border border-slate-200 text-slate-600 rounded hover:bg-slate-50 transition-colors flex items-center gap-1"
+                      title="Download Calibration Certificate"
+                    >
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                        <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+                      </svg>
+                      Cert
+                    </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -297,7 +426,7 @@ function TabHistory({ history, onView }) {
 
 // ── Tab 5: Technical Data ─────────────────────────────────────────────────
 
-function TabTechnical({ instrument: i }) {
+function TabTechnical({ instrument: i, userCanEdit }) {
   const ALL_FIELDS = [
     ['id',                       i.id,                        true ],
     ['tag_number',               i.tag_number,                true ],
@@ -332,13 +461,22 @@ function TabTechnical({ instrument: i }) {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">All Fields</h3>
-          <button
-            disabled
-            className="text-xs px-3 py-1.5 border border-slate-200 rounded text-slate-400 cursor-not-allowed"
-            title="Edit requires supervisor or admin role"
-          >
-            Edit
-          </button>
+          {userCanEdit ? (
+            <Link
+              to={`/app/instruments/${i.id}/edit`}
+              className="text-xs px-3 py-1.5 border border-blue-200 text-blue-600 rounded hover:bg-blue-50 transition-colors"
+            >
+              Edit
+            </Link>
+          ) : (
+            <button
+              disabled
+              className="text-xs px-3 py-1.5 border border-slate-200 rounded text-slate-400 cursor-not-allowed"
+              title={`Your role (${getUser()?.role ?? 'none'}) cannot edit instruments`}
+            >
+              Edit
+            </button>
+          )}
         </div>
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 px-5 py-5">
           {ALL_FIELDS.map(([label, value, mono]) => (
@@ -358,16 +496,16 @@ export default function InstrumentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const [instrument, setInstrument] = useState(null)
-  const [history,    setHistory]    = useState(null)
-  const [loading,    setLoading]    = useState(true)
-  const [error,      setError]      = useState(null)
-  const [activeTab,  setActiveTab]  = useState(0)
-  const [slideId,    setSlideId]    = useState(null)
+  const [instrument,    setInstrument]    = useState(null)
+  const [history,       setHistory]       = useState(null)
+  const [loading,       setLoading]       = useState(true)
+  const [error,         setError]         = useState(null)
+  const [activeTab,     setActiveTab]     = useState(0)
+  const [slideId,       setSlideId]       = useState(null)
+  const [genReport,     setGenReport]     = useState(false)
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     if (!id) return
-    setLoading(true)
     Promise.all([
       instrApi.get(id),
       instrApi.calibrationHistory(id, { limit: 100 }),
@@ -383,12 +521,17 @@ export default function InstrumentDetail() {
       })
   }, [id])
 
+  useEffect(() => {
+    setLoading(true)
+    fetchData()
+  }, [fetchData])
+
   if (loading) return <Spinner />
   if (error) return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <p className="text-slate-600 font-medium mb-2">Failed to load instrument</p>
       <p className="text-slate-400 text-sm mb-4">{error}</p>
-      <button onClick={() => navigate('/instruments')} className="text-sm text-blue-600 hover:underline">
+      <button onClick={() => navigate('/app/instruments')} className="text-sm text-blue-600 hover:underline">
         ← Back to instruments
       </button>
     </div>
@@ -396,6 +539,33 @@ export default function InstrumentDetail() {
   if (!instrument) return null
 
   const i = instrument
+  const currentUserPage = getUser()
+  const userCanEdit      = canEdit(currentUserPage)
+  const userCanCalibrate = canCalibrate(currentUserPage)
+
+  async function handleHistoryReport() {
+    if (!instrument || !history?.results?.length) return
+    setGenReport(true)
+    try {
+      // Fetch full records so each page has test point data
+      const fullRecords = await Promise.all(
+        history.results.map(r => calApi.get(r.id))
+      )
+      await generateMultiCalibrationReport(instrument, fullRecords)
+    } finally {
+      setGenReport(false)
+    }
+  }
+
+  async function handleSingleCert(recordId) {
+    if (!instrument) return
+    try {
+      const fullRecord = await calApi.get(recordId)
+      await generateSingleCalibrationCert(instrument, fullRecord)
+    } catch (e) {
+      console.error('Certificate generation failed:', e)
+    }
+  }
 
   // Alert banner conditions
   const isOverdue = i.alert_status === 'overdue'
@@ -406,21 +576,26 @@ export default function InstrumentDetail() {
 
       {/* ── Breadcrumb ── */}
       <nav className="flex items-center gap-2 text-sm text-slate-500 mb-4">
-        <Link to="/instruments" className="hover:text-slate-700">Instruments</Link>
+        <Link to="/app/instruments" className="hover:text-slate-700">Instruments</Link>
         <span>/</span>
         <span className="text-slate-800 font-mono font-semibold">{i.tag_number}</span>
       </nav>
 
       {/* ── Alert banner ── */}
-      {(isOverdue || isFailed) && (
-        <div className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-4 border text-sm font-medium
-          ${isFailed ? 'bg-red-50 border-red-200 text-red-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+      {isFailed && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg mb-4 border text-sm font-medium bg-red-50 border-red-200 text-red-700">
           <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          {isOverdue
-            ? `OVERDUE — ${i.days_overdue} day${i.days_overdue !== 1 ? 's' : ''} past calibration due date`
-            : 'LAST CALIBRATION FAILED — instrument may not be fit for service'}
+          LAST CALIBRATION FAILED — instrument may not be fit for service
+        </div>
+      )}
+      {isOverdue && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg mb-4 border text-sm font-medium bg-amber-50 border-amber-200 text-amber-700">
+          <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          OVERDUE — {i.days_overdue} day{i.days_overdue !== 1 ? 's' : ''} past calibration due date
         </div>
       )}
 
@@ -438,19 +613,39 @@ export default function InstrumentDetail() {
             </p>
           )}
         </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <Link
-            to={`/instruments/${i.id}/edit`}
-            className="px-4 py-2 text-sm border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
-          >
-            Edit
-          </Link>
-          <Link
-            to={`/calibrations/new/${i.id}`}
-            className="px-4 py-2 text-sm bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Start Calibration
-          </Link>
+        <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
+          {history?.results?.length > 0 && (
+            <button
+              onClick={handleHistoryReport}
+              disabled={genReport}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50"
+            >
+              {genReport ? (
+                <><div className="w-3.5 h-3.5 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" /> Generating…</>
+              ) : (
+                <><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+                  </svg>History Report</>
+              )}
+            </button>
+          )}
+          {userCanEdit && (
+            <Link
+              to={`/app/instruments/${i.id}/edit`}
+              className="px-4 py-2 text-sm border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              Edit
+            </Link>
+          )}
+          {userCanCalibrate && (
+            <Link
+              to={`/app/calibrations/new/${i.id}`}
+              className="px-4 py-2 text-sm bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Start Calibration
+            </Link>
+          )}
         </div>
       </div>
 
@@ -479,7 +674,7 @@ export default function InstrumentDetail() {
 
       {/* ── Tab content ── */}
       {activeTab === 0 && <TabOverview instrument={i} history={history} />}
-      {activeTab === 1 && <TabHistory  history={history} onView={setSlideId} />}
+      {activeTab === 1 && <TabHistory  history={history} onView={setSlideId} onCert={handleSingleCert} />}
       {activeTab === 2 && <TrendCharts instrument={i} history={history?.results ?? []} />}
       {activeTab === 3 && (
         <div className="pt-6 bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-8 text-center text-slate-400">
@@ -490,10 +685,17 @@ export default function InstrumentDetail() {
           <p className="text-sm">Attach datasheets, certificates, and procedures to this instrument.</p>
         </div>
       )}
-      {activeTab === 4 && <TabTechnical instrument={i} />}
+      {activeTab === 4 && <TabTechnical instrument={i} userCanEdit={userCanEdit} />}
 
       {/* ── Slide-out panel ── */}
-      {slideId && <SlidePanel recordId={slideId} onClose={() => setSlideId(null)} />}
+      {slideId && (
+        <SlidePanel
+          recordId={slideId}
+          instrument={instrument}
+          onClose={() => setSlideId(null)}
+          onRefresh={fetchData}
+        />
+      )}
     </div>
   )
 }

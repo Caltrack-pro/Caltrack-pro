@@ -4,6 +4,8 @@ import { instruments as instrApi, calibrations as calApi } from '../utils/api'
 import { CalStatusBadge } from '../components/Badges'
 import { fmtDate, fmtNum, fmtPct, todayISO, humanise } from '../utils/formatting'
 import { calcPoint, overallResult, maxErrorPct, generateTestPoints } from '../utils/calEngine'
+import { getUser } from '../utils/userContext'
+import { ToastContainer, useToast } from '../components/Toast'
 
 // ── Small helpers ────────────────────────────────────────────────────────────
 
@@ -136,12 +138,13 @@ function TestPointsTable({ instrument, readings, onChange, label = 'Actual Outpu
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-const CAL_TYPES = ['scheduled','unscheduled','initial','as_found_only','spot_check']
+const CAL_TYPES = ['routine','corrective','post_repair','initial']
 const ADJ_TYPES = ['zero_only','span_only','zero_and_span','full_calibration','other']
 
 export default function CalibrationForm() {
   const { instrumentId } = useParams()
   const navigate = useNavigate()
+  const { toasts, showToast, dismissToast } = useToast()
 
   const [instrument, setInstrument] = useState(null)
   const [loading,    setLoading]    = useState(true)
@@ -150,10 +153,11 @@ export default function CalibrationForm() {
   const [errors,     setErrors]     = useState({})
 
   // Section 2 — Calibration details
-  const [calDate,      setCalDate]      = useState(todayISO())
-  const [calType,      setCalType]      = useState('scheduled')
-  const [technician,   setTechnician]   = useState('')
-  const [workOrder,    setWorkOrder]    = useState('')
+  const [calDate,       setCalDate]       = useState(todayISO())
+  const [calType,       setCalType]       = useState('routine')
+  const [technician,    setTechnician]    = useState(() => getUser()?.userName ?? '')
+  const [workOrder,     setWorkOrder]     = useState('')
+  const [procedureUsed, setProcedureUsed] = useState('')
 
   // Section 3 — Reference standard
   const [refDesc,    setRefDesc]    = useState('')
@@ -173,9 +177,10 @@ export default function CalibrationForm() {
   const [asLeftReadings, setAsLeftReadings] = useState([])
 
   // Section 7 — Notes
-  const [notes,            setNotes]            = useState('')
-  const [defectFound,      setDefectFound]       = useState(false)
-  const [returnedToService,setReturnedToService] = useState(true)
+  const [notes,              setNotes]              = useState('')
+  const [defectFound,        setDefectFound]         = useState(false)
+  const [defectDescription,  setDefectDescription]   = useState('')
+  const [returnedToService,  setReturnedToService]   = useState(true)
 
   // ── Fetch instrument ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -185,6 +190,7 @@ export default function CalibrationForm() {
         const pts = generateTestPoints(inst)
         setAsFoundReadings(Array(pts.length).fill(''))
         setAsLeftReadings(Array(pts.length).fill(''))
+        if (inst.procedure_reference) setProcedureUsed(inst.procedure_reference)
         setLoading(false)
       })
       .catch(err => { setError(err.message); setLoading(false) })
@@ -229,35 +235,36 @@ export default function CalibrationForm() {
   }
 
   // ── Build payload ─────────────────────────────────────────────────────────
-  function buildPayload(asDraft) {
+  function buildPayload() {
     const pts = generateTestPoints(instrument)
     const test_points = pts.map((pt, i) => ({
-      point_number:           pt.point_number,
-      nominal_input:          pt.nominal_input,
-      expected_output:        pt.expected_output,
-      as_found_actual_output: asFoundReadings[i] !== '' ? parseFloat(asFoundReadings[i]) : null,
-      as_left_actual_output:  adjustmentMade && asLeftReadings[i] !== ''
-                                ? parseFloat(asLeftReadings[i])
-                                : null,
+      point_number:    pt.point_number,
+      nominal_input:   pt.nominal_input,
+      expected_output: pt.expected_output,
+      as_found_output: asFoundReadings[i] !== '' ? parseFloat(asFoundReadings[i]) : null,
+      as_left_output:  adjustmentMade && asLeftReadings[i] !== ''
+                         ? parseFloat(asLeftReadings[i])
+                         : null,
     }))
 
     return {
-      instrument_id:                    instrument.id,
-      calibration_date:                 calDate,
-      calibration_type:                 calType,
-      technician_name:                  technician,
-      work_order_number:                workOrder || null,
-      reference_standard_description:   refDesc || null,
-      reference_standard_serial:        refSerial || null,
-      reference_standard_cert_number:   refCert || null,
-      reference_standard_expiry_date:   refExpiry || null,
-      adjustment_made:                  adjustmentMade,
-      adjustment_type:                  adjustmentMade ? adjType : null,
-      adjustment_notes:                 adjustmentMade && adjNotes ? adjNotes : null,
-      notes:                            notes || null,
-      defect_found:                     defectFound,
-      returned_to_service:              returnedToService,
-      record_status:                    asDraft ? 'draft' : 'submitted',
+      instrument_id:                   instrument.id,
+      calibration_date:                calDate,
+      calibration_type:                calType,
+      technician_name:                 technician,
+      work_order_reference:            workOrder || null,
+      procedure_used:                  procedureUsed || null,
+      reference_standard_description:  refDesc || null,
+      reference_standard_serial:       refSerial || null,
+      reference_standard_cert_number:  refCert || null,
+      reference_standard_cert_expiry:  refExpiry || null,
+      adjustment_made:                 adjustmentMade,
+      adjustment_type:                 adjustmentMade ? adjType : null,
+      adjustment_notes:                adjustmentMade && adjNotes ? adjNotes : null,
+      technician_notes:                notes || null,
+      defect_found:                    defectFound,
+      defect_description:              defectFound && defectDescription ? defectDescription : null,
+      return_to_service:               returnedToService,
       test_points,
     }
   }
@@ -268,11 +275,16 @@ export default function CalibrationForm() {
     setErrors({})
     setSaving(true)
     try {
-      const record = await calApi.create(buildPayload(asDraft))
-      navigate(`/instruments/${instrumentId}`)
+      const record = await calApi.create(buildPayload())
+      if (!asDraft) {
+        await calApi.submit(record.id)
+        showToast('Calibration submitted for approval', 'success')
+      } else {
+        showToast('Draft saved — remember to submit when complete', 'info')
+      }
+      setTimeout(() => navigate(`/app/instruments/${instrumentId}`), 1200)
     } catch (err) {
       setError(err.message)
-    } finally {
       setSaving(false)
     }
   }
@@ -288,18 +300,19 @@ export default function CalibrationForm() {
     <div className="bg-red-50 border border-red-200 rounded-xl px-6 py-8 text-center text-red-700 text-sm">
       <p className="font-semibold mb-1">Failed to load instrument</p>
       <p>{error}</p>
-      <Link to="/instruments" className="mt-3 inline-block text-blue-600 underline">Back to list</Link>
+      <Link to="/app/instruments" className="mt-3 inline-block text-blue-600 underline">Back to list</Link>
     </div>
   )
 
   return (
     <div className="max-w-4xl space-y-5">
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/instruments" className="hover:text-slate-700">Instruments</Link>
+        <Link to="/app/instruments" className="hover:text-slate-700">Instruments</Link>
         <span>/</span>
-        <Link to={`/instruments/${instrumentId}`} className="hover:text-slate-700 font-mono text-slate-700">
+        <Link to={`/app/instruments/${instrumentId}`} className="hover:text-slate-700 font-mono text-slate-700">
           {instrument?.tag_number ?? instrumentId}
         </Link>
         <span>/</span>
@@ -390,6 +403,16 @@ export default function CalibrationForm() {
               value={workOrder}
               onChange={e => setWorkOrder(e.target.value)}
               placeholder="e.g. WO-2024-001"
+              className={inputCls(false)}
+            />
+          </Field>
+
+          <Field label="Procedure Used">
+            <input
+              type="text"
+              value={procedureUsed}
+              onChange={e => setProcedureUsed(e.target.value)}
+              placeholder={instrument?.procedure_reference ? `Default: ${instrument.procedure_reference}` : 'e.g. CAL-PROC-001, Rev 3'}
               className={inputCls(false)}
             />
           </Field>
@@ -499,26 +522,43 @@ export default function CalibrationForm() {
             />
           </Field>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:gap-8 pt-2 border-t border-slate-100">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={defectFound}
-                onChange={e => setDefectFound(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm text-slate-700">Defect found during calibration</span>
-            </label>
+          <div className="flex flex-col gap-3 pt-2 border-t border-slate-100">
+            <div className="flex flex-col gap-3 sm:flex-row sm:gap-8">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={defectFound}
+                  onChange={e => { setDefectFound(e.target.checked); if (!e.target.checked) setDefectDescription('') }}
+                  className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-slate-700">Defect found during calibration</span>
+              </label>
 
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={returnedToService}
-                onChange={e => setReturnedToService(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm text-slate-700">Instrument returned to service</span>
-            </label>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={returnedToService}
+                  onChange={e => setReturnedToService(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-slate-700">Instrument returned to service</span>
+              </label>
+            </div>
+
+            {defectFound && (
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">
+                  Defect Description <span className="text-red-500 ml-0.5">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={defectDescription}
+                  onChange={e => setDefectDescription(e.target.value)}
+                  placeholder="Describe the defect found…"
+                  className={`${inputCls(false)} resize-none border-red-200 bg-red-50`}
+                />
+              </div>
+            )}
           </div>
         </div>
       </SectionCard>
@@ -551,7 +591,7 @@ export default function CalibrationForm() {
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
             <Link
-              to={`/instruments/${instrumentId}`}
+              to={`/app/instruments/${instrumentId}`}
               className="px-4 py-2.5 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
             >
               Cancel

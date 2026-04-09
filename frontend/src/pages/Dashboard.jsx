@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { dashboard as dashApi } from '../utils/api'
+import { getUser } from '../utils/userContext'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -29,17 +30,26 @@ function useDashboard() {
   const [data,    setData]      = useState(null)
   const [tick,    setTick]      = useState(0)
 
+  // Re-fetch whenever the signed-in user (and therefore site) changes
+  useEffect(() => {
+    function onUserChange() { setTick(t => t + 1) }
+    window.addEventListener('caltrack-user-change', onUserChange)
+    return () => window.removeEventListener('caltrack-user-change', onUserChange)
+  }, [])
+
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
 
+    const site = getUser()?.siteName ?? null
+
     Promise.all([
-      dashApi.stats(),
-      dashApi.alerts(),
-      dashApi.complianceByArea(),
-      dashApi.upcoming(),
-      dashApi.badActors(),
+      dashApi.stats(site),
+      dashApi.alerts(site),
+      dashApi.complianceByArea(site),
+      dashApi.upcoming(site),
+      dashApi.badActors(site),
     ])
       .then(([stats, alerts, areas, upcoming, actors]) => {
         if (!cancelled) {
@@ -344,9 +354,12 @@ function UpcomingList({ instruments }) {
     )
   }
 
+  const shown = nextWeek.slice(0, 8)
+  const hiddenCount = nextWeek.length - shown.length
+
   return (
     <div className="divide-y divide-slate-100">
-      {nextWeek.slice(0, 8).map((inst) => {
+      {shown.map((inst) => {
         const d = inst.days_until_due
         const urgent = d <= 1
         const soon   = d <= 4
@@ -364,7 +377,7 @@ function UpcomingList({ instruments }) {
         return (
           <Link
             key={inst.id}
-            to={`/instruments/${inst.id}`}
+            to={`/app/instruments/${inst.id}`}
             className="flex items-center justify-between py-3 px-2 -mx-2 rounded-lg hover:bg-slate-50 transition-colors"
           >
             <div className="min-w-0 flex-1">
@@ -386,6 +399,16 @@ function UpcomingList({ instruments }) {
           </Link>
         )
       })}
+      {hiddenCount > 0 && (
+        <div className="pt-3 pb-1 text-center">
+          <Link
+            to="/app/instruments?calibration_status=due_soon"
+            className="text-xs text-blue-600 hover:underline"
+          >
+            + {hiddenCount} more — view all
+          </Link>
+        </div>
+      )}
     </div>
   )
 }
@@ -407,12 +430,15 @@ function BadActorsList({ actors }) {
     )
   }
 
+  const shown = actors.slice(0, 10)
+  const remaining = actors.length - shown.length
+
   return (
     <div className="divide-y divide-slate-100">
-      {actors.slice(0, 5).map((actor, i) => (
+      {shown.map((actor, i) => (
         <Link
           key={actor.instrument_id}
-          to={`/instruments/${actor.instrument_id}`}
+          to={`/app/instruments/${actor.instrument_id}`}
           className="flex items-center justify-between py-3 px-2 -mx-2 rounded-lg hover:bg-slate-50 transition-colors"
         >
           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -566,7 +592,7 @@ export default function Dashboard() {
           subtitle={`${dueThisWeek} instrument${dueThisWeek !== 1 ? 's' : ''} require calibration`}
           headerRight={
             dueThisWeek > 8
-              ? <Link to="/instruments?calibration_status=due_soon" className="text-xs text-blue-600 hover:underline">View all</Link>
+              ? <Link to="/app/instruments?calibration_status=due_soon" className="text-xs text-blue-600 hover:underline">View all</Link>
               : null
           }
         >
@@ -575,9 +601,9 @@ export default function Dashboard() {
 
         <Card
           title="Bad Actors"
-          subtitle="Top 5 instruments by as-found failures (12 months)"
+          subtitle="Top 10 instruments by as-found failures (12 months)"
           headerRight={
-            <Link to="/instruments?calibration_status=all" className="text-xs text-blue-600 hover:underline">View all</Link>
+            <Link to="/app/bad-actors" className="text-xs text-blue-600 hover:underline">View all</Link>
           }
         >
           <BadActorsList actors={actors} />

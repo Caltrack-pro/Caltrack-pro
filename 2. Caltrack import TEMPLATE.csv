@@ -1,0 +1,9 @@
+tag_number,description,area,unit,instrument_type,manufacturer,model,serial_number,measurement_lrv,measurement_urv,engineering_units,output_type,calibration_interval_days,tolerance_type,tolerance_value,num_test_points,criticality,status,procedure_reference,last_calibration_date,last_calibration_result
+PT-1023A,Feed pump discharge pressure,Unit 1,Train A,pressure,Endress+Hauser,PMC51,K123456789,0,1000,kPa,4-20mA,365,percent_span,0.5,5,process_critical,active,CAL-PROC-001,2025-08-15,pass
+TT-2011,Reactor inlet temperature,Unit 2,Train B,temperature,Yokogawa,EJA530E,YK987654,0,300,degC,4-20mA,365,percent_span,0.5,5,process_critical,active,CAL-PROC-002,2025-07-20,pass
+FT-3044,Cooling water flow,Unit 1,,flow,Emerson,8750W,EM445566,0,500,m3/h,4-20mA,180,percent_span,1.0,5,standard,active,,2025-09-01,pass
+LT-4088,Feedstock storage tank level,Tank Farm,,level,ABB,LMT100,AB112233,0,10,m,4-20mA,365,percent_span,0.5,5,standard,active,,2025-06-30,marginal
+AT-5001,Stack gas O2 analyser,Utilities,,analyser,Servomex,4900,SX778899,0,25,%,4-20mA,90,absolute,0.1,5,process_critical,active,CAL-PROC-005,2025-10-01,pass
+PSH-6012,Compressor high pressure switch,Compressor Area,,switch,Ashcroft,B420,,0,0,,discrete,365,absolute,5,1,safety_critical,active,CAL-PROC-006,2025-05-15,fail
+CV-7001,Feed rate control valve,Unit 1,Train A,valve,Fisher,667,,0,100,%,4-20mA,365,percent_span,1.0,5,process_critical,active,,2025-08-01,pass
+PT-8055,Spare pressure transmitter,Utilities,,pressure,Rosemount,3051,RM556677,0,500,kPa,4-20mA,365,percent_span,0.5,5,non_critical,spare,,,,not_calibrated

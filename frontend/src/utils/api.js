@@ -148,22 +148,22 @@ export const calibrations = {
 // ---------------------------------------------------------------------------
 
 export const dashboard = {
-  stats: () =>
-    request('/dashboard/stats'),
+  stats: (site) =>
+    request(`/dashboard/stats${toQueryString({ site })}`),
 
-  alerts: () =>
-    request('/dashboard/alerts'),
+  alerts: (site) =>
+    request(`/dashboard/alerts${toQueryString({ site })}`),
 
-  complianceByArea: () =>
-    request('/dashboard/compliance-by-area'),
+  complianceByArea: (site) =>
+    request(`/dashboard/compliance-by-area${toQueryString({ site })}`),
 
   /** Instruments due in the next N days (default 30), sorted by due date. */
-  upcoming: (days = 30) =>
-    request(`/dashboard/upcoming${toQueryString({ days })}`),
+  upcoming: (site, days = 30) =>
+    request(`/dashboard/upcoming${toQueryString({ site, days })}`),
 
   /** Top-10 instruments by as-found failure count in the last 12 months. */
-  badActors: () =>
-    request('/dashboard/bad-actors'),
+  badActors: (site) =>
+    request(`/dashboard/bad-actors${toQueryString({ site })}`),
 }
 
 // ---------------------------------------------------------------------------

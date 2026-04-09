@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { instruments as instrApi, calibrations as calApi, dashboard as dashApi } from '../utils/api'
 import { fmtDate, fmtPct, humanise, todayISO } from '../utils/formatting'
 import { ResultBadge } from '../components/Badges'
+import { getUser } from '../utils/userContext'
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -83,7 +84,8 @@ function OverdueReport() {
 
   useEffect(() => {
     setLoading(true); setError(null)
-    instrApi.list({ calibration_status: 'overdue', limit: 500 })
+    const site = getUser()?.siteName ?? undefined
+    instrApi.list({ calibration_status: 'overdue', limit: 500, site })
       .then(res => {
         const sorted = [...(res.results ?? [])].sort((a, b) => (b.days_overdue ?? 0) - (a.days_overdue ?? 0))
         setData(sorted); setLoading(false)
@@ -139,7 +141,7 @@ function OverdueReport() {
                     </td>
                     <td className={tdCls}><ResultBadge result={inst.last_calibration_result} /></td>
                     <td className={`${tdCls} whitespace-nowrap`}>
-                      <Link to={`/calibrations/new/${inst.id}`}
+                      <Link to={`/app/calibrations/new/${inst.id}`}
                         className="text-xs px-2.5 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
                         Calibrate
                       </Link>
@@ -208,7 +210,7 @@ function UpcomingReport() {
                     </td>
                     <td className={`${tdCls} text-slate-600`}>{inst.calibration_interval ?? '—'}</td>
                     <td className={`${tdCls} whitespace-nowrap`}>
-                      <Link to={`/calibrations/new/${inst.id}`}
+                      <Link to={`/app/calibrations/new/${inst.id}`}
                         className="text-xs px-2.5 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
                         Calibrate
                       </Link>
@@ -242,7 +244,8 @@ function FailedReport() {
 
   useEffect(() => {
     setLoading(true); setError(null)
-    calApi.list({ result: 'fail', date_from: dateFrom, date_to: dateTo, limit: 500 })
+    const site = getUser()?.siteName ?? undefined
+    calApi.list({ result: 'fail', date_from: dateFrom, date_to: dateTo, limit: 500, site })
       .then(res => { setData(res?.results ?? res ?? []); setLoading(false) })
       .catch(err => { setError(err.message); setLoading(false) })
   }, [rev])
@@ -307,7 +310,7 @@ function FailedReport() {
                   <tr key={rec.id} className="hover:bg-slate-50">
                     <td className={`${tdCls} whitespace-nowrap text-slate-700`}>{fmtDate(rec.calibration_date)}</td>
                     <td className={tdCls}>
-                      <Link to={`/instruments/${rec.instrument_id}`}
+                      <Link to={`/app/instruments/${rec.instrument_id}`}
                         className="font-mono font-bold text-blue-600 hover:underline">
                         {rec.instrument?.tag_number ?? rec.instrument_id?.slice(0, 8)}
                       </Link>
@@ -319,7 +322,7 @@ function FailedReport() {
                     <td className={`${tdCls} text-slate-600`}>{rec.technician_name || '—'}</td>
                     <td className={`${tdCls} text-slate-600`}>{rec.adjustment_made ? humanise(rec.adjustment_type) : 'No'}</td>
                     <td className={`${tdCls} whitespace-nowrap`}>
-                      <Link to={`/instruments/${rec.instrument_id}`}
+                      <Link to={`/app/instruments/${rec.instrument_id}`}
                         className="text-xs px-2.5 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-100 transition-colors">
                         View
                       </Link>
@@ -351,7 +354,8 @@ function HistoryReport() {
     if (search.length < 2) { setSuggestions([]); return }
     clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
-      instrApi.list({ limit: 10 })
+      const site = getUser()?.siteName ?? undefined
+      instrApi.list({ limit: 10, site })
         .then(res => {
           const q = search.toLowerCase()
           setSuggestions((res.results ?? []).filter(i => i.tag_number.toLowerCase().includes(q)))

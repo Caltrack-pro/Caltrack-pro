@@ -107,12 +107,17 @@ def list_instruments(
     type:                Optional[str]         = Query(None, description="Filter by instrument_type enum value"),
     status:              Optional[str]         = Query(None, description="Filter by status enum value"),
     calibration_status:  Optional[str]         = Query(None, description="overdue | due_soon | current | not_calibrated | all"),
+    site:                Optional[str]         = Query(None, description="Filter by site/organisation (created_by field)"),
     skip:                int                   = Query(0, ge=0),
     limit:               int                   = Query(100, ge=1, le=500),
     db:                  Session               = Depends(get_db),
 ) -> InstrumentListResponse:
 
     q = db.query(Instrument)
+
+    # --- site isolation filter ---
+    if site:
+        q = q.filter(Instrument.created_by == site)
 
     # --- simple column filters ---
     if area:

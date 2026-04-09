@@ -40,6 +40,7 @@ from schemas import (
     CalibrationRecordListItem,
     CalibrationRecordResponse,
     CalibrationRecordUpdate,
+    InstrumentSummary,
     RejectPayload,
     TestPointInput,
     TestPointResponse,
@@ -234,12 +235,19 @@ def list_calibrations(
     date_from:     Optional[date] = Query(None, description="Calibration date ≥ this date"),
     date_to:       Optional[date] = Query(None, description="Calibration date ≤ this date"),
     record_status: Optional[str]  = Query(None, description="draft | submitted | approved | rejected"),
+    site:          Optional[str]  = Query(None, description="Filter by site/organisation (created_by on instrument)"),
     skip:          int            = Query(0, ge=0),
     limit:         int            = Query(100, ge=1, le=500),
     db:            Session        = Depends(get_db),
 ) -> CalibrationListResponse:
 
     q = db.query(CalibrationRecord)
+
+    # Site isolation: join instruments table and filter by created_by
+    if site:
+        q = q.join(Instrument, CalibrationRecord.instrument_id == Instrument.id).filter(
+            Instrument.created_by == site
+        )
 
     if instrument_id:
         q = q.filter(CalibrationRecord.instrument_id == instrument_id)
@@ -262,10 +270,22 @@ def list_calibrations(
         .all()
     )
 
-    return CalibrationListResponse(
-        total=total,
-        results=[CalibrationRecordListItem.model_validate(r) for r in records],
-    )
+    # Collect unique instrument IDs and batch-fetch their summaries
+    instr_ids = list({r.instrument_id for r in records})
+    instruments_map: dict = {}
+    if instr_ids:
+        instrs = db.query(Instrument).filter(Instrument.id.in_(instr_ids)).all()
+        instruments_map = {i.id: i for i in instrs}
+
+    items = []
+    for r in records:
+        item = CalibrationRecordListItem.model_validate(r)
+        instr = instruments_map.get(r.instrument_id)
+        if instr:
+            item.instrument = InstrumentSummary.model_validate(instr)
+        items.append(item)
+
+    return CalibrationListResponse(total=total, results=items)
 
 
 # ---------------------------------------------------------------------------

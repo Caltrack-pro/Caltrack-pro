@@ -1,4 +1,6 @@
-import { NavLink } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { getUser, ROLES, signOut } from '../utils/userContext'
 
 // ---------------------------------------------------------------------------
 // Icons (inline SVG — no external icon library needed)
@@ -59,6 +61,16 @@ function IconUser({ className }) {
   )
 }
 
+function IconClock({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 3" />
+    </svg>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Logo mark — larger gauge used in the app header
 // ---------------------------------------------------------------------------
@@ -108,6 +120,19 @@ function NavItem({ to, icon: Icon, label, onClick }) {
 // ---------------------------------------------------------------------------
 
 export default function Sidebar({ onNavigate }) {
+  const navigate = useNavigate()
+  const [user, setUserState] = useState(() => getUser())
+
+  useEffect(() => {
+    function onUserChange(e) { setUserState(e.detail) }
+    window.addEventListener('caltrack-user-change', onUserChange)
+    return () => window.removeEventListener('caltrack-user-change', onUserChange)
+  }, [])
+
+  const roleLabel = user
+    ? (ROLES.find(r => r.value === user.role)?.label ?? user.role)
+    : 'Not signed in'
+
   return (
     <aside className="w-64 flex-shrink-0 bg-slate-900 flex flex-col h-screen">
 
@@ -127,23 +152,68 @@ export default function Sidebar({ onNavigate }) {
         <p className="px-3 pb-2 text-slate-600 text-xs font-semibold uppercase tracking-wider">
           Main
         </p>
-        <NavItem to="/"            icon={IconDashboard} label="Dashboard"    onClick={onNavigate} />
-        <NavItem to="/instruments" icon={IconGauge}     label="Instruments"  onClick={onNavigate} />
-        <NavItem to="/alerts"      icon={IconBell}      label="Alerts"       onClick={onNavigate} />
-        <NavItem to="/reports"     icon={IconChart}     label="Reports"      onClick={onNavigate} />
+        <NavItem to="/app"              icon={IconDashboard} label="Dashboard"    onClick={onNavigate} />
+        <NavItem to="/app/instruments"  icon={IconGauge}     label="Instruments"  onClick={onNavigate} />
+        <NavItem to="/app/alerts"       icon={IconBell}      label="Alerts"       onClick={onNavigate} />
+        <NavItem to="/app/approvals"    icon={IconClock}     label="Approvals"    onClick={onNavigate} />
+        <NavItem to="/app/reports"      icon={IconChart}     label="Reports"      onClick={onNavigate} />
+
+        {/* ── Back to website ── */}
+        <div className="pt-3 mt-3 border-t border-slate-700/60">
+          <a
+            href="/"
+            className={`${NAV_BASE} ${NAV_IDLE}`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12l9-9 9 9" />
+              <path d="M9 21V9h6v12" />
+            </svg>
+            <span>Back to Website</span>
+          </a>
+        </div>
       </nav>
 
-      {/* ── Current user ── */}
-      <div className="px-4 py-4 border-t border-slate-700/60">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
-            <IconUser className="w-4 h-4 text-slate-300" />
+      {/* ── Current user + Profile + Sign Out ── */}
+      <div className="px-3 py-4 border-t border-slate-700/60 space-y-1">
+
+        {/* Profile link */}
+        <NavLink
+          to="/app/profile"
+          onClick={onNavigate}
+          className={({ isActive }) => `${NAV_BASE} ${isActive ? NAV_ACTIVE : NAV_IDLE}`}
+        >
+          <div className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
+            <IconUser className="w-3 h-3 text-slate-300" />
           </div>
-          <div className="min-w-0">
-            <p className="text-slate-200 text-sm font-medium truncate">J. Smith</p>
-            <p className="text-slate-500 text-xs truncate">Technician</p>
+          <div className="min-w-0 flex-1">
+            {user?.siteName && (
+              <p className="text-[10px] leading-tight truncate opacity-60">{user.siteName}</p>
+            )}
+            <p className="text-sm font-medium truncate leading-tight">
+              {user?.userName ?? 'Not signed in'}
+            </p>
           </div>
-        </div>
+        </NavLink>
+
+        {/* Sign out */}
+        {user && (
+          <button
+            onClick={() => {
+              signOut()
+              navigate('/')
+            }}
+            className={`w-full ${NAV_BASE} text-red-400 hover:bg-red-900/30 hover:text-red-300`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            <span>Sign Out</span>
+          </button>
+        )}
       </div>
 
     </aside>

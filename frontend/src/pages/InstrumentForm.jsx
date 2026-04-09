@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { instruments as instrApi } from '../utils/api'
 import { humanise } from '../utils/formatting'
+import { ToastContainer, useToast } from '../components/Toast'
+import { getUser } from '../utils/userContext'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -15,8 +17,10 @@ const TOLERANCE_TYPES  = [
   { value: 'absolute',        label: 'Absolute' },
 ]
 const TEST_POINT_OPTS = [3, 5, 7, 9, 11]
-const AREAS = ['Area 1','Area 2','Area 3','Area 4','Utilities','Offsite']  // fallback list
 const LAST_RESULTS = ['pass','fail','marginal']
+
+// Fallback areas shown before API data loads
+const DEFAULT_AREAS = []
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -58,23 +62,50 @@ const TOL_REFERENCE = [
   { type: 'Non-Critical',      typical: '±2.0% span' },
 ]
 
+// Convert interval → days
+function toDays(value, unit) {
+  const n = parseInt(value, 10)
+  if (isNaN(n) || !value) return null
+  if (unit === 'weeks')  return n * 7
+  if (unit === 'months') return Math.round(n * 30.44)
+  return n
+}
+
+// Convert days → best display unit
+function fromDays(days) {
+  if (!days) return { value: '', unit: 'days' }
+  if (days % 7 === 0 && days < 365) return { value: String(days / 7),         unit: 'weeks'  }
+  if (days >= 28 && days % 30 === 0) return { value: String(days / 30),        unit: 'months' }
+  // Approximate: if days is close to a month multiple
+  const nearestMonths = Math.round(days / 30.44)
+  if (nearestMonths > 0 && Math.abs(days - nearestMonths * 30.44) < 2)
+    return { value: String(nearestMonths), unit: 'months' }
+  return { value: String(days), unit: 'days' }
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function InstrumentForm() {
   const navigate = useNavigate()
+  const { id } = useParams()      // present when editing existing instrument
+  const isEdit = Boolean(id)
 
+  const { toasts, showToast, dismissToast } = useToast()
+
+  const [loading,        setLoading]        = useState(isEdit)
   const [saving,         setSaving]         = useState(false)
   const [errors,         setErrors]         = useState({})
   const [saveError,      setSaveError]      = useState(null)
   const [tagChecking,    setTagChecking]    = useState(false)
   const [tagExists,      setTagExists]      = useState(false)
   const [showTolRef,     setShowTolRef]     = useState(false)
+  const [knownAreas,     setKnownAreas]     = useState(DEFAULT_AREAS)
+  const [origTagNumber,  setOrigTagNumber]  = useState('')  // for edit — skip self-check
 
   // Section 1 — Identification
   const [tagNumber,      setTagNumber]      = useState('')
   const [description,    setDescription]    = useState('')
   const [area,           setArea]           = useState('')
-  const [areaCustom,     setAreaCustom]     = useState('')
   const [unit,           setUnit]           = useState('')
   const [location,       setLocation]       = useState('')
   const [status,         setStatus]         = useState('active')
@@ -102,22 +133,74 @@ export default function InstrumentForm() {
   const [lastCalDate,    setLastCalDate]    = useState('')
   const [lastCalResult,  setLastCalResult]  = useState('')
 
-  // ── Tag uniqueness check ──────────────────────────────────────────────────
+  // ── Fetch existing areas for autocomplete ─────────────────────────────────
   useEffect(() => {
-    if (tagNumber.length < 2) { setTagExists(false); return }
+    const site = getUser()?.siteName ?? undefined
+    instrApi.list({ limit: 500, site })
+      .then(res => {
+        const set = new Set((res.results ?? []).map(i => i.area).filter(Boolean))
+        setKnownAreas([...set].sort())
+      })
+      .catch(() => {})
+  }, [])
+
+  // ── Load existing instrument when editing ─────────────────────────────────
+  useEffect(() => {
+    if (!isEdit) return
+    instrApi.get(id)
+      .then(inst => {
+        setOrigTagNumber(inst.tag_number)
+        setTagNumber(inst.tag_number ?? '')
+        setDescription(inst.description ?? '')
+        setArea(inst.area ?? '')
+        setUnit(inst.unit ?? '')
+        setLocation(inst.physical_location ?? '')
+        setStatus(inst.status ?? 'active')
+        setCriticality(inst.criticality ?? 'standard')
+        setInstrType(inst.instrument_type ?? '')
+        setManufacturer(inst.manufacturer ?? '')
+        setModelNumber(inst.model ?? '')
+        setSerialNumber(inst.serial_number ?? '')
+        setLrv(inst.measurement_lrv != null ? String(inst.measurement_lrv) : '')
+        setUrv(inst.measurement_urv != null ? String(inst.measurement_urv) : '')
+        setEngUnits(inst.engineering_units ?? '')
+        setOutputType(inst.output_type ?? '')
+        setProcedureRef(inst.procedure_reference ?? '')
+        setNumPoints(inst.num_test_points ?? 5)
+        setTolType(inst.tolerance_type ?? 'percent_span')
+        setTolValue(inst.tolerance_value != null ? String(inst.tolerance_value) : '')
+        if (inst.calibration_interval_days) {
+          const { value, unit: u } = fromDays(inst.calibration_interval_days)
+          setCalInterval(value)
+          setIntervalUnit(u)
+        }
+        setLastCalDate(inst.last_calibration_date ?? '')
+        setLastCalResult(inst.last_calibration_result === 'not_calibrated' ? '' : (inst.last_calibration_result ?? ''))
+        setLoading(false)
+      })
+      .catch(() => { navigate('/app/instruments'); })
+  }, [id, isEdit])
+
+  // ── Tag uniqueness check (skip if unchanged in edit mode) ─────────────────
+  useEffect(() => {
+    const upperTag = tagNumber.toUpperCase().trim()
+    if (upperTag.length < 2) { setTagExists(false); return }
+    if (isEdit && upperTag === origTagNumber.toUpperCase()) { setTagExists(false); return }
     setTagChecking(true)
     const timer = setTimeout(() => {
-      instrApi.list({ limit: 1 })
+      const site = getUser()?.siteName ?? undefined
+      instrApi.list({ limit: 500, site })
         .then(res => {
-          // Simple client-side check against first page; good enough for most cases
-          const found = (res.results ?? []).some(i => i.tag_number.toUpperCase() === tagNumber.toUpperCase())
+          const found = (res.results ?? []).some(i =>
+            i.tag_number.toUpperCase() === upperTag && i.id !== id
+          )
           setTagExists(found)
           setTagChecking(false)
         })
         .catch(() => setTagChecking(false))
     }, 400)
     return () => clearTimeout(timer)
-  }, [tagNumber])
+  }, [tagNumber, origTagNumber, isEdit, id])
 
   // ── Validate ──────────────────────────────────────────────────────────────
   function validate() {
@@ -133,14 +216,6 @@ export default function InstrumentForm() {
     return e
   }
 
-  // ── Compute interval in days ──────────────────────────────────────────────
-  function intervalDays() {
-    if (!calInterval) return null
-    const n = parseInt(calInterval, 10)
-    if (isNaN(n)) return null
-    return intervalUnit === 'months' ? n * 30 : n
-  }
-
   // ── Submit ────────────────────────────────────────────────────────────────
   async function handleSave() {
     const errs = validate()
@@ -149,25 +224,23 @@ export default function InstrumentForm() {
     setSaveError(null)
     setSaving(true)
 
-    const effectiveArea = area === '__custom__' ? areaCustom : area
-
+    const currentUser = getUser()
     const payload = {
       tag_number:                   tagNumber.toUpperCase().trim(),
       description:                  description.trim(),
-      area:                         effectiveArea || null,
+      area:                         area || null,
       unit:                         unit || null,
-      physical_location:            location || null,
       status,
       criticality,
       instrument_type:              instrType || null,
       manufacturer:                 manufacturer || null,
-      model_number:                 modelNumber || null,
+      model:                        modelNumber || null,     // backend field is "model" not "model_number"
       serial_number:                serialNumber || null,
       measurement_lrv:              lrv !== '' ? parseFloat(lrv) : null,
       measurement_urv:              urv !== '' ? parseFloat(urv) : null,
       engineering_units:            engUnits || null,
       output_type:                  outputType || null,
-      calibration_interval:         intervalDays(),
+      calibration_interval_days:    toDays(calInterval, intervalUnit),  // backend field is "calibration_interval_days"
       num_test_points:              numPoints,
       tolerance_type:               tolType,
       tolerance_value:              tolValue !== '' ? parseFloat(tolValue) : null,
@@ -176,9 +249,21 @@ export default function InstrumentForm() {
       last_calibration_result:      lastCalResult || null,
     }
 
+    // On create: stamp the site name into created_by for data isolation
+    if (!isEdit && currentUser?.siteName) {
+      payload.created_by = currentUser.siteName
+    }
+
     try {
-      const inst = await instrApi.create(payload)
-      navigate(`/instruments/${inst.id}`)
+      let inst
+      if (isEdit) {
+        inst = await instrApi.update(id, payload)
+        showToast('Instrument updated successfully', 'success')
+      } else {
+        inst = await instrApi.create(payload)
+        showToast('Instrument created successfully', 'success')
+      }
+      setTimeout(() => navigate(`/app/instruments/${inst.id}`), 600)
     } catch (err) {
       setSaveError(err.message)
       setSaving(false)
@@ -189,14 +274,27 @@ export default function InstrumentForm() {
   const tolUnitLabel = tolType === 'percent_span' || tolType === 'percent_reading'
     ? '%' : engUnits || 'EU'
 
+  if (loading) return (
+    <div className="flex items-center justify-center py-32">
+      <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+    </div>
+  )
+
   return (
     <div className="max-w-4xl space-y-5">
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/instruments" className="hover:text-slate-700">Instruments</Link>
+        <Link to="/app/instruments" className="hover:text-slate-700">Instruments</Link>
+        {isEdit && (
+          <>
+            <span>/</span>
+            <Link to={`/app/instruments/${id}`} className="hover:text-slate-700 font-mono">{origTagNumber}</Link>
+          </>
+        )}
         <span>/</span>
-        <span className="text-slate-800 font-medium">New Instrument</span>
+        <span className="text-slate-800 font-medium">{isEdit ? 'Edit' : 'New Instrument'}</span>
       </nav>
 
       {saveError && (
@@ -208,7 +306,7 @@ export default function InstrumentForm() {
       {/* ── Section 1: Identification ─── */}
       <SectionCard title="Identification">
         <Field label="Tag Number" required error={errors.tagNumber}
-          hint='Must be unique. Will be auto-uppercased. e.g. PT-1023A'>
+          hint='Must be unique. Auto-uppercased. e.g. PT-1023A'>
           <div className="relative">
             <input
               type="text"
@@ -224,24 +322,26 @@ export default function InstrumentForm() {
         </Field>
 
         <Field label="Service Description" required error={errors.description}
-          hint="What does this instrument measure? e.g. Reactor inlet pressure">
+          hint="What does this instrument measure?">
           <input type="text" value={description}
             onChange={e => setDescription(e.target.value)}
             placeholder="e.g. Reactor inlet pressure"
             className={inputCls(errors.description)} />
         </Field>
 
-        <Field label="Plant Area">
-          <select value={area} onChange={e => setArea(e.target.value)} className={inputCls(false)}>
-            <option value="">Select area…</option>
-            {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
-            <option value="__custom__">Other (type below)…</option>
-          </select>
-          {area === '__custom__' && (
-            <input type="text" value={areaCustom} onChange={e => setAreaCustom(e.target.value)}
-              placeholder="Type area name…"
-              className={`${inputCls(false)} mt-2`} />
-          )}
+        <Field label="Plant Area"
+          hint="Type a new area or pick an existing one">
+          <input
+            type="text"
+            list="area-options"
+            value={area}
+            onChange={e => setArea(e.target.value)}
+            placeholder="e.g. Area 1, Utilities, Offsite…"
+            className={inputCls(false)}
+          />
+          <datalist id="area-options">
+            {knownAreas.map(a => <option key={a} value={a} />)}
+          </datalist>
         </Field>
 
         <Field label="Unit / Plant Section">
@@ -318,16 +418,23 @@ export default function InstrumentForm() {
 
       {/* ── Section 3: Calibration config ─── */}
       <SectionCard title="Calibration Configuration">
-        <Field label="Calibration Interval">
+        <Field label="Calibration Interval"
+          hint="Backend stores in days; weeks/months are converted automatically">
           <div className="flex gap-2">
             <input type="number" min="1" value={calInterval} onChange={e => setCalInterval(e.target.value)}
               placeholder="e.g. 12" className={`${inputCls(false)} flex-1`} />
             <select value={intervalUnit} onChange={e => setIntervalUnit(e.target.value)}
               className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700">
               <option value="days">Days</option>
+              <option value="weeks">Weeks</option>
               <option value="months">Months</option>
             </select>
           </div>
+          {calInterval && (
+            <p className="text-xs text-slate-400 mt-1">
+              = {toDays(calInterval, intervalUnit)} days stored in database
+            </p>
+          )}
         </Field>
 
         <Field label="Number of Test Points">
@@ -386,8 +493,8 @@ export default function InstrumentForm() {
       </SectionCard>
 
       {/* ── Section 4: Initial calibration status ─── */}
-      <SectionCard title="Initial Calibration Status"
-        hint="Optional — for migrating existing instruments with known calibration history.">
+      <SectionCard title={isEdit ? 'Calibration Status' : 'Initial Calibration Status'}
+        hint={isEdit ? undefined : 'Optional — for migrating existing instruments with known calibration history.'}>
         <Field label="Last Calibration Date">
           <input type="date" value={lastCalDate} onChange={e => setLastCalDate(e.target.value)}
             className={inputCls(false)} />
@@ -404,7 +511,8 @@ export default function InstrumentForm() {
 
       {/* ── Footer ─── */}
       <div className="flex flex-wrap items-center justify-between gap-3 py-2">
-        <Link to="/instruments"
+        <Link
+          to={isEdit ? `/app/instruments/${id}` : '/app/instruments'}
           className="px-4 py-2.5 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
           Cancel
         </Link>
@@ -413,7 +521,7 @@ export default function InstrumentForm() {
           disabled={saving || tagChecking}
           className="px-6 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
         >
-          {saving ? 'Saving…' : 'Save Instrument'}
+          {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Instrument'}
         </button>
       </div>
 

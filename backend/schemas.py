@@ -196,6 +196,20 @@ class InstrumentListResponse(BaseModel):
     results: List[InstrumentResponse]
 
 
+# ---------------------------------------------------------------------------
+# Minimal instrument summary — embedded in calibration list items
+# ---------------------------------------------------------------------------
+
+class InstrumentSummary(BaseModel):
+    """Lightweight instrument fields embedded in calibration list responses."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id:          UUID
+    tag_number:  str
+    description: Optional[str]
+    area:        Optional[str]
+
+
 # ===========================================================================
 # Calibration record schemas
 # ===========================================================================
@@ -344,8 +358,12 @@ class CalibrationRecordListItem(BaseModel):
     max_as_found_error_pct: Optional[float]
     max_as_left_error_pct:  Optional[float]
     work_order_reference:   Optional[str]
+    adjustment_made:        bool = False
     created_at:             datetime
     approved_by:            Optional[str]
+
+    # Joined instrument summary — populated by the list endpoint
+    instrument: Optional[InstrumentSummary] = None
 
 
 class CalibrationListResponse(BaseModel):

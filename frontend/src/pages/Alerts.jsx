@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { dashboard as dashApi } from '../utils/api'
 import { fmtDate, humanise } from '../utils/formatting'
+import { getUser } from '../utils/userContext'
 
 // ── Priority config ───────────────────────────────────────────────────────────
 
@@ -84,7 +85,7 @@ function AlertCard({ alert }) {
       </div>
 
       <Link
-        to={`/instruments/${alert.instrument_id}`}
+        to={`/app/instruments/${alert.instrument_id}`}
         onClick={e => e.stopPropagation()}
         className="flex-shrink-0 text-xs px-2.5 py-1 border border-current/20 rounded text-slate-600 bg-white/60 hover:bg-white transition-colors whitespace-nowrap"
       >
@@ -143,7 +144,8 @@ export default function Alerts() {
 
   const load = useCallback(() => {
     setLoading(true); setError(null)
-    dashApi.alerts()
+    const site = getUser()?.siteName ?? null
+    dashApi.alerts(site)
       .then(data => {
         const alerts = Array.isArray(data) ? data : (data.results ?? [])
         // Sort: critical first, then by triggered_at desc
