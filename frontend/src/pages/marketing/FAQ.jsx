@@ -1,9 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import MarketingNav    from '../../components/marketing/MarketingNav'
 import MarketingFooter from '../../components/marketing/MarketingFooter'
-
-// META: Frequently asked questions about Calcheq — instrument calibration management software for oil & gas, chemical, pharma, and mining industries.
 
 const SECTIONS = [
   {
@@ -137,6 +135,14 @@ function AccordionItem({ q, a }) {
 }
 
 export default function FAQ() {
+  useEffect(() => {
+    document.title = 'FAQ — Calcheq Instrument Calibration Management'
+    const desc = document.querySelector('meta[name="description"]')
+    const content = 'Frequently asked questions about Calcheq — instrument calibration management software for oil & gas, chemical, pharma, and mining industries.'
+    if (desc) desc.setAttribute('content', content)
+    else { const m = document.createElement('meta'); m.name = 'description'; m.content = content; document.head.appendChild(m) }
+  }, [])
+
   return (
     <div className="min-h-screen bg-white">
       <MarketingNav />

@@ -1,9 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import MarketingNav    from '../../components/marketing/MarketingNav'
 import MarketingFooter from '../../components/marketing/MarketingFooter'
-
-// META: Contact Calcheq — get in touch for a demo, support, or pricing enquiries for our instrument calibration management platform.
 
 function InfoCard({ icon, title, body, action, actionLabel }) {
   return (
@@ -23,6 +21,14 @@ function InfoCard({ icon, title, body, action, actionLabel }) {
 }
 
 export default function Contact() {
+  useEffect(() => {
+    document.title = 'Contact — Calcheq Instrument Calibration Management'
+    const desc = document.querySelector('meta[name="description"]')
+    const content = 'Get in touch with Calcheq — book a demo, start a free pilot, or ask about pricing for our instrument calibration management platform.'
+    if (desc) desc.setAttribute('content', content)
+    else { const m = document.createElement('meta'); m.name = 'description'; m.content = content; document.head.appendChild(m) }
+  }, [])
+
   const [form,    setForm]    = useState({ name: '', company: '', email: '', industry: '', message: '', type: 'general' })
   const [sent,    setSent]    = useState(false)
   const [sending, setSending] = useState(false)

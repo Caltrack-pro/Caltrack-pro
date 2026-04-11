@@ -1,9 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import MarketingNav    from '../../components/marketing/MarketingNav'
 import MarketingFooter from '../../components/marketing/MarketingFooter'
-
-// META: Calcheq pricing — simple, transparent plans for instrument calibration management. Free trial, no credit card required.
 
 function Check() {
   return (
@@ -109,6 +107,14 @@ function AccordionFaqItem({ q, a }) {
 }
 
 export default function Pricing() {
+  useEffect(() => {
+    document.title = 'Pricing — Calcheq Instrument Calibration Management'
+    const desc = document.querySelector('meta[name="description"]')
+    const content = 'Simple, transparent pricing for Calcheq — instrument calibration management software. Site-based plans starting from $99/month with a free 30-day trial. No credit card required.'
+    if (desc) desc.setAttribute('content', content)
+    else { const m = document.createElement('meta'); m.name = 'description'; m.content = content; document.head.appendChild(m) }
+  }, [])
+
   return (
     <div className="min-h-screen bg-white">
       <MarketingNav />

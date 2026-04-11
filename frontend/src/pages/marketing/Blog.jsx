@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import MarketingNav    from '../../components/marketing/MarketingNav'
 import MarketingFooter from '../../components/marketing/MarketingFooter'
@@ -109,6 +110,14 @@ function PostCard({ post, featured = false }) {
 
 export default function Blog() {
   const [featured, ...rest] = POSTS
+
+  useEffect(() => {
+    document.title = 'Use Cases — Calcheq Instrument Calibration Management'
+    const desc = document.querySelector('meta[name="description"]')
+    const content = 'Discover how Calcheq is used across oil & gas, chemical, pharma, and process industries to replace spreadsheet-based calibration management.'
+    if (desc) desc.setAttribute('content', content)
+    else { const m = document.createElement('meta'); m.name = 'description'; m.content = content; document.head.appendChild(m) }
+  }, [])
 
   return (
     <div className="min-h-screen bg-white">

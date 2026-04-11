@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import MarketingNav    from '../../components/marketing/MarketingNav'
 import MarketingFooter from '../../components/marketing/MarketingFooter'
@@ -13,13 +14,29 @@ function Icon({ d, size = 6 }) {
   )
 }
 
-// ── Stat card ─────────────────────────────────────────────────────────────────
+// ── Pain card ─────────────────────────────────────────────────────────────────
 
-function Stat({ value, label }) {
+function PainCard({ icon, text }) {
   return (
-    <div className="text-center">
-      <p className="text-4xl font-extrabold text-blue-600 mb-1">{value}</p>
-      <p className="text-sm text-slate-500 font-medium">{label}</p>
+    <div className="flex items-start gap-3 bg-white rounded-xl border border-red-100 shadow-sm px-5 py-4">
+      <div className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+        {icon}
+      </div>
+      <p className="text-sm text-slate-600 leading-relaxed">{text}</p>
+    </div>
+  )
+}
+
+// ── Outcome card ──────────────────────────────────────────────────────────────
+
+function OutcomeCard({ icon, title, body }) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 hover:shadow-md hover:-translate-y-0.5 transition-all">
+      <div className="w-11 h-11 rounded-xl bg-green-50 text-green-600 flex items-center justify-center mb-4">
+        {icon}
+      </div>
+      <h3 className="text-base font-semibold text-slate-800 mb-2">{title}</h3>
+      <p className="text-sm text-slate-500 leading-relaxed">{body}</p>
     </div>
   )
 }
@@ -193,6 +210,19 @@ function DashboardMockup() {
 export default function Landing() {
   const navigate = useNavigate()
 
+  useEffect(() => {
+    document.title = 'Calcheq — Instrument Calibration Management for Process Industries'
+    const desc = document.querySelector('meta[name="description"]')
+    const content = 'Stop chasing overdue calibrations in spreadsheets. Calcheq gives your instrumentation team a single source of truth for every calibration record, alert, and due date — built for oil & gas, chemical, pharma, and manufacturing sites.'
+    if (desc) desc.setAttribute('content', content)
+    else {
+      const m = document.createElement('meta')
+      m.name = 'description'
+      m.content = content
+      document.head.appendChild(m)
+    }
+  }, [])
+
   async function openDemo() {
     try {
       await signInAsDemo()
@@ -238,16 +268,16 @@ export default function Landing() {
             <div>
               <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-full px-4 py-1.5 text-sm text-blue-700 font-semibold mb-6">
                 <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse flex-shrink-0" />
-                ISO 9001 · ISO 17025 · ISA-5.1 compliant workflows
+                Built for oil & gas, chemical, and process industries
               </div>
 
               <h1 className="text-5xl sm:text-6xl font-extrabold text-slate-900 leading-tight tracking-tight mb-6">
-                Instrument calibration management built for{' '}
-                <span className="text-blue-600">process industries.</span>
+                Your pressure transmitters won't calibrate{' '}
+                <span className="text-red-500">themselves.</span>
               </h1>
 
               <p className="text-lg text-slate-500 leading-relaxed mb-8 max-w-lg">
-                Stop chasing overdue calibrations. Calcheq gives your instrumentation team a single source of truth for every calibration record, alert, and due date — from ISO 9001 to the field.
+                Most sites manage calibrations through a tangle of spreadsheets, paper records, and memory. When an auditor asks for the as-found history on a safety-critical loop — you need to know the answer in seconds, not days.
               </p>
 
               <div className="flex flex-wrap gap-4">
@@ -255,93 +285,163 @@ export default function Landing() {
                   to="/contact"
                   className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 text-sm"
                 >
-                  Get Started Free →
+                  Book a demo →
                 </Link>
                 <button
                   onClick={openDemo}
                   className="px-6 py-3 border border-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors text-sm"
                 >
-                  Open Demo App
+                  See how it works
                 </button>
               </div>
 
-              <p className="text-xs text-slate-400 mt-4">No credit card required · Free for small teams</p>
+              <p className="text-xs text-slate-400 mt-4">Site-based pricing from $99/month · Free 30-day trial</p>
             </div>
 
             {/* Right: mockup */}
             <div className="relative">
               <DashboardMockup />
+              <p className="text-xs text-slate-400 text-center mt-3">Know your entire calibration status at a glance</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── STATS BAR ─────────────────────────────────────────────────────── */}
-      <section className="py-14 border-y border-slate-100 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          <Stat value="< 2 min" label="To log a calibration record" />
-          <Stat value="1–20"    label="Test points captured per calibration" />
-          <Stat value="5 roles" label="Built-in access control" />
-          <Stat value="ISO aligned" label="9001 &amp; 17025 compatible workflows" />
+      {/* ── THE PROBLEM ───────────────────────────────────────────────────── */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-sm font-semibold text-red-500 uppercase tracking-widest mb-3">Sound familiar?</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
+              The spreadsheet problem never goes away.
+            </h2>
+            <p className="text-slate-500 max-w-xl mx-auto text-lg">
+              Most E&I teams manage calibration with a mix of Excel, shared drives, and individual memory — until something breaks, or an auditor arrives.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <PainCard
+              icon={<Icon d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" size={4} />}
+              text="Overdue calibrations hidden in a spreadsheet that no one checks until shutdown week — then the scramble begins."
+            />
+            <PainCard
+              icon={<Icon d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" size={4} />}
+              text="Calibration certificates scattered across shared drives, email attachments, and paper folders — try finding the right one at 2am."
+            />
+            <PainCard
+              icon={<Icon d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" size={4} />}
+              text="A flow meter that's failed three consecutive calibrations — and nobody noticed because the data lives in three different files."
+            />
+            <PainCard
+              icon={<Icon d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" size={4} />}
+              text="A key technician leaves — and takes with them the site-specific knowledge of which instruments run hot, which drift predictably, which are problem children."
+            />
+            <PainCard
+              icon={<Icon d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" size={4} />}
+              text="ISO 9001 or ISO 17025 audit incoming — and you spend a week manually pulling records to prove calibration status you should know instantly."
+            />
+            <PainCard
+              icon={<Icon d="M13 10V3L4 14h7v7l9-11h-7z" size={4} />}
+              text="No visibility into instrument drift until a loop calibration fails completely — by which time process quality or safety may already be compromised."
+            />
+          </div>
         </div>
       </section>
 
-      {/* ── FEATURES ──────────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50" id="features">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
+      {/* ── OUTCOME SECTION ───────────────────────────────────────────────── */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-sm font-semibold text-green-600 uppercase tracking-widest mb-3">Life after Calcheq</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
-              Everything your team needs
+              Your team always knows where every instrument stands.
             </h2>
             <p className="text-slate-500 max-w-xl mx-auto text-lg">
-              Calcheq covers the full lifecycle of instruments from commissioning and setup, to preventative and corrective maintenance.
+              Outcomes — not features. Here's what changes when your calibration program has a single source of truth.
             </p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <Feature
+            <OutcomeCard
               icon={<Icon d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />}
-              title="Smart Calibration Records"
-              body="Capture full as-found and as-left test point data with automatic pass/fail/marginal calculations per your defined tolerance — percent span, percent reading, or absolute."
+              title="Know your calibration status at a glance"
+              body="Open the dashboard and see exactly how many instruments are overdue, due this week, and failing — by area, by type, by criticality. No manual counting. No spreadsheet formulas."
             />
-            <Feature
+            <OutcomeCard
+              icon={<Icon d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />}
+              title="Find any instrument's full history in seconds"
+              body="Search any tag number. See every as-found and as-left reading, every adjustment, every approval — going back as far as your records exist. Ready for any audit, any time."
+            />
+            <OutcomeCard
               icon={<Icon d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />}
-              title="Automated Alerts"
-              body="Never miss a due date. Automatic overdue, due-soon, failed, and consecutive-failure alerts surface the most critical instruments on your dashboard the moment they need attention."
+              title="Catch problems before they become failures"
+              body="Overdue alerts arrive before instruments are missed. Consecutive-failure alerts flag the bad actors automatically. Drift prediction surfaces instruments that are likely to fail before they do."
             />
-            <Feature
-              icon={<Icon d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />}
-              title="Compliance Dashboard"
-              body="Live compliance rate by area, trending charts, bad-actor leaderboard, and a full upcoming schedule — giving supervisors an instant health snapshot of the entire instrument fleet."
+            <OutcomeCard
+              icon={<Icon d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />}
+              title="Every calibration properly reviewed and approved"
+              body="Technicians log as-found and as-left readings in the field. Records go through a formal submit → supervisor approval workflow. No more unsigned calibration certificates."
             />
-            <Feature
+            <OutcomeCard
+              icon={<Icon d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />}
+              title="Spot drift before it costs you"
+              body="Linear regression on historical calibration data shows you which loops are trending towards failure — months before the next calibration is due. Prioritise your shutdown work accordingly."
+            />
+            <OutcomeCard
               icon={<Icon d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />}
-              title="Role-Based Access Control"
-              body="Five roles — Admin, Supervisor, Technician, Planner, and Read-Only — ensure the right people see and do the right things. Calibration records go through a formal submit → approve workflow."
+              title="Institutional knowledge that stays when people leave"
+              body="Every calibration record is tied to a technician, a date, a result, and a set of readings. When someone leaves, the history stays. New team members can see exactly what's been done and why."
             />
-            <Feature
-              icon={<Icon d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />}
-              title="Multi-Site Isolation"
-              body="Each organisation gets its own isolated environment. Staff sign in to their site, see only their instruments, and their names appear on every record — full traceability without shared accounts."
-            />
-            <Feature
-              icon={<Icon d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />}
-              title="Reports & Trend Analysis"
-              body="Generate overdue schedules, failure analysis reports, and instrument calibration history with trend charts. Export to CSV for integration with your existing maintenance systems."
-            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── ORIGIN STORY ──────────────────────────────────────────────────── */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-slate-900 rounded-2xl px-8 py-10 text-white">
+            <div className="flex flex-col md:flex-row gap-8 items-start">
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-blue-400 uppercase tracking-widest mb-3">Built from a real problem</p>
+                <h3 className="text-2xl font-bold text-white mb-4 leading-tight">
+                  Calcheq started on a real process plant — because the existing tools weren't good enough.
+                </h3>
+                <p className="text-slate-300 text-sm leading-relaxed mb-4">
+                  The original problem was simple: a large chlor-alkali facility was managing hundreds of instrument calibrations across Excel sheets uploaded to a CMMS. Due dates were missed. Failures were discovered late. When auditors came, the preparation took days.
+                </p>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Calcheq was built specifically to fix that — and it's been refined against the reality of process plant instrumentation ever since. If you manage pressure transmitters, flow meters, temperature elements, or any loop that requires documented calibration, this was built for you.
+                </p>
+              </div>
+              <div className="flex-shrink-0 md:w-48 flex flex-col gap-3">
+                <div className="bg-slate-800 rounded-xl px-5 py-4 text-center">
+                  <p className="text-2xl font-extrabold text-blue-400 mb-1">1–20</p>
+                  <p className="text-xs text-slate-400">Test points per calibration</p>
+                </div>
+                <div className="bg-slate-800 rounded-xl px-5 py-4 text-center">
+                  <p className="text-2xl font-extrabold text-green-400 mb-1">5 roles</p>
+                  <p className="text-xs text-slate-400">Built-in access control</p>
+                </div>
+                <div className="bg-slate-800 rounded-xl px-5 py-4 text-center">
+                  <p className="text-2xl font-extrabold text-amber-400 mb-1">ISO</p>
+                  <p className="text-xs text-slate-400">9001 &amp; 17025 aligned</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
-              Up and running in minutes
+              Up and running in days — not months.
             </h2>
             <p className="text-slate-500 max-w-xl mx-auto">
-              No month-long implementation. No consultant required. Your team is calibrating and approving records on day one.
+              No consultant required. No six-month implementation. Import your instrument register via CSV and your team is logging calibrations on day one.
             </p>
           </div>
 
@@ -350,18 +450,65 @@ export default function Landing() {
             <div className="hidden md:block absolute top-6 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200" />
             <Step
               num="1"
-              title="Set up your site"
-              body="Create a password-protected site for your organisation. Add instruments with their calibration intervals, tolerances, and test point definitions."
+              title="Import your instrument register"
+              body="Upload a CSV from your existing CMMS or spreadsheet. Every instrument — with tag number, calibration interval, tolerance, and test point definitions — lands in Calcheq within minutes."
             />
             <Step
               num="2"
-              title="Your team signs in"
-              body="Technicians, planners, and supervisors each sign in under your site with their own name and role. Their identity is stamped on every record they create."
+              title="Your team signs in and starts logging"
+              body="Technicians, planners, and supervisors each get their own login. Their name goes on every record they create or approve. Full traceability from day one."
             />
             <Step
               num="3"
-              title="Calibrate, approve, track"
-              body="Log as-found and as-left readings in the field. Submit for supervisor approval. Dashboards and alerts update automatically — no manual chasing."
+              title="Calibrate, approve, and track drift"
+              body="Log as-found and as-left readings per test point in the field. Submit for supervisor approval. Dashboards, alerts, and drift trends update automatically."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURES ──────────────────────────────────────────────────────── */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white" id="features">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
+              Built for the way instrumentation teams actually work
+            </h2>
+            <p className="text-slate-500 max-w-xl mx-auto text-lg">
+              From loop calibration records to drift prediction to ISO-ready audit trails — Calcheq covers the full calibration lifecycle.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <Feature
+              icon={<Icon d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />}
+              title="Multi-point calibration records"
+              body="Capture full as-found and as-left data for 1–20 test points per calibration. Automatic pass/fail/marginal per point and per record, calculated against your defined tolerance — percent span, percent reading, or absolute."
+            />
+            <Feature
+              icon={<Icon d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />}
+              title="Automated overdue and failure alerts"
+              body="Overdue, due-soon, failed, and consecutive-failure alerts surface the most critical instruments the moment they need attention — on your dashboard and by email."
+            />
+            <Feature
+              icon={<Icon d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />}
+              title="Drift prediction engine"
+              body="Linear regression on historical calibration data projects when an instrument is likely to fail before its next due date — giving you the foresight to act before you have a problem."
+            />
+            <Feature
+              icon={<Icon d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />}
+              title="Compliance dashboard and reports"
+              body="Live compliance rate by area, trending charts, and a bad-actor leaderboard. Export overdue schedules, failure analysis, and full calibration history to CSV for your CMMS or audit pack."
+            />
+            <Feature
+              icon={<Icon d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />}
+              title="Role-based access control"
+              body="Five roles — Admin, Supervisor, Technician, Planner, and Read-Only — with a formal submit → approve workflow for calibration records. Each user's name is stamped on every action they take."
+            />
+            <Feature
+              icon={<Icon d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />}
+              title="Immutable audit trail"
+              body="Every create, edit, approval, and rejection is logged with user, timestamp, and a before/after diff. When the auditor arrives, your traceability evidence is already there."
             />
           </div>
         </div>
@@ -372,10 +519,10 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
-              Built for demanding environments
+              Built for demanding process environments
             </h2>
             <p className="text-slate-500 max-w-xl mx-auto">
-              Wherever accurate instrumentation is critical to safety, quality, or compliance — Calcheq fits.
+              Wherever accurate instrumentation is critical to safety, quality, or regulatory compliance — Calcheq fits.
             </p>
           </div>
 
@@ -410,23 +557,26 @@ export default function Landing() {
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-indigo-700">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-4xl font-extrabold text-white mb-5 leading-tight">
-            Ready to take control of your calibration program?
+            Start a free 30-day pilot.
           </h2>
-          <p className="text-blue-200 text-lg mb-10 leading-relaxed">
-            Join teams across oil & gas, chemicals, and manufacturing who have moved off spreadsheets and paper logs for good.
+          <p className="text-blue-200 text-lg mb-4 leading-relaxed">
+            Import your instrument register, add your team, and run your first calibrations — all within a week. Site-based pricing from $99/month after your trial.
+          </p>
+          <p className="text-blue-300 text-sm mb-10">
+            Or book a 20-minute demo and we'll walk you through the product with your own instrument types and workflows.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               to="/contact"
               className="px-8 py-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg text-sm"
             >
-              Get Started Free →
+              Start a free pilot →
             </Link>
             <button
               onClick={openDemo}
               className="px-8 py-4 border-2 border-white/30 text-white font-bold rounded-xl hover:bg-white/10 transition-colors text-sm"
             >
-              Explore the Demo
+              Explore the demo app
             </button>
           </div>
           <p className="text-blue-300 text-xs mt-6">No credit card · No lock-in · Cancel any time</p>

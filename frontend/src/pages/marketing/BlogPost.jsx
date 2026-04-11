@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import MarketingNav    from '../../components/marketing/MarketingNav'
 import MarketingFooter from '../../components/marketing/MarketingFooter'
@@ -333,6 +334,18 @@ function ArticleSection({ heading, body }) {
 export default function BlogPost() {
   const { slug } = useParams()
   const article = ARTICLES[slug]
+
+  useEffect(() => {
+    if (article) {
+      document.title = `${article.title} — Calcheq`
+      const desc = document.querySelector('meta[name="description"]')
+      const content = (article.sections?.[0]?.body ?? 'Read the latest insights on instrument calibration management from Calcheq.')
+      if (desc) desc.setAttribute('content', content.slice(0, 160))
+      else { const m = document.createElement('meta'); m.name = 'description'; m.content = content.slice(0, 160); document.head.appendChild(m) }
+    } else {
+      document.title = 'Article Not Found — Calcheq'
+    }
+  }, [slug, article])
 
   // 404 fallback
   if (!article) {
