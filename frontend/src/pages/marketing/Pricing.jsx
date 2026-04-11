@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import MarketingNav    from '../../components/marketing/MarketingNav'
 import MarketingFooter from '../../components/marketing/MarketingFooter'
+
+// META: Calcheq pricing — simple, transparent plans for instrument calibration management. Free trial, no credit card required.
 
 function Check() {
   return (
@@ -78,6 +81,33 @@ function FaqRow({ q, a }) {
   )
 }
 
+function AccordionFaqItem({ q, a }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="border-b border-slate-200">
+      <button
+        className="w-full flex items-center justify-between py-5 text-left gap-4 group"
+        onClick={() => setOpen(o => !o)}
+      >
+        <span className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+          {q}
+        </span>
+        <span className={`flex-shrink-0 w-5 h-5 flex items-center justify-center transition-transform ${open ? 'rotate-45' : ''}`}>
+          <svg className={`w-3 h-3 transition-colors ${open ? 'text-blue-600' : 'text-slate-400'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </span>
+      </button>
+      {open && (
+        <div className="pb-5 -mt-1">
+          <p className="text-sm text-slate-600 leading-relaxed">{a}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Pricing() {
   return (
     <div className="min-h-screen bg-white">
@@ -95,6 +125,26 @@ export default function Pricing() {
           <p className="mt-3 text-sm text-amber-600 font-semibold">
             🎉 Early access pricing — lock in your rate before our general launch.
           </p>
+        </div>
+      </section>
+
+      {/* Compliance trust strip */}
+      <section className="py-0 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-wrap justify-center gap-3 mb-12">
+            {[
+              { label: "ISO 9001", sub: "Quality Management" },
+              { label: "ISO/IEC 17025", sub: "Calibration Labs" },
+              { label: "ISA-5.1", sub: "Instrument Tagging" },
+              { label: "PSSR 2000", sub: "Pressure Systems" },
+              { label: "AS/NZS Aligned", sub: "Australian Standards" },
+            ].map(({ label, sub }) => (
+              <div key={label} className="flex flex-col items-center bg-white border border-blue-100 rounded-xl px-5 py-3 shadow-sm">
+                <span className="text-xs font-bold text-blue-700">{label}</span>
+                <span className="text-[10px] text-slate-400 mt-0.5">{sub}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -154,13 +204,13 @@ export default function Pricing() {
               { text: 'Custom reporting',                 included: true },
               { text: 'SSO / LDAP',                       included: true },
             ]}
-            cta="Contact Sales"
+            cta="Book a Demo →"
           />
 
         </div>
       </section>
 
-      {/* FAQ */}
+      {/* Pricing FAQ */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 mt-10">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-2xl font-extrabold text-slate-900 mb-8 text-center">Pricing FAQ</h2>
@@ -184,6 +234,35 @@ export default function Pricing() {
             q="Do you offer annual billing?"
             a="Yes — annual billing will be available at a discount versus monthly. Exact rates will be confirmed at launch."
           />
+        </div>
+      </section>
+
+      {/* General FAQ */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl font-extrabold text-slate-900 mb-8 text-center">Frequently Asked Questions</h2>
+          <div className="space-y-1">
+            <AccordionFaqItem
+              q="Is my data secure?"
+              a="Yes. All data is isolated per organisation — no other company can see your instruments or calibration records. Data is stored in a managed PostgreSQL database on Supabase with encryption at rest and in transit. We do not share or sell your data."
+            />
+            <AccordionFaqItem
+              q="Can I export my data?"
+              a="Absolutely. You can export your full calibration history to CSV at any time from the Reports page. You're never locked in — your data is yours."
+            />
+            <AccordionFaqItem
+              q="What happens at the end of my free trial?"
+              a="You'll be prompted to select a plan. If you don't upgrade, your account moves to read-only mode — you can still view and export your data, but won't be able to add new calibration records."
+            />
+            <AccordionFaqItem
+              q="Do I need to sign a contract?"
+              a="No long-term contracts. All plans are month-to-month and can be cancelled at any time from your account settings."
+            />
+            <AccordionFaqItem
+              q="Can I change plans later?"
+              a="Yes, you can upgrade or downgrade at any time. Changes take effect at the start of your next billing cycle."
+            />
+          </div>
         </div>
       </section>
 

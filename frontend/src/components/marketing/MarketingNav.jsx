@@ -56,7 +56,7 @@ export default function MarketingNav() {
                 </svg>
               </div>
               <span className="text-lg font-bold text-slate-900 tracking-tight">
-                CalTrack <span className="text-blue-600">Pro</span>
+                Calc<span className="text-blue-600">heq</span>
               </span>
             </Link>
 

@@ -18,7 +18,7 @@ export default function MarketingFooter() {
                   <path d="M2 12l10 5 10-5"/>
                 </svg>
               </div>
-              <span className="text-white font-bold text-lg">CalTrack <span className="text-blue-400">Pro</span></span>
+              <span className="text-white font-bold text-lg">Calcheq</span>
             </div>
             <p className="text-sm leading-relaxed max-w-xs">
               Industrial instrument calibration management — built for the people who keep plants running.
@@ -54,14 +54,14 @@ export default function MarketingFooter() {
             <ul className="space-y-3 text-sm">
               <li><Link to="/contact"  className="hover:text-white transition-colors">Contact Us</Link></li>
               <li><Link to="/contact"  className="hover:text-white transition-colors">Request Demo</Link></li>
-              <li><a href="mailto:info@caltrackpro.com" className="hover:text-white transition-colors">info@caltrackpro.com</a></li>
+              <li><a href="mailto:info@calcheq.com" className="hover:text-white transition-colors">info@calcheq.com</a></li>
             </ul>
           </div>
         </div>
 
         {/* Bottom bar */}
         <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-          <p>© {year} CalTrack Pro. All rights reserved.</p>
+          <p>© {year} Calcheq. All rights reserved.</p>
           <div className="flex gap-6">
             <span className="hover:text-white transition-colors cursor-default">Privacy Policy</span>
             <span className="hover:text-white transition-colors cursor-default">Terms of Service</span>

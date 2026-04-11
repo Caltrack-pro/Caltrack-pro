@@ -1,4 +1,4 @@
-# CalTrack Pro
+# Calcheq
 
 Industrial instrument calibration management web application.
 
@@ -79,7 +79,7 @@ App available at: http://localhost:5173
 ## Project Structure
 
 ```
-caltrack-pro/
+calcheq/
   backend/
     main.py          # FastAPI app entry point
     database.py      # SQLAlchemy engine + session

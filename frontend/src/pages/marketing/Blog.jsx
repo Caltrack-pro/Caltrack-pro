@@ -2,13 +2,15 @@ import { Link } from 'react-router-dom'
 import MarketingNav    from '../../components/marketing/MarketingNav'
 import MarketingFooter from '../../components/marketing/MarketingFooter'
 
+// META: Calcheq Blog — Calibration management insights, ISO compliance tips, and instrument maintenance best practices for process industries.
+
 const POSTS = [
   {
     slug: 'overdue-calibrations',
     tag: 'Case Study',
     tagColor: 'bg-green-100 text-green-700',
     title: 'How a Refinery Cut Overdue Calibrations from 23% to Under 4%',
-    excerpt: 'When a mid-sized oil refinery in Queensland replaced spreadsheets with CalTrack Pro, their overdue rate plummeted — and two near-miss incidents were prevented by alerts the old system would have missed entirely.',
+    excerpt: 'When a mid-sized oil refinery in Queensland replaced spreadsheets with Calcheq, their overdue rate plummeted — and two near-miss incidents were prevented by alerts the old system would have missed entirely.',
     readTime: '5 min read',
     date: 'March 2026',
     emoji: '🛢️',
@@ -18,7 +20,7 @@ const POSTS = [
     tag: 'Compliance',
     tagColor: 'bg-blue-100 text-blue-700',
     title: "ISO/IEC 17025 Audit? Here's What Your Calibration Records Actually Need",
-    excerpt: 'Auditors are specific about what constitutes an acceptable calibration record. We break down the exact fields, traceability requirements, and approval workflows that CalTrack Pro provides out of the box.',
+    excerpt: 'Auditors are specific about what constitutes an acceptable calibration record. We break down the exact fields, traceability requirements, and approval workflows that Calcheq provides out of the box.',
     readTime: '7 min read',
     date: 'February 2026',
     emoji: '📋',
@@ -38,7 +40,7 @@ const POSTS = [
     tag: 'Feature Deep Dive',
     tagColor: 'bg-purple-100 text-purple-700',
     title: 'Consecutive Failures: The Alert That Catches Systematic Instrument Problems Early',
-    excerpt: 'A single failure could be random. Two or more in a row almost never are. CalTrack Pro\'s consecutive failure detection surfaces instruments with systematic problems before they cause process upsets.',
+    excerpt: 'A single failure could be random. Two or more in a row almost never are. Calcheq\'s consecutive failure detection surfaces instruments with systematic problems before they cause process upsets.',
     readTime: '4 min read',
     date: 'December 2025',
     emoji: '⚠️',
@@ -48,7 +50,7 @@ const POSTS = [
     tag: 'Use Case',
     tagColor: 'bg-pink-100 text-pink-700',
     title: 'Calibration Management in Pharma: 21 CFR Part 11 and What You Need to Know',
-    excerpt: 'Pharmaceutical manufacturers face strict electronic records requirements. We look at how CalTrack Pro\'s approval workflow, user traceability, and audit trail helps teams stay compliant.',
+    excerpt: 'Pharmaceutical manufacturers face strict electronic records requirements. We look at how Calcheq\'s approval workflow, user traceability, and audit trail helps teams stay compliant.',
     readTime: '8 min read',
     date: 'November 2025',
     emoji: '💊',
@@ -57,7 +59,7 @@ const POSTS = [
     slug: 'field-technician-workflow',
     tag: 'Guide',
     tagColor: 'bg-amber-100 text-amber-700',
-    title: 'A Day in the Life: How Field Technicians Use CalTrack Pro',
+    title: 'A Day in the Life: How Field Technicians Use Calcheq',
     excerpt: 'Follow an instrument technician through a full calibration day — from checking their due-this-week list in the morning to submitting calibration records for approval before knocking off.',
     readTime: '5 min read',
     date: 'October 2025',
@@ -168,7 +170,7 @@ export default function Blog() {
         <div className="max-w-xl mx-auto text-center">
           <h2 className="text-2xl font-extrabold text-slate-900 mb-3">Stay in the loop</h2>
           <p className="text-slate-500 mb-6 text-sm leading-relaxed">
-            New guides, case studies, and CalTrack Pro updates delivered to your inbox — no spam, unsubscribe any time.
+            New guides, case studies, and Calcheq updates delivered to your inbox — no spam, unsubscribe any time.
           </p>
           <div className="flex gap-3 max-w-sm mx-auto">
             <input

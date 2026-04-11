@@ -117,9 +117,9 @@ export default function BadActors() {
 
       {!loading && !error && actors.length > 0 && (
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-
+          <div className="overflow-x-auto">
           {/* Table header */}
-          <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+          <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[600px]">
             <div className="col-span-1 text-center">Rank</div>
             <div className="col-span-2">Tag</div>
             <div className="col-span-3">Description</div>
@@ -130,7 +130,7 @@ export default function BadActors() {
           </div>
 
           {/* Rows */}
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 min-w-[600px]">
             {actors.map((actor, i) => (
               <Link
                 key={actor.instrument_id}
@@ -183,6 +183,7 @@ export default function BadActors() {
             ))}
           </div>
 
+          </div>{/* end overflow-x-auto */}
           {/* Footer */}
           <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-400">
             Showing {actors.length} instrument{actors.length !== 1 ? 's' : ''} with repeated as-found failures.

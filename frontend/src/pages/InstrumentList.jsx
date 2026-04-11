@@ -21,7 +21,7 @@ function Spinner() {
 function EmptyState({ filtered }) {
   return (
     <tr>
-      <td colSpan={8} className="px-6 py-16 text-center text-slate-400">
+      <td colSpan={9} className="px-6 py-16 text-center text-slate-400">
         <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
         </svg>
@@ -81,6 +81,9 @@ export default function InstrumentList() {
   const [search,     setSearch]     = useState('')
   const [lastResult, setLastResult] = useState('')
 
+  // ── Checkbox selection state ───────────────────────────────────────────────
+  const [selected, setSelected] = useState(new Set())
+
   // ── Pagination ────────────────────────────────────────────────────────────
   const [page, setPage] = useState(0)
 
@@ -111,7 +114,7 @@ export default function InstrumentList() {
       skip:  page * PAGE_SIZE,
       limit: PAGE_SIZE,
     })
-      .then((res) => { if (!cancelled) { setResponse(res); setLoading(false) } })
+      .then((res) => { if (!cancelled) { setResponse(res); setSelected(new Set()); setLoading(false) } })
       .catch((err) => { if (!cancelled) { setError(err.message); setLoading(false) } })
 
     return () => { cancelled = true }
@@ -143,6 +146,47 @@ export default function InstrumentList() {
     setServerFilters(f => ({ ...f, [key]: val }))
   }
 
+  // ── Checkbox selection logic ──────────────────────────────────────────────
+  const allSelected = displayed.length > 0 && displayed.every(i => selected.has(i.id))
+  const someSelected = displayed.some(i => selected.has(i.id)) && !allSelected
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(displayed.map(i => i.id)))
+    }
+  }
+
+  function toggleOne(id) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  // ── CSV export for selected ───────────────────────────────────────────────
+  function exportSelected() {
+    const sel = displayed.filter(i => selected.has(i.id))
+    const headers = ['Tag Number','Description','Area','Type','Due Date','Status','Last Result']
+    const rows = sel.map(i => [
+      i.tag_number,
+      i.description ?? '',
+      i.area ?? '',
+      humanise(i.instrument_type),
+      i.calibration_due_date ?? '',
+      i.alert_status ?? '',
+      i.last_calibration_result ?? '',
+    ])
+    const escape = v => { const s = String(v ?? ''); return s.includes(',') || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s }
+    const csv = [headers, ...rows].map(r => r.map(escape).join(',')).join('\r\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'selected-instruments.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="space-y-4">
 
@@ -161,7 +205,7 @@ export default function InstrumentList() {
             onChange={e => setSearch(e.target.value)}
             placeholder="Search tag or description…"
             className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-700 placeholder-slate-400
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 w-56"
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-56"
           />
         </div>
 
@@ -214,19 +258,52 @@ export default function InstrumentList() {
           <span className="font-semibold text-slate-700">{response.total}</span> instruments
         </p>
 
-        {/* Add button */}
+        {/* Add / Import buttons */}
         {userCanEdit && (
-          <Link
-            to="/app/instruments/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Add Instrument
-          </Link>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Link
+              to="/app/import"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Import CSV
+            </Link>
+            <Link
+              to="/app/instruments/new"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Add Instrument
+            </Link>
+          </div>
         )}
       </div>
+
+      {/* ── Bulk action bar ──────────────────────────────────────────────── */}
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+          <span className="font-semibold text-blue-700">{selected.size} instrument{selected.size !== 1 ? 's' : ''} selected</span>
+          <div className="flex-1" />
+          <button
+            onClick={exportSelected}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"/></svg>
+            Export CSV
+          </button>
+          <button
+            onClick={() => setSelected(new Set())}
+            className="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-100 transition-colors text-xs font-medium"
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
 
       {/* ── Error banner ─────────────────────────────────────────────────── */}
       {error && (
@@ -242,6 +319,16 @@ export default function InstrumentList() {
             <table className="w-full text-sm min-w-[800px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={el => { if (el) el.indeterminate = someSelected }}
+                      onChange={toggleAll}
+                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      onClick={e => e.stopPropagation()}
+                    />
+                  </th>
                   {[
                     { label: 'Tag Number',   key: 'tag_number'              },
                     { label: 'Description',  key: 'description'             },
@@ -273,6 +360,16 @@ export default function InstrumentList() {
                       onClick={() => navigate(`/app/instruments/${inst.id}`)}
                       className="hover:bg-slate-50 cursor-pointer transition-colors"
                     >
+                      {/* Checkbox */}
+                      <td className="px-4 py-3 w-10" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(inst.id)}
+                          onChange={() => toggleOne(inst.id)}
+                          className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
+
                       {/* Tag number */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="font-mono font-bold text-slate-800 text-sm">{inst.tag_number}</span>

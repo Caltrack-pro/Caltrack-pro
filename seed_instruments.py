@@ -1,5 +1,5 @@
 """
-Seed 30 demo instruments into CalTrack Pro via the REST API.
+Seed 30 demo instruments into Calcheq via the REST API.
 Run: python seed_instruments.py
 """
 

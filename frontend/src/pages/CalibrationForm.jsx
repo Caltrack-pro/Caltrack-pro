@@ -12,10 +12,10 @@ import { ToastContainer, useToast } from '../components/Toast'
 function SectionCard({ title, children }) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-3 bg-slate-50 border-b border-slate-200">
+      <div className="px-4 py-3 sm:px-6 bg-slate-50 border-b border-slate-200">
         <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{title}</h2>
       </div>
-      <div className="px-6 py-5">{children}</div>
+      <div className="px-4 py-4 sm:px-6 sm:py-5">{children}</div>
     </div>
   )
 }

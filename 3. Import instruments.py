@@ -1,7 +1,7 @@
 """
-CalTrack Pro — MEX Instrument Import Script
-============================================
-Reads a prepared CSV file and creates instruments via the CalTrack Pro API.
+Calcheq — MEX Instrument Import Script
+==========================================
+Reads a prepared CSV file and creates instruments via the Calcheq API.
 
 Usage:
     python import_instruments.py
@@ -25,11 +25,11 @@ from datetime import datetime
 # CONFIGURATION — edit these before running
 # ─────────────────────────────────────────────────────────────────────────────
 
-API_URL   = "http://localhost:8000"   # Your CalTrack Pro backend URL
+API_URL   = "http://localhost:8000"   # Your Calcheq backend URL
                                        # e.g. "https://caltrack-backend.up.railway.app"
 
 SITE_NAME = "Admin"                    # Your site name — must match exactly what you
-                                       # used when signing into CalTrack Pro
+                                       # used when signing into Calcheq
 
 # ─────────────────────────────────────────────────────────────────────────────
 # VALID VALUES — do not change these
@@ -56,7 +56,7 @@ VALID_CAL_RESULTS = {
     "pass", "fail", "marginal", "not_calibrated"
 }
 
-# Common MEX → CalTrack type mappings (extend as needed)
+# Common MEX → Calcheq type mappings (extend as needed)
 INSTRUMENT_TYPE_MAP = {
     # pressure
     "pressure transmitter": "pressure",
@@ -105,7 +105,7 @@ INSTRUMENT_TYPE_MAP = {
     "tcv": "valve",
 }
 
-# Common MEX status → CalTrack status mappings
+# Common MEX status → Calcheq status mappings
 STATUS_MAP = {
     "active":          "active",
     "in service":      "active",
@@ -294,7 +294,7 @@ def process_row(row, row_num, existing_tags, dry_run=False):
 
     # ── Skip duplicates ────────────────────────────────────────────────────
     if tag in existing_tags:
-        return "skipped", tag, "already exists in CalTrack Pro"
+        return "skipped", tag, "already exists in Calcheq"
 
     if errors:
         return "failed", tag, "; ".join(errors)
@@ -404,7 +404,7 @@ def process_row(row, row_num, existing_tags, dry_run=False):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Import instruments from CSV into CalTrack Pro")
+    parser = argparse.ArgumentParser(description="Import instruments from CSV into Calcheq")
     parser.add_argument("--csv",     default="caltrack_import.csv", help="Path to the import CSV file")
     parser.add_argument("--dry-run", action="store_true",           help="Validate CSV without creating instruments")
     args = parser.parse_args()
@@ -413,7 +413,7 @@ def main():
     dry_run  = args.dry_run
 
     print("=" * 60)
-    print("  CalTrack Pro — Instrument Import Script")
+    print("  Calcheq — Instrument Import Script")
     print("=" * 60)
     print(f"  API URL  : {API_URL}")
     print(f"  Site     : {SITE_NAME}")
@@ -454,7 +454,7 @@ def main():
                     print("OK")
             except urllib.error.URLError as e:
                 print(f"FAILED\n\nERROR: Cannot connect to {API_URL}\n{e.reason}")
-                print("\nCheck that your CalTrack Pro backend is running and API_URL is correct.")
+                print("\nCheck that your Calcheq backend is running and API_URL is correct.")
                 sys.exit(1)
             except Exception as e:
                 print(f"OK (ignoring: {e})")
@@ -497,7 +497,7 @@ def main():
     if log_lines:
         log_path = "import_errors.log"
         with open(log_path, "w", encoding="utf-8") as f:
-            f.write(f"CalTrack Pro Import Errors — {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
+            f.write(f"Calcheq Import Errors — {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
             f.write(f"CSV: {csv_path}\n")
             f.write(f"Site: {SITE_NAME}\n\n")
             f.write("\n".join(log_lines))

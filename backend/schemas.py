@@ -1,5 +1,5 @@
 """
-Pydantic v2 request / response schemas for CalTrack Pro.
+Pydantic v2 request / response schemas for Calcheq.
 """
 from __future__ import annotations
 
@@ -416,3 +416,46 @@ class BadActor(BaseModel):
     area:              Optional[str]
     failure_count:     int
     last_failure_date: date
+
+
+# ===========================================================================
+# Audit log schemas
+# ===========================================================================
+
+class AuditLogEntry(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id:             UUID
+    site_id:        UUID
+    entity_type:    str
+    entity_id:      UUID
+    user_id:        str
+    user_name:      str
+    action:         str
+    changed_fields: Optional[dict] = None
+    created_at:     datetime
+
+
+class AuditLogListResponse(BaseModel):
+    total:   int
+    results: List[AuditLogEntry]
+
+
+# ===========================================================================
+# Bulk import schemas
+# ===========================================================================
+
+class ImportRowResult(BaseModel):
+    row:     int
+    tag:     str
+    status:  str   # 'created' | 'skipped' | 'error'
+    message: str
+
+
+class BulkImportResponse(BaseModel):
+    dry_run:  bool
+    total:    int
+    created:  int
+    skipped:  int
+    errors:   int
+    rows:     List[ImportRowResult]

@@ -19,6 +19,8 @@ from uuid import UUID
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from auth import UserContext, assert_writable_site, check_instrument_access, get_current_user, get_optional_user, resolve_site
+import notifications as notif
 from calibration_engine import (
     CalibrationEngineError,
     EngineResult,
@@ -28,11 +30,14 @@ from calibration_engine import (
 from database import get_db
 from models import (
     AsLeftResult,
+    AuditLog,
     CalibrationRecord,
     CalibrationResultStatus,
     CalTestPoint,
     Instrument,
     RecordStatus,
+    SiteMember,
+    Site,
 )
 from schemas import (
     CalibrationListResponse,
@@ -50,6 +55,58 @@ router = APIRouter(prefix="/api/calibrations", tags=["calibrations"])
 
 # Separate router for the instrument-scoped history endpoint
 instruments_router = APIRouter(prefix="/api/instruments", tags=["calibrations"])
+
+
+# ---------------------------------------------------------------------------
+# Audit + notification helpers
+# ---------------------------------------------------------------------------
+
+def _write_audit(
+    db:           Session,
+    user:         UserContext,
+    entity_id,
+    action:       str,
+    changed_fields: Optional[dict] = None,
+) -> None:
+    from uuid import UUID as _UUID
+    try:
+        entry = AuditLog(
+            site_id=_UUID(str(user.site_id)),
+            entity_type="calibration_record",
+            entity_id=_UUID(str(entity_id)),
+            user_id=user.user_id,
+            user_name=user.display_name or user.email or user.user_id,
+            action=action,
+            changed_fields=changed_fields,
+        )
+        db.add(entry)
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Audit write failed: %s", exc)
+
+
+def _supervisor_emails(user: UserContext, db: Session) -> list[str]:
+    """Return email addresses of all supervisors/admins at the user's site."""
+    from uuid import UUID as _UUID
+    members = (
+        db.query(SiteMember)
+        .filter(
+            SiteMember.site_id == _UUID(str(user.site_id)),
+            SiteMember.email.isnot(None),
+            SiteMember.role.in_(["admin", "supervisor"]),
+        )
+        .all()
+    )
+    return [m.email for m in members if m.email]
+
+
+def _technician_email(technician_id, db: Session) -> Optional[str]:
+    """Return email for a technician by their Supabase user_id."""
+    if not technician_id:
+        return None
+    from uuid import UUID as _UUID
+    member = db.query(SiteMember).filter(SiteMember.user_id == _UUID(str(technician_id))).first()
+    return member.email if member else None
 
 
 # ---------------------------------------------------------------------------
@@ -229,25 +286,24 @@ def _update_instrument_on_approve(record: CalibrationRecord, db: Session) -> Non
 
 @router.get("", response_model=CalibrationListResponse)
 def list_calibrations(
-    instrument_id: Optional[UUID] = Query(None),
-    result:        Optional[str]  = Query(None, description="as_found_result value: pass | fail | marginal"),
-    technician:    Optional[str]  = Query(None, description="Partial match on technician_name"),
-    date_from:     Optional[date] = Query(None, description="Calibration date ≥ this date"),
-    date_to:       Optional[date] = Query(None, description="Calibration date ≤ this date"),
-    record_status: Optional[str]  = Query(None, description="draft | submitted | approved | rejected"),
-    site:          Optional[str]  = Query(None, description="Filter by site/organisation (created_by on instrument)"),
-    skip:          int            = Query(0, ge=0),
-    limit:         int            = Query(100, ge=1, le=500),
-    db:            Session        = Depends(get_db),
+    instrument_id:  Optional[UUID] = Query(None),
+    result:         Optional[str]  = Query(None, description="as_found_result value: pass | fail | marginal"),
+    technician:     Optional[str]  = Query(None, description="Partial match on technician_name"),
+    date_from:      Optional[date] = Query(None, description="Calibration date ≥ this date"),
+    date_to:        Optional[date] = Query(None, description="Calibration date ≤ this date"),
+    record_status:  Optional[str]  = Query(None, description="draft | submitted | approved | rejected"),
+    skip:           int            = Query(0, ge=0),
+    limit:          int            = Query(100, ge=1, le=500),
+    resolved_site:  str            = Depends(resolve_site),
+    db:             Session        = Depends(get_db),
 ) -> CalibrationListResponse:
 
     q = db.query(CalibrationRecord)
 
     # Site isolation: join instruments table and filter by created_by
-    if site:
-        q = q.join(Instrument, CalibrationRecord.instrument_id == Instrument.id).filter(
-            Instrument.created_by == site
-        )
+    q = q.join(Instrument, CalibrationRecord.instrument_id == Instrument.id).filter(
+        Instrument.created_by == resolved_site
+    )
 
     if instrument_id:
         q = q.filter(CalibrationRecord.instrument_id == instrument_id)
@@ -292,12 +348,21 @@ def list_calibrations(
 # GET /api/calibrations/{id}
 # ---------------------------------------------------------------------------
 
+def _check_cal_access(rec: CalibrationRecord, current_user: Optional[UserContext], db: Session) -> None:
+    """Verify the current user can access the instrument that owns this calibration record."""
+    instr = db.get(Instrument, rec.instrument_id)
+    if instr:
+        check_instrument_access(instr.created_by, current_user)
+
+
 @router.get("/{record_id}", response_model=CalibrationRecordResponse)
 def get_calibration(
-    record_id: UUID,
-    db: Session = Depends(get_db),
+    record_id:    UUID,
+    current_user: Optional[UserContext] = Depends(get_optional_user),
+    db:           Session               = Depends(get_db),
 ) -> CalibrationRecordResponse:
     rec = _get_record_or_404(record_id, db)
+    _check_cal_access(rec, current_user, db)
     return _to_record_response(rec, db)
 
 
@@ -307,11 +372,14 @@ def get_calibration(
 
 @router.post("", response_model=CalibrationRecordResponse, status_code=status.HTTP_201_CREATED)
 def create_calibration(
-    payload: CalibrationRecordCreate,
-    db: Session = Depends(get_db),
+    payload:      CalibrationRecordCreate,
+    current_user: UserContext = Depends(get_current_user),
+    db:           Session     = Depends(get_db),
 ) -> CalibrationRecordResponse:
 
     instr = _get_instrument_or_404(payload.instrument_id, db)
+    check_instrument_access(instr.created_by, current_user)
+    assert_writable_site(current_user, instr.created_by)
 
     # Build record from payload (exclude test_points — handled separately)
     record_data = payload.model_dump(exclude={"test_points"})
@@ -322,6 +390,9 @@ def create_calibration(
     if payload.test_points:
         _save_test_points(rec, payload.test_points, instr, db)
 
+    _write_audit(db, current_user, rec.id, "create",
+                 {"instrument_id": str(payload.instrument_id),
+                  "calibration_date": str(payload.calibration_date)})
     db.commit()
     db.refresh(rec)
     return _to_record_response(rec, db)
@@ -333,12 +404,15 @@ def create_calibration(
 
 @router.put("/{record_id}", response_model=CalibrationRecordResponse)
 def update_calibration(
-    record_id: UUID,
-    payload:   CalibrationRecordUpdate,
-    db:        Session = Depends(get_db),
+    record_id:    UUID,
+    payload:      CalibrationRecordUpdate,
+    current_user: UserContext = Depends(get_current_user),
+    db:           Session     = Depends(get_db),
 ) -> CalibrationRecordResponse:
 
     rec = _get_record_or_404(record_id, db)
+    _check_cal_access(rec, current_user, db)
+    assert_writable_site(current_user)
     _require_draft(rec)
 
     updates = payload.model_dump(exclude_unset=True, exclude={"test_points"})
@@ -349,6 +423,8 @@ def update_calibration(
         instr = _get_instrument_or_404(rec.instrument_id, db)
         _save_test_points(rec, payload.test_points, instr, db)
 
+    _write_audit(db, current_user, rec.id, "update",
+                 {"fields": list(updates.keys())})
     db.commit()
     db.refresh(rec)
     return _to_record_response(rec, db)
@@ -360,11 +436,14 @@ def update_calibration(
 
 @router.post("/{record_id}/submit", response_model=CalibrationRecordResponse)
 def submit_calibration(
-    record_id: UUID,
-    db: Session = Depends(get_db),
+    record_id:    UUID,
+    current_user: UserContext = Depends(get_current_user),
+    db:           Session     = Depends(get_db),
 ) -> CalibrationRecordResponse:
 
     rec = _get_record_or_404(record_id, db)
+    _check_cal_access(rec, current_user, db)
+    assert_writable_site(current_user)
     _require_draft(rec)
 
     instr      = _get_instrument_or_404(rec.instrument_id, db)
@@ -404,8 +483,25 @@ def submit_calibration(
         )
 
     rec.record_status = RecordStatus.SUBMITTED
+    _write_audit(db, current_user, rec.id, "submit",
+                 {"instrument_id": str(rec.instrument_id)})
     db.commit()
     db.refresh(rec)
+
+    # Notify supervisors — fire-and-forget after commit
+    try:
+        supervisor_emails = _supervisor_emails(current_user, db)
+        if supervisor_emails:
+            notif.notify_submission(
+                instrument_tag=instr.tag_number,
+                instrument_desc=instr.description,
+                technician_name=current_user.display_name or current_user.email,
+                record_id=str(rec.id),
+                supervisor_emails=supervisor_emails,
+            )
+    except Exception:
+        pass  # Never fail a submit due to email issues
+
     return _to_record_response(rec, db)
 
 
@@ -415,12 +511,15 @@ def submit_calibration(
 
 @router.post("/{record_id}/approve", response_model=CalibrationRecordResponse)
 def approve_calibration(
-    record_id:      UUID,
-    approved_by:    str     = Body(..., embed=True),
-    db:             Session = Depends(get_db),
+    record_id:    UUID,
+    approved_by:  str        = Body(..., embed=True),
+    current_user: UserContext = Depends(get_current_user),
+    db:           Session     = Depends(get_db),
 ) -> CalibrationRecordResponse:
 
     rec = _get_record_or_404(record_id, db)
+    _check_cal_access(rec, current_user, db)
+    assert_writable_site(current_user)
     _require_status(rec, RecordStatus.SUBMITTED, "approve")
 
     from datetime import datetime, timezone
@@ -429,9 +528,25 @@ def approve_calibration(
     rec.approved_at   = datetime.now(timezone.utc)
 
     _update_instrument_on_approve(rec, db)
-
+    _write_audit(db, current_user, rec.id, "approve",
+                 {"approved_by": approved_by})
     db.commit()
     db.refresh(rec)
+
+    # Notify technician — fire-and-forget after commit
+    try:
+        tech_email = _technician_email(rec.technician_id, db)
+        instr = _get_instrument_or_404(rec.instrument_id, db)
+        notif.notify_approved(
+            instrument_tag=instr.tag_number,
+            instrument_desc=instr.description,
+            approved_by=approved_by,
+            record_id=str(rec.id),
+            technician_email=tech_email,
+        )
+    except Exception:
+        pass
+
     return _to_record_response(rec, db)
 
 
@@ -441,12 +556,15 @@ def approve_calibration(
 
 @router.post("/{record_id}/reject", response_model=CalibrationRecordResponse)
 def reject_calibration(
-    record_id: UUID,
-    payload:   RejectPayload = Body(default=RejectPayload()),
-    db:        Session       = Depends(get_db),
+    record_id:    UUID,
+    payload:      RejectPayload = Body(default=RejectPayload()),
+    current_user: UserContext   = Depends(get_current_user),
+    db:           Session       = Depends(get_db),
 ) -> CalibrationRecordResponse:
 
     rec = _get_record_or_404(record_id, db)
+    _check_cal_access(rec, current_user, db)
+    assert_writable_site(current_user)
     _require_status(rec, RecordStatus.SUBMITTED, "reject")
 
     rec.record_status = RecordStatus.REJECTED
@@ -456,8 +574,26 @@ def reject_calibration(
             f"{existing}\n[REJECTED] {payload.notes}".strip()
         )
 
+    _write_audit(db, current_user, rec.id, "reject",
+                 {"notes": payload.notes})
     db.commit()
     db.refresh(rec)
+
+    # Notify technician — fire-and-forget after commit
+    try:
+        tech_email = _technician_email(rec.technician_id, db)
+        instr = _get_instrument_or_404(rec.instrument_id, db)
+        notif.notify_rejected(
+            instrument_tag=instr.tag_number,
+            instrument_desc=instr.description,
+            rejected_by=current_user.display_name or current_user.email,
+            notes=payload.notes,
+            record_id=str(rec.id),
+            technician_email=tech_email,
+        )
+    except Exception:
+        pass
+
     return _to_record_response(rec, db)
 
 
@@ -472,12 +608,14 @@ def reject_calibration(
 )
 def calibration_history(
     instrument_id: UUID,
-    skip:    int     = Query(0, ge=0),
-    limit:   int     = Query(50, ge=1, le=200),
-    db:      Session = Depends(get_db),
+    skip:         int                   = Query(0, ge=0),
+    limit:        int                   = Query(50, ge=1, le=200),
+    current_user: Optional[UserContext] = Depends(get_optional_user),
+    db:           Session               = Depends(get_db),
 ) -> CalibrationListResponse:
 
-    _get_instrument_or_404(instrument_id, db)   # 404 if instrument doesn't exist
+    instr = _get_instrument_or_404(instrument_id, db)
+    check_instrument_access(instr.created_by, current_user)
 
     q = (
         db.query(CalibrationRecord)

@@ -1,13 +1,13 @@
-# CalTrack Pro — Project Master Reference
+# Calcheq — Project Master Reference
 
 ## What This Project Is
-CalTrack Pro is an industrial instrument calibration management web application.
+Calcheq is an industrial instrument calibration management web application.
 It is a full-stack application with a React frontend and a Python FastAPI backend,
 using a PostgreSQL database (via Supabase).
 
 The app has two distinct parts:
 1. **Marketing site** — public-facing homepage, pricing, blog, FAQ, contact (no auth required)
-2. **Calibration app** — the actual tool, lives under /app/* (currently ungated, auth planned)
+2. **Calibration app** — the actual tool, lives under /app/* (gated behind Supabase Auth via AuthGuard)
 
 ---
 
@@ -15,11 +15,12 @@ The app has two distinct parts:
 - Frontend: React 18 + Vite + Tailwind CSS
 - Backend: Python 3.11 + FastAPI
 - Database: PostgreSQL via Supabase (supabase.com), using PgBouncer pooler
-- Auth: localStorage-based user context (Supabase Auth migration is pending — see DECISIONS.md)
+- Auth: Supabase Auth (JWT, email + password) — migration from localStorage completed April 2026
 - Charts: Recharts
 - PDF generation: jsPDF + jspdf-autotable (client-side, no backend required)
 - Deployment: Railway.app (live) — single service, FastAPI serves React SPA in production
-- Production URL: caltrack-pro-production.up.railway.app (custom domain pending — see ROADMAP.md)
+- Production URL: calcheq.com (custom domain — see ROADMAP.md 0.1 for setup checklist)
+- Railway internal URL: caltrack-pro-production.up.railway.app (keep this in Railway until domain DNS is verified)
 
 ---
 
@@ -27,6 +28,12 @@ The app has two distinct parts:
 
 ### Frontend — src/App.jsx (router root)
 All routes are defined here. Two layout trees: marketing (no sidebar) and app (with sidebar).
+
+### Frontend — src/pages/auth/ (public auth pages, no sidebar)
+- SignIn.jsx             — 2-step sign-in: company name → email + password (uses Supabase Auth)
+- SignUp.jsx             — self-serve registration: creates Supabase user + calls /api/auth/register
+- ForgotPassword.jsx     — sends Supabase password reset email
+- ResetPassword.jsx      — handles reset link from email, sets new password
 
 ### Frontend — src/pages/ (app pages, all live under /app/*)
 - Dashboard.jsx          — main dashboard: stats, alerts, compliance by area, upcoming, bad actors
@@ -38,7 +45,7 @@ All routes are defined here. Two layout trees: marketing (no sidebar) and app (w
 - PendingApprovals.jsx   — supervisor approval queue for submitted calibration records
 - Reports.jsx            — compliance reporting and calibration history export
 - BadActors.jsx          — ranked list of instruments with repeated as-found failures
-- Profile.jsx            — user profile page (added; route: /app/profile)
+- Profile.jsx            — user profile page (route: /app/profile)
 
 ### Frontend — src/pages/marketing/ (public pages, no /app prefix)
 - Landing.jsx            — homepage with hero, features, industries, testimonials, CTA
@@ -50,8 +57,9 @@ All routes are defined here. Two layout trees: marketing (no sidebar) and app (w
 
 ### Frontend — src/components/
 - Layout.jsx             — app shell: wraps Sidebar + Header + <Outlet>
-- Sidebar.jsx            — left nav, user section, "Back to Website" link at bottom
-- Header.jsx             — top bar with sign-in modal (3-step: site → password → name+role)
+- AuthGuard.jsx          — protects /app/* routes; redirects to /auth/sign-in if no session
+- Sidebar.jsx            — left nav, user section, "Try Demo" toggle, "Back to Website" link
+- Header.jsx             — top bar showing logged-in user name + role; sign-out via Supabase
 - Badges.jsx             — shared status/result badge components
 - Toast.jsx              — notification toast system
 - TrendCharts.jsx        — calibration trend charts (used in InstrumentDetail)
@@ -59,8 +67,9 @@ All routes are defined here. Two layout trees: marketing (no sidebar) and app (w
 - marketing/MarketingFooter.jsx — shared footer for all marketing pages
 
 ### Frontend — src/utils/
-- userContext.js      — ALL user/site state: getUser, setUser, canEdit, ROLES, site password logic
-- api.js              — all API calls, every function accepts a `site` param for isolation
+- supabase.js         — Supabase client (createClient with VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)
+- userContext.js      — getUser(), onAuthStateChange, demo mode toggle; backward-compatible with all pages
+- api.js              — all API calls; auto-injects Authorization: Bearer <JWT> header on every request
 - calEngine.js        — pass/fail/marginal calculation logic (mirrors backend rules)
 - formatting.js       — shared date and number formatting helpers
 - reportGenerator.js  — jsPDF-based PDF generation: single calibration cert + multi-calibration history report
@@ -70,10 +79,11 @@ All routes are defined here. Two layout trees: marketing (no sidebar) and app (w
 - models.py             — SQLAlchemy ORM models (Instrument, CalibrationRecord, CalTestPoint)
 - schemas.py            — Pydantic v2 request/response schemas
 - database.py           — Supabase/PostgreSQL connection via SQLAlchemy
-- auth.py               — authentication helpers
+- auth.py               — JWT verification via python-jose; get_current_user / get_optional_user / resolve_site dependencies
 - calibration_engine.py — server-side pass/fail calculation (source of truth)
-- routes/instruments.py  — CRUD for instruments, accepts ?site= filter param
-- routes/calibrations.py — CRUD for calibration records, site filter via instrument join
+- routes/auth.py         — GET /api/auth/check-site, POST /api/auth/register, GET /api/auth/me
+- routes/instruments.py  — CRUD for instruments; site derived from JWT (not ?site= param)
+- routes/calibrations.py — CRUD for calibration records; ownership checks on GET/PUT/DELETE
 - routes/dashboard.py    — 5 dashboard endpoints (stats, alerts, compliance, upcoming, bad-actors)
 
 ### Root-level scripts (Caltrack-pro/)
@@ -84,6 +94,14 @@ All routes are defined here. Two layout trees: marketing (no sidebar) and app (w
 ---
 
 ## Routing (complete)
+
+### Auth routes (no sidebar/header)
+| Path                    | Component          | Notes                              |
+|-------------------------|--------------------|------------------------------------|
+| /auth/sign-in           | SignIn             | 2-step: company → email + password |
+| /auth/sign-up           | SignUp             | Self-serve registration            |
+| /auth/forgot-password   | ForgotPassword     | Sends Supabase reset email         |
+| /auth/reset-password    | ResetPassword      | Handles reset link from email      |
 
 ### Marketing routes (no sidebar/header)
 | Path          | Component     | Notes                                      |
@@ -116,28 +134,36 @@ All routes are defined here. Two layout trees: marketing (no sidebar) and app (w
 
 ---
 
-## User / Auth System (current — localStorage)
+## User / Auth System (Supabase Auth — migrated April 2026)
 
-User state is stored in localStorage under key `caltrack_user`.
+Auth is now handled by Supabase Auth (JWT, email + password). The old localStorage
+system has been replaced. See DECISIONS.md for migration history.
 
-### User object shape
-```js
-{ siteName: "IXOM", userName: "John Smith", role: "technician" }
-```
+### Database tables (Supabase)
+- `sites` — one row per company: id (UUID), name, slug, created_at
+- `site_members` — maps users to sites: site_id (FK), user_id (FK to auth.users), role, created_at
 
-### Site isolation mechanism
-- Sites are stored in localStorage under `caltrack_sites` (array of {name, passwordHash})
-- Members stored under `caltrack_members` (array of {siteName, userName, role})
-- On sign-in, `siteName` is written to the user object
-- All API calls pass `?site=siteName` as a query param
-- Backend filters `Instrument.created_by == site` on every query
-- New instruments are stamped `created_by = siteName` in InstrumentForm.jsx
+### Auth flow
+1. User signs in at /auth/sign-in (2-step: company name → email + password)
+2. Supabase returns a JWT session token
+3. Frontend stores the session via Supabase client (not localStorage)
+4. api.js auto-injects `Authorization: Bearer <JWT>` on every API request
+5. Backend auth.py verifies the JWT using SUPABASE_JWT_SECRET (python-jose)
+6. `get_current_user` dependency extracts user_id from JWT and looks up site_members
+7. `resolve_site` dependency returns the site name for the authenticated user
+8. All routes use `resolve_site` instead of `?site=` query param
 
-### Cross-component state sync
-Custom DOM event `caltrack-user-change` fires on sign-in/out.
-Dashboard.jsx and InstrumentList.jsx both listen for this and re-fetch data.
+### Backend auth dependencies (auth.py)
+- `get_current_user(token)` — verifies JWT, returns user_id + site_id + role. Raises 401 if invalid.
+- `get_optional_user(token)` — same but returns None instead of raising (used for public/demo routes)
+- `resolve_site(user)` — returns site name string for use in DB queries
 
-### Role permissions
+### Auth routes (routes/auth.py)
+- `GET /api/auth/check-site?name=X` — checks if a site name exists (used in sign-in step 1)
+- `POST /api/auth/register` — called after Supabase sign-up; creates site + site_members row
+- `GET /api/auth/me` — returns current user's profile: name, email, role, site name
+
+### Role permissions (unchanged)
 - admin: full access
 - supervisor: read/write + approve calibration records
 - technician: read + create/edit calibration records (own until submitted). CAN edit instruments.
@@ -146,29 +172,52 @@ Dashboard.jsx and InstrumentList.jsx both listen for this and re-fetch data.
 
 `canEdit()` in userContext.js returns true for: admin, supervisor, planner, technician.
 
-### Demo account
-- Site name: "Demo" (no password) — previously "Admin", renamed April 2026
-- Pre-seeded with 30 instruments via seed_instruments.py (SITE = "Demo")
-- All existing DB records updated: UPDATE instruments SET created_by = 'Demo' WHERE created_by = 'Admin'
-- Mix of areas, instrument types, pass/fail states, overdue/current/due-soon
+### Demo account (Supabase Auth)
+- Email: demo@calcheq.com  |  Password: CalTrackDemo2026
+- Supabase user ID: 832b2b94-417f-4cda-a7de-71c598baff50
+- Linked to Demo site (site ID: 004c156b-5012-45d8-892d-4a34e159e6f9) with role: admin
+- "Try Demo" toggle in Sidebar auto-signs in using VITE_DEMO_EMAIL + VITE_DEMO_PASSWORD env vars
+- 30 instruments pre-seeded via seed_instruments.py (SITE = "Demo")
+- DB instruments stamped: created_by = 'Demo'
+
+### Required environment variables
+**Railway (backend + Vite build):**
+- `SUPABASE_URL` — https://qdrgjjndwgrmmjvzzdhg.supabase.co (backend fetches public JWKS from here for ES256 JWT verification)
+- `SUPABASE_JWT_SECRET` — no longer needed; SUPABASE_URL replaces it. Can be removed or left (ignored).
+- `VITE_SUPABASE_URL` — https://qdrgjjndwgrmmjvzzdhg.supabase.co (frontend Supabase client)
+- `VITE_SUPABASE_ANON_KEY` — see frontend/.env.example
+- `VITE_DEMO_EMAIL` — demo@calcheq.com
+- `VITE_DEMO_PASSWORD` — CalTrackDemo2026
+
+**JWT verification approach (updated April 2026):**
+Supabase uses ECC P-256 asymmetric signing (ES256). auth.py fetches the public JWKS from
+https://qdrgjjndwgrmmjvzzdhg.supabase.co/auth/v1/.well-known/jwks.json and caches keys
+for 1 hour. SUPABASE_JWT_SECRET is no longer required.
+
+**Supabase Auth URL Configuration (Dashboard → Authentication → URL Configuration):**
+- Site URL: https://calcheq.com  (update from railway URL once DNS is verified)
+- Redirect URLs (add ALL of these):
+  - https://calcheq.com/auth/reset-password
+  - https://caltrack-pro-production.up.railway.app/auth/reset-password  (keep until domain is live)
+  - http://localhost:5173/auth/reset-password  (local dev)
 
 ---
 
 ## Site Isolation — Backend
 
-Every backend route that returns instruments or calibration data accepts `?site=` param.
+Site is now derived from the authenticated user's JWT (via `resolve_site` dependency in auth.py),
+not from a `?site=` query param. The filtering logic on the DB queries is unchanged.
 
 ### instruments.py
 ```python
-if site:
-    q = q.filter(Instrument.created_by == site)
+# site comes from: site = resolve_site(current_user)
+q = q.filter(Instrument.created_by == site)
 ```
 
 ### calibrations.py (joins to instruments)
 ```python
-if site:
-    q = q.join(Instrument, CalibrationRecord.instrument_id == Instrument.id)
-        .filter(Instrument.created_by == site)
+q = q.join(Instrument, CalibrationRecord.instrument_id == Instrument.id)
+     .filter(Instrument.created_by == site)
 ```
 
 ### dashboard.py
@@ -310,24 +359,30 @@ A full phased roadmap with signal/noise analysis from two independent product re
 is documented in ROADMAP.md. Summary of priorities below.
 
 ### Phase 0 — Commercial Readiness (must complete before any sales activity)
-- **Custom domain** — caltrack-pro-production.up.railway.app must be replaced; kills sales conversations
-- **Supabase Auth migration** — replace localStorage with proper JWT auth (email + password, session tokens, password reset). Requires new `sites` and `site_members` DB tables.
+- ✅ **Custom domain** — calcheq.com LIVE (April 2026). Domain purchased, Railway configured, APP_URL set to https://calcheq.com, Supabase Site URL updated, all marketing/app code updated to Calcheq branding.
+- ✅ **Supabase Auth migration** — COMPLETE (April 2026). JWT auth, email + password, password reset, AuthGuard on /app/*, self-serve sign-up, Demo account in Supabase.
+- ✅ **Railway env vars** — COMPLETE (April 2026). APP_URL, SUPABASE_URL, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_DEMO_EMAIL, VITE_DEMO_PASSWORD, RESEND_API_KEY, RESEND_FROM_EMAIL all set.
+- ✅ **Supabase redirect URLs** — COMPLETE (April 2026). /auth/reset-password whitelisted for calcheq.com, caltrack-pro-production.up.railway.app, and localhost.
+- ✅ **Microsoft 365 email** — COMPLETE (April 2026). info@calcheq.com active. MX, SPF, DKIM all verified green in M365 Admin. Cloudflare DNS records confirmed.
+- ✅ **Demo account updated** — COMPLETE (April 2026). Email: demo@calcheq.com, Password: CalcheqDemo2026. Updated via direct SQL in Supabase auth.users.
 - **Stripe payment integration** — subscription billing (Starter / Professional / Enterprise), webhook handling, `subscription_status` on sites table
-- **Account gating** — /app/* must require a valid login + active subscription
-- **Self-serve sign-up** — registration → Stripe checkout → site creation flow
+- **Account gating** — /app/* login gate is done; subscription enforcement (active paid plan) still needed
+- **Self-serve sign-up** — registration flow is built; needs to connect to Stripe checkout
 
 ### Phase 1 — Core Product Hardening (first 30 days post-launch)
-- **Immutable audit trail** — timestamp + user attribution on every record change. Regulatory requirement for ISO 9001 / ISO 17025. New `audit_log` table. Non-negotiable.
-- **CSV import UI** — frontend upload page for import_instruments.py (currently script-only). #1 onboarding blocker.
-- **Email notifications** — overdue alerts + approval notifications via Resend/SendGrid. Daily/weekly digests.
-- **Mobile/tablet UI audit** — CalibrationForm and InstrumentDetail must work on a tablet in the field.
-- **Demo account hardening** — nightly reset of Demo site data OR make Demo read-only for unauthenticated visitors.
+- ✅ **Immutable audit trail** — COMPLETE (April 2026). `audit_log` table. Backend writes on every create/update/delete/submit/approve/reject. "Audit Trail" tab on InstrumentDetail. `GET /api/instruments/{id}/audit-log` + `GET /api/audit` (admin-only site-wide log).
+- ✅ **CSV import UI** — COMPLETE (April 2026). `POST /api/instruments/bulk-import` endpoint with ?dry_run=true preview. Frontend at `/app/import` with file picker → preview → confirm workflow. "Import CSV" button on InstrumentList.
+- ✅ **Email notifications** — COMPLETE (April 2026). Resend integration (`notifications.py`). Immediate emails: submit → supervisors, approve/reject → technician. Daily overdue digest + weekly due-soon digest via APScheduler. Requires `RESEND_API_KEY` + `RESEND_FROM_EMAIL` env vars. `site_members.email` populated on register + back-filled on `/api/auth/me`.
+- ✅ **Mobile/tablet UI audit** — COMPLETE (April 2026). Sidebar hamburger already in place (Layout.jsx). Fixed: BadActors overflow on mobile, CalibrationForm SectionCard responsive padding, InstrumentList search full-width on mobile. All tables already had overflow-x-auto.
+- ✅ **Demo account hardening** — COMPLETE (April 2026). `assert_writable_site(current_user, created_by?)` in auth.py blocks all writes to Demo site (HTTP 403). Applied to all instrument + calibration write endpoints.
 
 ### Phase 2 — Product Depth (30–90 days post-launch)
-- **Drift prediction engine** — per-instrument drift rate calculation + projected failure date. The product's clearest differentiator. Rule-based (no ML needed at this stage).
+- ✅ **Drift prediction engine** — COMPLETE (April 2026). Linear regression on historical as-found error % per instrument. `GET /api/instruments/{id}/drift` returns drift_rate_per_year, projected_failure_date, drift_status (critical/warning/watch/stable/exceeded). DriftAnalysis tab added to InstrumentDetail. "Predicted to Fail" alert type added to Alerts page.
+- ✅ **Reporting improvements** — COMPLETE (April 2026). Area filter on Overdue/Upcoming tabs; area, instrument type, and technician filters on Failed tab. Date-range filtering via useMemo client-side.
+- ✅ **Instrument bulk actions** — COMPLETE (April 2026). Checkbox selection with select-all/indeterminate state, bulk CSV export, clear selection bar added to InstrumentList.
 - **Role-based views** — technician task queue vs manager compliance dashboard vs planner schedule.
-- **Reporting improvements** — scheduled report delivery, compliance certificate PDF, date-range filtering.
-- **Instrument bulk actions** — checkbox selection + bulk status change, area reassignment, CSV export.
+- **Scheduled report delivery** — weekly/monthly compliance PDF by email to supervisors (requires Resend — item 4 done).
+- **Compliance certificate PDF** — one-page cert suitable for ISO audit evidence packs.
 
 ### Phase 3 — Ecosystem (3–6 months post-launch)
 - CMMS integration (MEX first, then Maximo / SAP PM)

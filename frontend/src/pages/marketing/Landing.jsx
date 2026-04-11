@@ -63,30 +63,6 @@ function Step({ num, title, body }) {
   )
 }
 
-// ── Testimonial card ──────────────────────────────────────────────────────────
-
-function Testimonial({ quote, name, role, company }) {
-  return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-      <div className="flex gap-1 mb-4">
-        {[1,2,3,4,5].map(i => (
-          <svg key={i} className="w-4 h-4 text-amber-400 fill-current" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        ))}
-      </div>
-      <p className="text-sm text-slate-600 leading-relaxed mb-5 italic">"{quote}"</p>
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-          {name[0]}
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-slate-800 leading-tight">{name}</p>
-          <p className="text-xs text-slate-400 leading-tight">{role} · {company}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Dashboard Preview (SVG mockup) ────────────────────────────────────────────
 
 function DashboardMockup() {
@@ -106,7 +82,7 @@ function DashboardMockup() {
           </div>
           <div className="flex-1 mx-4">
             <div className="bg-slate-200 rounded-md h-5 flex items-center px-3">
-              <span className="text-[10px] text-slate-500 font-mono">caltrackpro.com/app</span>
+              <span className="text-[10px] text-slate-500 font-mono">calcheq.com/app</span>
             </div>
           </div>
         </div>
@@ -116,7 +92,7 @@ function DashboardMockup() {
           {/* Sidebar */}
           <div className="w-44 bg-slate-900 flex-shrink-0 p-3 flex flex-col gap-1">
             <div className="px-2 py-1 mb-2">
-              <div className="text-white text-xs font-bold opacity-90">CalTrack Pro</div>
+              <div className="text-white text-xs font-bold opacity-90">Calcheq</div>
             </div>
             {['Dashboard', 'Instruments', 'Alerts', 'Approvals', 'Reports'].map((item, i) => (
               <div key={item} className={`px-3 py-2 rounded-lg flex items-center gap-2 ${i === 0 ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
@@ -224,6 +200,30 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "Calcheq",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "url": "https://calcheq.com",
+          "description": "Instrument calibration management software built for process industries. Tracks calibration records, automates alerts, and ensures ISO 9001 and ISO 17025 compliance.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "AUD",
+            "description": "Free trial available"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Calcheq",
+            "url": "https://calcheq.com",
+            "email": "info@calcheq.com"
+          }
+        }) }}
+      />
       <MarketingNav />
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
@@ -234,16 +234,16 @@ export default function Landing() {
             <div>
               <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-full px-4 py-1.5 text-sm text-blue-700 font-semibold mb-6">
                 <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse flex-shrink-0" />
-                Designed for industrial environments
+                ISO 9001 · ISO 17025 · ISA-5.1 compliant workflows
               </div>
 
               <h1 className="text-5xl sm:text-6xl font-extrabold text-slate-900 leading-tight tracking-tight mb-6">
-                Calibration management,{' '}
-                <span className="text-blue-600">done right.</span>
+                Instrument calibration management built for{' '}
+                <span className="text-blue-600">process industries.</span>
               </h1>
 
               <p className="text-lg text-slate-500 leading-relaxed mb-8 max-w-lg">
-                CalTrack Pro gives your instrumentation team a single, clear source of truth for every calibration record, alert, and due date — from the field to the control room.
+                Stop chasing overdue calibrations. Calcheq gives your instrumentation team a single source of truth for every calibration record, alert, and due date — from ISO 9001 to the field.
               </p>
 
               <div className="flex flex-wrap gap-4">
@@ -275,10 +275,10 @@ export default function Landing() {
       {/* ── STATS BAR ─────────────────────────────────────────────────────── */}
       <section className="py-14 border-y border-slate-100 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          <Stat value="10,000+" label="Instruments tracked" />
-          <Stat value="98.4%"   label="Calibration compliance achieved" />
           <Stat value="< 2 min" label="To log a calibration record" />
-          <Stat value="100%"    label="Audit-ready, always" />
+          <Stat value="1–20"    label="Test points captured per calibration" />
+          <Stat value="5 roles" label="Built-in access control" />
+          <Stat value="ISO aligned" label="9001 &amp; 17025 compatible workflows" />
         </div>
       </section>
 
@@ -290,7 +290,7 @@ export default function Landing() {
               Everything your team needs
             </h2>
             <p className="text-slate-500 max-w-xl mx-auto text-lg">
-              CalTrack Pro covers the full lifecycle of instruments from commissioning and setup, to preventative and corrective maintenance.
+              Calcheq covers the full lifecycle of instruments from commissioning and setup, to preventative and corrective maintenance.
             </p>
           </div>
 
@@ -371,7 +371,7 @@ export default function Landing() {
               Built for demanding environments
             </h2>
             <p className="text-slate-500 max-w-xl mx-auto">
-              Wherever accurate instrumentation is critical to safety, quality, or compliance — CalTrack Pro fits.
+              Wherever accurate instrumentation is critical to safety, quality, or compliance — Calcheq fits.
             </p>
           </div>
 
@@ -398,39 +398,6 @@ export default function Landing() {
             >
               Talk to an expert →
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ──────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-extrabold text-slate-900 mb-3">
-              Trusted by instrumentation teams
-            </h2>
-            <p className="text-slate-500">What the people using it every day say.</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <Testimonial
-              quote="We cut our overdue calibration rate from 23% down to under 4% in the first three months. The alert system is what makes the difference — you just can't miss it."
-              name="David Hartley"
-              role="Lead Instrument Technician"
-              company="Refinery Operations"
-            />
-            <Testimonial
-              quote="Finally a system that doesn't require a PhD to use. The guys in the field can log a calibration in two minutes and it's immediately visible to supervisors for approval."
-              name="Sarah Nkosi"
-              role="Maintenance Supervisor"
-              company="Chemical Processing Plant"
-            />
-            <Testimonial
-              quote="The multi-site isolation means each of our plants has its own clean dataset. Auditors love it — every record has a name, a date, and a clear pass/fail with test point data."
-              name="Marcus Webb"
-              role="Reliability Engineer"
-              company="Power Generation"
-            />
           </div>
         </div>
       </section>

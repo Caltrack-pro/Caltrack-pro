@@ -1,13 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import logging
 import os
 import pathlib
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 app = FastAPI(
-    title="CalTrack Pro API",
+    title="Calcheq API",
     description="Industrial instrument calibration management backend",
     version="0.1.0",
 )
@@ -29,15 +32,65 @@ app.add_middleware(
 )
 
 # --- routers ---
-from routes.instruments import router as instruments_router               # noqa: E402
+from routes.auth         import router as auth_router                     # noqa: E402
+from routes.instruments  import router as instruments_router              # noqa: E402
 from routes.calibrations import router as calibrations_router             # noqa: E402
 from routes.calibrations import instruments_router as cal_instr_router    # noqa: E402
 from routes.dashboard    import router as dashboard_router                # noqa: E402
+from routes.audit        import router as audit_router                    # noqa: E402
 
+app.include_router(auth_router)
 app.include_router(instruments_router)
 app.include_router(calibrations_router)
 app.include_router(cal_instr_router)
 app.include_router(dashboard_router)
+app.include_router(audit_router)
+
+
+# ---------------------------------------------------------------------------
+# Notification scheduler (daily overdue digest + weekly due-soon digest)
+# ---------------------------------------------------------------------------
+
+@app.on_event("startup")
+def start_scheduler():
+    if not os.getenv("RESEND_API_KEY"):
+        logger.info("RESEND_API_KEY not set — notification scheduler will not send emails")
+
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        from apscheduler.triggers.cron import CronTrigger
+        from database import SessionLocal
+        import notifications as notif
+
+        def run_overdue_digest():
+            db = SessionLocal()
+            try:
+                sent = notif.send_overdue_digest(db)
+                logger.info("Overdue digest sent %d email(s)", sent)
+            except Exception as exc:
+                logger.warning("Overdue digest failed: %s", exc)
+            finally:
+                db.close()
+
+        def run_due_soon_digest():
+            db = SessionLocal()
+            try:
+                sent = notif.send_due_soon_digest(db)
+                logger.info("Due-soon digest sent %d email(s)", sent)
+            except Exception as exc:
+                logger.warning("Due-soon digest failed: %s", exc)
+            finally:
+                db.close()
+
+        scheduler = BackgroundScheduler()
+        # Daily overdue digest at 08:00 UTC
+        scheduler.add_job(run_overdue_digest, CronTrigger(hour=8, minute=0))
+        # Weekly due-soon digest on Mondays at 08:00 UTC
+        scheduler.add_job(run_due_soon_digest, CronTrigger(day_of_week="mon", hour=8, minute=0))
+        scheduler.start()
+        logger.info("Notification scheduler started")
+    except Exception as exc:
+        logger.warning("Could not start notification scheduler: %s", exc)
 
 
 @app.get("/api/health")

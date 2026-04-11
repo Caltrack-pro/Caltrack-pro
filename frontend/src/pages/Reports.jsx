@@ -81,6 +81,7 @@ function OverdueReport() {
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
   const [rev,     setRev]     = useState(0)
+  const [areaFilter, setAreaFilter] = useState('')
 
   useEffect(() => {
     setLoading(true); setError(null)
@@ -93,9 +94,12 @@ function OverdueReport() {
       .catch(err => { setError(err.message); setLoading(false) })
   }, [rev])
 
+  const uniqueAreas = useMemo(() => [...new Set(data.map(i => i.area).filter(Boolean))].sort(), [data])
+  const displayed = areaFilter ? data.filter(i => i.area === areaFilter) : data
+
   function exportCSV() {
     const headers = ['Tag Number','Description','Area','Type','Due Date','Days Overdue','Last Result']
-    const rows = data.map(i => [
+    const rows = displayed.map(i => [
       i.tag_number, i.description, i.area, humanise(i.instrument_type),
       fmtDate(i.calibration_due_date), i.days_overdue ?? '',
       i.last_calibration_result ?? '',
@@ -105,14 +109,21 @@ function OverdueReport() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-600">
-          <span className="font-semibold text-red-600">{data.length}</span> overdue instrument{data.length !== 1 ? 's' : ''}
+          <span className="font-semibold text-red-600">{displayed.length}</span> of {data.length} overdue instrument{data.length !== 1 ? 's' : ''} shown
         </p>
-        <button onClick={exportCSV} disabled={!data.length}
-          className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors">
-          <ExportIcon /> Export CSV
-        </button>
+        <div className="flex items-center gap-2">
+          <select value={areaFilter} onChange={e => setAreaFilter(e.target.value)}
+            className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">All Areas</option>
+            {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          <button onClick={exportCSV} disabled={!displayed.length}
+            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors">
+            <ExportIcon /> Export CSV
+          </button>
+        </div>
       </div>
 
       {loading ? <Spinner /> : error ? <ErrorMsg message={error} onRetry={() => setRev(r => r + 1)} /> :
@@ -127,7 +138,7 @@ function OverdueReport() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.map(inst => (
+                {displayed.map(inst => (
                   <tr key={inst.id} className="hover:bg-slate-50">
                     <td className={tdCls}><span className="font-mono font-bold text-slate-800">{inst.tag_number}</span></td>
                     <td className={`${tdCls} text-slate-600 max-w-[180px] truncate`}>{inst.description || '—'}</td>
@@ -163,6 +174,7 @@ function UpcomingReport() {
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
   const [rev,     setRev]     = useState(0)
+  const [areaFilter, setAreaFilter] = useState('')
 
   useEffect(() => {
     setLoading(true); setError(null)
@@ -171,11 +183,21 @@ function UpcomingReport() {
       .catch(err => { setError(err.message); setLoading(false) })
   }, [rev])
 
+  const uniqueAreas = useMemo(() => [...new Set(data.map(i => i.area).filter(Boolean))].sort(), [data])
+  const displayed = areaFilter ? data.filter(i => i.area === areaFilter) : data
+
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600">
-        <span className="font-semibold text-slate-800">{data.length}</span> calibration{data.length !== 1 ? 's' : ''} due in the next 30 days
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-slate-600">
+          <span className="font-semibold text-slate-800">{displayed.length}</span> of {data.length} calibration{data.length !== 1 ? 's' : ''} due in the next 30 days
+        </p>
+        <select value={areaFilter} onChange={e => setAreaFilter(e.target.value)}
+          className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">All Areas</option>
+          {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
+      </div>
 
       {loading ? <Spinner /> : error ? <ErrorMsg message={error} onRetry={() => setRev(r => r + 1)} /> :
         data.length === 0 ? <EmptyState message="No calibrations due in the next 30 days." /> : (
@@ -189,7 +211,7 @@ function UpcomingReport() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.map(inst => (
+                {displayed.map(inst => (
                   <tr key={inst.id} className="hover:bg-slate-50">
                     <td className={tdCls}><span className="font-mono font-bold text-slate-800">{inst.tag_number}</span></td>
                     <td className={`${tdCls} text-slate-600 max-w-[180px] truncate`}>{inst.description || '—'}</td>
@@ -241,6 +263,9 @@ function FailedReport() {
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState(null)
   const [rev,      setRev]      = useState(0)
+  const [areaFilter,   setAreaFilter]   = useState('')
+  const [typeFilter,   setTypeFilter]   = useState('')
+  const [techFilter,   setTechFilter]   = useState('')
 
   useEffect(() => {
     setLoading(true); setError(null)
@@ -250,9 +275,21 @@ function FailedReport() {
       .catch(err => { setError(err.message); setLoading(false) })
   }, [rev])
 
+  const displayed = useMemo(() => {
+    return data.filter(r => {
+      if (areaFilter && r.instrument?.area !== areaFilter) return false
+      if (typeFilter && r.instrument?.instrument_type !== typeFilter) return false
+      if (techFilter && !(r.technician_name ?? '').toLowerCase().includes(techFilter.toLowerCase())) return false
+      return true
+    })
+  }, [data, areaFilter, typeFilter, techFilter])
+
+  const uniqueAreas = useMemo(() => [...new Set(data.map(r => r.instrument?.area).filter(Boolean))].sort(), [data])
+  const uniqueTypes = useMemo(() => [...new Set(data.map(r => r.instrument?.instrument_type).filter(Boolean))].sort(), [data])
+
   function exportCSV() {
     const headers = ['Date','Tag Number','Area','Max Error %','Technician','Adjustment Made','Notes']
-    const rows = data.map(r => [
+    const rows = displayed.map(r => [
       fmtDate(r.calibration_date),
       r.instrument?.tag_number ?? r.instrument_id,
       r.instrument?.area ?? '',
@@ -283,15 +320,28 @@ function FailedReport() {
           className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
           Apply
         </button>
+        <select value={areaFilter} onChange={e => setAreaFilter(e.target.value)}
+          className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">All Areas</option>
+          {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+          className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">All Types</option>
+          {uniqueTypes.map(t => <option key={t} value={t}>{humanise(t)}</option>)}
+        </select>
+        <input type="text" value={techFilter} onChange={e => setTechFilter(e.target.value)}
+          placeholder="Technician…"
+          className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-36" />
         <div className="flex-1" />
-        <button onClick={exportCSV} disabled={!data.length}
+        <button onClick={exportCSV} disabled={!displayed.length}
           className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors">
           <ExportIcon /> Export CSV
         </button>
       </div>
 
       <p className="text-sm text-slate-600">
-        <span className="font-semibold text-red-600">{data.length}</span> failed calibration{data.length !== 1 ? 's' : ''} in range
+        <span className="font-semibold text-red-600">{displayed.length}</span> of {data.length} failed calibration{data.length !== 1 ? 's' : ''} shown
       </p>
 
       {loading ? <Spinner /> : error ? <ErrorMsg message={error} onRetry={() => setRev(r => r + 1)} /> :
@@ -306,7 +356,7 @@ function FailedReport() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.map(rec => (
+                {displayed.map(rec => (
                   <tr key={rec.id} className="hover:bg-slate-50">
                     <td className={`${tdCls} whitespace-nowrap text-slate-700`}>{fmtDate(rec.calibration_date)}</td>
                     <td className={tdCls}>

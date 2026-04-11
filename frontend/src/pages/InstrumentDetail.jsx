@@ -280,7 +280,129 @@ function SlidePanel({ recordId, instrument, onClose, onRefresh }) {
 // Tabs
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TABS = ['Overview', 'Calibration History', 'Trends', 'Documents', 'Technical Data']
+const TABS = ['Overview', 'Calibration History', 'Trends', 'Drift Analysis', 'Audit Trail', 'Technical Data']
+
+// ── Tab 1: Overview ───────────────────────────────────────────────────────
+
+function DriftAnalysis({ instrumentId }) {
+  const [data, setData]     = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError]   = useState(null)
+
+  useEffect(() => {
+    if (!instrumentId) return
+    setLoading(true)
+    instrApi.driftAnalysis(instrumentId)
+      .then(d => { setData(d); setLoading(false) })
+      .catch(e => { setError(e.message); setLoading(false) })
+  }, [instrumentId])
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+    </div>
+  )
+  if (error) return (
+    <div className="bg-red-50 border border-red-200 rounded-lg px-5 py-4 text-sm text-red-700">{error}</div>
+  )
+  if (!data) return null
+
+  if (!data.sufficient_data) return (
+    <div className="bg-slate-50 border border-slate-200 rounded-xl px-6 py-8 text-center">
+      <svg className="w-10 h-10 mx-auto mb-3 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      <p className="text-sm font-semibold text-slate-600 mb-1">Insufficient Data</p>
+      <p className="text-sm text-slate-500">{data.message}</p>
+      <p className="text-xs text-slate-400 mt-2">{data.record_count} of 3 required records available</p>
+    </div>
+  )
+
+  const statusConfig = {
+    critical:   { bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-700',    label: 'Critical — Projected to Fail Soon' },
+    warning:    { bg: 'bg-amber-50',  border: 'border-amber-200',  text: 'text-amber-700',  label: 'Warning — Drift Trend Detected' },
+    watch:      { bg: 'bg-blue-50',   border: 'border-blue-200',   text: 'text-blue-700',   label: 'Watch — Slow Drift Detected' },
+    stable:     { bg: 'bg-green-50',  border: 'border-green-200',  text: 'text-green-700',  label: 'Stable — No Significant Drift' },
+    exceeded:   { bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-700',    label: 'Exceeded — Currently Out of Tolerance' },
+    insufficient_data: { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-600', label: 'Insufficient Data' },
+  }
+  const cfg = statusConfig[data.drift_status] || statusConfig.stable
+
+  return (
+    <div className="space-y-5 pt-6">
+      {/* Status banner */}
+      <div className={`${cfg.bg} ${cfg.border} border rounded-xl px-5 py-4 flex items-center gap-4`}>
+        <div className={`text-sm font-semibold ${cfg.text}`}>{cfg.label}</div>
+        <div className="flex-1" />
+        {data.projected_fail_date && (
+          <div className="text-right">
+            <p className="text-xs text-slate-500">Projected to exceed tolerance</p>
+            <p className={`text-sm font-bold ${cfg.text}`}>{data.projected_fail_date}</p>
+          </div>
+        )}
+      </div>
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[
+          { label: 'Records Analysed',    value: data.record_count },
+          { label: 'Current Error',       value: `${data.current_error_pct?.toFixed(2) ?? '—'}%` },
+          { label: 'Drift Rate / Year',   value: data.drift_rate_per_year > 0 ? `+${data.drift_rate_per_year?.toFixed(2)}%` : `${data.drift_rate_per_year?.toFixed(2)}%` },
+          { label: 'Tolerance',           value: `${data.tolerance_pct?.toFixed(2) ?? '—'}%` },
+        ].map(({ label, value }) => (
+          <div key={label} className="bg-white border border-slate-200 rounded-xl p-4">
+            <p className="text-xs text-slate-500 font-medium mb-1">{label}</p>
+            <p className="text-xl font-extrabold text-slate-800">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Error trend chart (simple visual) */}
+      {data.data_points?.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-slate-700 mb-4">Max As-Found Error Over Time</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-slate-100">
+                  <th className="text-left pb-2 text-slate-500 font-medium">Date</th>
+                  <th className="text-left pb-2 text-slate-500 font-medium pl-4">Max Error %</th>
+                  <th className="text-left pb-2 text-slate-500 font-medium pl-4">vs Tolerance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {data.data_points.map((pt, i) => {
+                  const pct = pt.error_pct / data.tolerance_pct * 100
+                  return (
+                    <tr key={i}>
+                      <td className="py-2 text-slate-600 font-mono">{pt.date}</td>
+                      <td className="py-2 pl-4 font-mono font-semibold text-slate-800">{pt.error_pct.toFixed(3)}%</td>
+                      <td className="py-2 pl-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-32 bg-slate-100 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-400' : 'bg-green-400'}`}
+                              style={{ width: `${Math.min(pct, 100)}%` }}
+                            />
+                          </div>
+                          <span className={`text-xs font-semibold ${pct >= 100 ? 'text-red-600' : pct >= 80 ? 'text-amber-600' : 'text-slate-500'}`}>
+                            {pct.toFixed(0)}%
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <p className="text-xs text-slate-400">Drift calculated using linear regression on as-found error % across approved calibration records. Projected failure date is an estimate based on current trend.</p>
+    </div>
+  )
+}
 
 // ── Tab 1: Overview ───────────────────────────────────────────────────────
 
@@ -415,6 +537,89 @@ function TabHistory({ history, onView, onCert }) {
                     </div>
                   </td>
                 </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Tab 4: Audit Trail ───────────────────────────────────────────────────
+
+const ACTION_COLOURS = {
+  create:      'bg-green-100 text-green-700',
+  update:      'bg-blue-100 text-blue-700',
+  delete:      'bg-red-100 text-red-700',
+  submit:      'bg-purple-100 text-purple-700',
+  approve:     'bg-green-100 text-green-700',
+  reject:      'bg-red-100 text-red-700',
+  bulk_import: 'bg-slate-100 text-slate-600',
+}
+
+function AuditEntryRow({ entry }) {
+  const colour = ACTION_COLOURS[entry.action] ?? 'bg-slate-100 text-slate-600'
+  const fields = entry.changed_fields
+  return (
+    <tr className="hover:bg-slate-50 transition-colors">
+      <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+        {new Date(entry.created_at).toLocaleString()}
+      </td>
+      <td className="px-4 py-3">
+        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${colour}`}>
+          {entry.action}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-xs text-slate-500">{entry.entity_type.replace('_', ' ')}</td>
+      <td className="px-4 py-3 text-sm text-slate-700">{entry.user_name}</td>
+      <td className="px-4 py-3 text-xs text-slate-500 font-mono max-w-xs truncate">
+        {fields ? JSON.stringify(fields) : '—'}
+      </td>
+    </tr>
+  )
+}
+
+function TabAuditTrail({ instrumentId }) {
+  const [log,     setLog]     = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(null)
+
+  useEffect(() => {
+    if (!instrumentId) return
+    setLoading(true)
+    instrApi.auditLog(instrumentId, { limit: 200 })
+      .then(data => { setLog(data); setLoading(false) })
+      .catch(err => { setError(err.message); setLoading(false) })
+  }, [instrumentId])
+
+  if (loading) return <Spinner />
+  if (error) return <p className="pt-6 text-center text-sm text-slate-400">{error}</p>
+  if (!log || log.total === 0) return (
+    <div className="pt-6 flex flex-col items-center justify-center py-16 text-center">
+      <p className="text-slate-400 text-sm">No audit entries found for this instrument.</p>
+    </div>
+  )
+
+  return (
+    <div className="pt-6">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Audit Trail</h3>
+          <span className="text-xs text-slate-400">{log.total} entries</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                {['Timestamp','Action','Entity','User','Details'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {log.results.map(entry => (
+                <AuditEntryRow key={entry.id} entry={entry} />
               ))}
             </tbody>
           </table>
@@ -676,16 +881,9 @@ export default function InstrumentDetail() {
       {activeTab === 0 && <TabOverview instrument={i} history={history} />}
       {activeTab === 1 && <TabHistory  history={history} onView={setSlideId} onCert={handleSingleCert} />}
       {activeTab === 2 && <TrendCharts instrument={i} history={history?.results ?? []} />}
-      {activeTab === 3 && (
-        <div className="pt-6 bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-8 text-center text-slate-400">
-          <svg className="w-10 h-10 mx-auto mb-3 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-          </svg>
-          <p className="font-medium text-slate-600 mb-1">Document Management — Coming Soon</p>
-          <p className="text-sm">Attach datasheets, certificates, and procedures to this instrument.</p>
-        </div>
-      )}
-      {activeTab === 4 && <TabTechnical instrument={i} userCanEdit={userCanEdit} />}
+      {activeTab === 3 && <DriftAnalysis instrumentId={i.id} />}
+      {activeTab === 4 && <TabAuditTrail instrumentId={i.id} />}
+      {activeTab === 5 && <TabTechnical instrument={i} userCanEdit={userCanEdit} />}
 
       {/* ── Slide-out panel ── */}
       {slideId && (

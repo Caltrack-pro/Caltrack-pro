@@ -1,195 +1,185 @@
 /**
- * Site-based user context with password-protected site accounts.
+ * Calcheq — User context and auth utilities.
  *
- * Storage keys:
- *   caltrack_user    — current session { siteName, userName, role }
- *   caltrack_sites   — registered sites { [siteNameLower]: { siteName, password } }
- *   caltrack_members — per-site members { [siteNameLower]: { [userNameLower]: { userName, role } } }
+ * Auth is now handled by Supabase Auth (email + password).
+ * After sign-in, the backend /api/auth/me endpoint is called to fetch the
+ * user's site and role from the site_members DB table.
  *
- * Workflow:
- *   1. Enter site name (e.g. "IXOM")
- *   2. If new site → set site password (required)
- *   3. If existing site → enter site password to access
- *   4. Enter personal name + role (for traceability on calibration records)
- *   5. Role remembered per site-member, can be changed on re-sign-in
+ * User object shape (same as before, for backward compatibility):
+ *   { userId, email, userName, siteName, role, isDemoMode }
+ *
+ * Public API:
+ *   getUser()           → current user object or null (synchronous — reads module cache)
+ *   signOut()           → calls supabase.auth.signOut()
+ *   setDemoMode(bool)   → toggle Demo site viewing for the current logged-in user
+ *   ROLES               → array of { value, label }
+ *   canEdit(user)       → bool
+ *   canApprove(user)    → bool
+ *   canCalibrate(user)  → bool
+ *   isReadOnly(user)    → bool
+ *
+ * Events:
+ *   window 'caltrack-user-change' — dispatched whenever auth state changes.
+ *   event.detail is the new user object (or null on sign-out).
+ *   Existing listeners in Dashboard.jsx and InstrumentList.jsx continue to work.
  */
 
-const STORAGE_KEY  = 'caltrack_user'
-const SITES_KEY    = 'caltrack_sites'
-const MEMBERS_KEY  = 'caltrack_members'
+import { supabase } from './supabase'
 
-// The public demo site — no password required, auto-seeded instruments
 export const DEMO_SITE = 'Demo'
 
-// ── Site store helpers ────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Module-level state — synchronous reads for backward compat
+// ---------------------------------------------------------------------------
 
-/** Returns all sites as { [siteNameLower]: { siteName, password } } */
-export function getSites() {
+let _currentUser   = null   // { userId, email, userName, siteName, role }
+let _isDemoMode    = false   // true when logged-in user is viewing the Demo site
+let _initialised   = false   // true once the first session check has completed
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+async function _fetchUserContext(session) {
   try {
-    const stored = localStorage.getItem(SITES_KEY)
-    if (stored) return JSON.parse(stored)
-  } catch {}
-  return {}
-}
+    const res = await fetch('/api/auth/me', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
 
-function saveSites(sites) {
-  localStorage.setItem(SITES_KEY, JSON.stringify(sites))
-}
-
-/** Returns the saved site for a given name (case-insensitive), or null. */
-export function findSite(siteName) {
-  if (!siteName) return null
-  return getSites()[siteName.trim().toLowerCase()] ?? null
-}
-
-/**
- * Registers or updates a site.
- * @param {string} siteName
- * @param {string} password  — required for new sites
- */
-export function saveSite(siteName, password) {
-  const sites = getSites()
-  sites[siteName.trim().toLowerCase()] = {
-    siteName: siteName.trim(),
-    password: password || null,
-  }
-  saveSites(sites)
-}
-
-/** Verifies a site password. Returns true if correct (or site has no password).
- *  The Demo site never requires a password. */
-export function verifySitePassword(siteName, password) {
-  if (siteName?.trim().toLowerCase() === DEMO_SITE.toLowerCase()) return true
-  const site = findSite(siteName)
-  if (!site) return true
-  if (!site.password) return true
-  return site.password === (password ?? '')
-}
-
-/** Returns true if a site requires no password (Demo site or unprotected). */
-export function siteHasNoPassword(siteName) {
-  if (!siteName) return false
-  if (siteName.trim().toLowerCase() === DEMO_SITE.toLowerCase()) return true
-  const site = findSite(siteName)
-  return site ? !site.password : false
-}
-
-// ── Member store helpers ──────────────────────────────────────────────────────
-
-/** Returns all members map: { [siteNameLower]: { [userNameLower]: { userName, role } } } */
-export function getMembers() {
-  try {
-    const stored = localStorage.getItem(MEMBERS_KEY)
-    if (stored) return JSON.parse(stored)
-  } catch {}
-  return {}
-}
-
-function saveMembers(members) {
-  localStorage.setItem(MEMBERS_KEY, JSON.stringify(members))
-}
-
-/** Returns the saved member record for a given site + user name, or null. */
-export function findMember(siteName, userName) {
-  if (!siteName || !userName) return null
-  const allMembers = getMembers()
-  const siteMembers = allMembers[siteName.trim().toLowerCase()] ?? {}
-  return siteMembers[userName.trim().toLowerCase()] ?? null
-}
-
-/** Returns all members for a given site as an array of { userName, role }. */
-export function getSiteMembers(siteName) {
-  if (!siteName) return []
-  const allMembers = getMembers()
-  const siteMembers = allMembers[siteName.trim().toLowerCase()] ?? {}
-  return Object.values(siteMembers)
-}
-
-/** Registers or updates a site member's role. */
-export function saveMember(siteName, userName, role) {
-  const allMembers = getMembers()
-  const siteKey = siteName.trim().toLowerCase()
-  if (!allMembers[siteKey]) allMembers[siteKey] = {}
-  allMembers[siteKey][userName.trim().toLowerCase()] = {
-    userName: userName.trim(),
-    role,
-  }
-  saveMembers(allMembers)
-}
-
-// ── Current user ──────────────────────────────────────────────────────────────
-
-/** Returns the current user object or null if not signed in.
- *  Shape: { siteName, userName, role }
- *
- *  Automatically migrates the old format { name, role } to the new shape.
- */
-export function getUser() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      const user = JSON.parse(stored)
-      // Migrate legacy format: { name, role } → { userName, role, siteName }
-      if (user.name && !user.userName) {
-        const migrated = {
-          userName: user.name,
-          role:     user.role ?? 'technician',
-          siteName: user.siteName ?? null,
-        }
-        // Persist the migrated shape so this only runs once
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated))
-        return migrated
-      }
-      return user
+    if (res.status === 401) {
+      // User is authenticated but has no site membership → trigger registration
+      await _autoRegister(session)
+      return _fetchUserContext(session)   // retry after registering
     }
-  } catch {}
-  return null
+
+    if (!res.ok) return null
+
+    const data = await res.json()
+    return {
+      userId:   session.user.id,
+      email:    session.user.email,
+      userName: data.display_name || session.user.email.split('@')[0],
+      siteName: data.site_name,
+      role:     data.role,
+    }
+  } catch {
+    return null
+  }
 }
 
-/** Persists user to localStorage and notifies all listeners. */
-export function setUser(user) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+async function _autoRegister(session) {
+  // Read site_name from the user_metadata that was set during signUp
+  const meta = session.user.user_metadata || {}
+  if (!meta.site_name) return   // nothing to register without a site name
+
+  try {
+    await fetch('/api/auth/register', {
+      method:  'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+  } catch {
+    // ignore — me() will still return 401 and the sign-in page will show an error
+  }
+}
+
+function _dispatch(user) {
   window.dispatchEvent(new CustomEvent('caltrack-user-change', { detail: user }))
 }
 
-/** Clears the stored user (sign out). */
-export function clearUser() {
-  localStorage.removeItem(STORAGE_KEY)
-  window.dispatchEvent(new CustomEvent('caltrack-user-change', { detail: null }))
+// ---------------------------------------------------------------------------
+// Bootstrap: restore session on page load, before any component renders
+// ---------------------------------------------------------------------------
+
+supabase.auth.getSession().then(async ({ data: { session } }) => {
+  if (session) {
+    _currentUser = await _fetchUserContext(session)
+  }
+  _initialised = true
+  _dispatch(getUser())
+})
+
+// ---------------------------------------------------------------------------
+// Reactive: keep module cache in sync with Supabase auth state changes
+// ---------------------------------------------------------------------------
+
+supabase.auth.onAuthStateChange(async (event, session) => {
+  if (session) {
+    _currentUser = await _fetchUserContext(session)
+  } else {
+    _currentUser = null
+    _isDemoMode  = false
+  }
+  _dispatch(getUser())
+})
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the current user object (synchronous).
+ * Returns null if not authenticated or if the session has not loaded yet.
+ * When in demo mode, returns the user with siteName overridden to "Demo".
+ */
+export function getUser() {
+  if (!_currentUser) return null
+  if (_isDemoMode) {
+    return { ..._currentUser, siteName: DEMO_SITE, isDemoMode: true }
+  }
+  return { ..._currentUser, isDemoMode: false }
 }
 
-/** Alias for clearUser — matches the "Sign Out" label in the UI. */
+/**
+ * Returns a promise that resolves once the initial session check is done.
+ * Useful in AuthGuard to avoid flashing the sign-in page on hard refresh.
+ */
+export function waitForInit() {
+  if (_initialised) return Promise.resolve()
+  return new Promise(resolve => {
+    function handler() {
+      window.removeEventListener('caltrack-user-change', handler)
+      resolve()
+    }
+    window.addEventListener('caltrack-user-change', handler)
+  })
+}
+
+/**
+ * Toggle Demo mode for the currently logged-in user.
+ * When enabled, all API calls use ?site=Demo, showing public demo data.
+ */
+export function setDemoMode(enabled) {
+  _isDemoMode = !!enabled
+  _dispatch(getUser())
+}
+
+/** Signs out of Supabase Auth. */
 export function signOut() {
-  clearUser()
+  _isDemoMode = false
+  return supabase.auth.signOut()
 }
 
-/** Signs in as the public Demo account immediately (no password required).
- *  Used by "Open Demo App" / "Explore the Demo" buttons on the marketing site. */
-export function signInAsDemo() {
-  const demoUser = { siteName: DEMO_SITE, userName: 'Demo Visitor', role: 'admin' }
-  setUser(demoUser)
-  return demoUser
-}
-
-// ── Roles ─────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Roles
+// ---------------------------------------------------------------------------
 
 export const ROLES = [
-  { value: 'admin',      label: 'Admin'       },
-  { value: 'supervisor', label: 'Supervisor'  },
-  { value: 'technician', label: 'Technician'  },
-  { value: 'planner',    label: 'Planner'     },
-  { value: 'readonly',   label: 'Read Only'   },
+  { value: 'admin',      label: 'Admin'      },
+  { value: 'supervisor', label: 'Supervisor' },
+  { value: 'technician', label: 'Technician' },
+  { value: 'planner',    label: 'Planner'    },
+  { value: 'readonly',   label: 'Read Only'  },
 ]
 
-// ── Permission helpers ────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Permission helpers (unchanged — same logic as before)
+// ---------------------------------------------------------------------------
 
-/** Returns true if the user can approve calibration records. */
 export function canApprove(user) {
   if (!user) return false
   return user.role === 'admin' || user.role === 'supervisor'
 }
 
-/** Returns true if the user can create/edit instruments and manage scheduling. */
 export function canEdit(user) {
   if (!user) return false
   return (
@@ -200,13 +190,11 @@ export function canEdit(user) {
   )
 }
 
-/** Returns true if the user can create calibration records. */
 export function canCalibrate(user) {
   if (!user) return false
   return user.role === 'admin' || user.role === 'supervisor' || user.role === 'technician'
 }
 
-/** Returns true if the user only has read access. */
 export function isReadOnly(user) {
   if (!user) return true
   return user.role === 'readonly'

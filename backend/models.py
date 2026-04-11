@@ -187,6 +187,62 @@ class CalibrationRecord(Base):
     approved_at  = Column(DateTime(timezone=True))
 
 
+# ---------------------------------------------------------------------------
+# Auth / tenancy models
+# ---------------------------------------------------------------------------
+
+class Site(Base):
+    __tablename__ = "sites"
+
+    id = Column(
+        UUID(as_uuid=True), primary_key=True,
+        server_default=text("gen_random_uuid()")
+    )
+    name                = Column(String(100), nullable=False, unique=True)
+    subscription_status = Column(String(50),  nullable=False, server_default=text("'trial'"))
+    plan                = Column(String(50),  nullable=False, server_default=text("'starter'"))
+    created_at          = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class SiteMember(Base):
+    __tablename__ = "site_members"
+
+    id           = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    site_id      = Column(UUID(as_uuid=True), ForeignKey("sites.id", ondelete="CASCADE"), nullable=False)
+    user_id      = Column(UUID(as_uuid=True), nullable=False, unique=True)  # one site per user
+    role         = Column(String(50),  nullable=False, server_default=text("'technician'"))
+    display_name = Column(String(100))
+    email        = Column(String(255))
+    created_at   = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_log"
+
+    id           = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    site_id      = Column(UUID(as_uuid=True), nullable=False, index=True)
+    entity_type  = Column(String(50),  nullable=False)    # 'instrument' | 'calibration_record'
+    entity_id    = Column(UUID(as_uuid=True), nullable=False)
+    user_id      = Column(String(100), nullable=False)
+    user_name    = Column(String(100), nullable=False)
+    action       = Column(String(50),  nullable=False)    # create | update | delete | submit | approve | reject | bulk_import
+    changed_fields = Column(JSONB)
+    created_at   = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class NotificationPreference(Base):
+    __tablename__ = "notification_preferences"
+
+    id                     = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    site_member_id         = Column(UUID(as_uuid=True), ForeignKey("site_members.id", ondelete="CASCADE"), nullable=False, unique=True)
+    notify_overdue_digest  = Column(Boolean, nullable=False, server_default="true")
+    notify_due_soon_digest = Column(Boolean, nullable=False, server_default="true")
+    notify_submission      = Column(Boolean, nullable=False, server_default="true")
+    notify_approval        = Column(Boolean, nullable=False, server_default="true")
+    created_at             = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at             = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+
+
 class CalTestPoint(Base):
     __tablename__ = "cal_test_points"
 

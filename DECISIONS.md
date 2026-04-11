@@ -1,38 +1,75 @@
-# CalTrack Pro — Architecture Decisions
+# Calcheq — Architecture Decisions
 
 This file records the "why" behind key technical and product decisions.
 It exists so that context is not lost between sessions.
 
 ---
 
-## Auth: localStorage (temporary, not Supabase Auth)
+## Auth: Supabase Auth (email + password) — migrated April 2026
 
-**Decision:** User identity and site membership are stored in localStorage,
-not in Supabase Auth or the database.
+**Decision:** User identity and site membership are managed by Supabase Auth
+plus two new DB tables (`sites`, `site_members`).
 
-**Why:** Chosen for speed of development in early build stages. Supabase Auth
-requires email verification, password reset flows, and session token handling —
-all of which were out of scope when the multi-user/multi-site feature was first built.
+**Sign-in flow (2-step UX):**
+1. User enters company/site name → validated against `sites` table via `GET /api/auth/check-site`
+2. User enters email + password → Supabase `signInWithPassword` → JWT issued
+3. Frontend calls `GET /api/auth/me` → backend verifies JWT, looks up `site_members`, returns site + role
 
-**Current user shape stored in localStorage:**
+**Sign-up flow:**
+1. User enters company name + display name + email + password on `/auth/signup`
+2. `supabase.auth.signUp({ email, password, options: { data: { site_name, display_name } } })`
+3. Email confirmation sent (Supabase default)
+4. After confirmation + first sign-in, `onAuthStateChange` fires → frontend calls `POST /api/auth/register`
+5. Backend creates `sites` record + `site_members` record (first user = admin)
+
+**User object shape (module cache in userContext.js):**
 ```js
-// key: "caltrack_user"
-{ siteName: "IXOM", userName: "John Smith", role: "technician" }
-
-// key: "caltrack_sites"
-[{ name: "IXOM", passwordHash: "abc123..." }, ...]
-
-// key: "caltrack_members"
-[{ siteName: "IXOM", userName: "John Smith", role: "technician" }, ...]
+{ userId, email, userName, siteName, role, isDemoMode }
 ```
 
-**Consequences:** No true server-side auth. Anyone who knows a site's password
-can access its data. This is acceptable for a pre-commercial demo but must be
-resolved before the first paying customer goes live.
+**Backend JWT verification:**
+- `SUPABASE_JWT_SECRET` env var (from Supabase Project Settings → API → JWT Settings)
+- `python-jose` library decodes and verifies the HS256 JWT
+- Audience: "authenticated"
+- `get_optional_user(request, db)` → UserContext or None
+- `get_current_user(request, db)` → UserContext or 401
+- `resolve_site(site, current_user)` → site name string:
+  - `?site=Demo` → always allowed, public demo
+  - JWT present → user's own site (ignores `?site=` unless Demo)
+  - Neither → 401
 
-**Migration plan:** Replace with Supabase Auth (email + password). Store
-site membership in a `site_members` database table. Keep the existing
-site isolation logic (created_by field) intact — only the auth layer changes.
+**Demo mode:**
+- The "Demo" site is public (always accessible via `?site=Demo`)
+- Logged-in users can switch to Demo via the "Try Demo" button in the Sidebar
+- `setDemoMode(true)` in userContext.js sets a module-level flag; all API calls
+  then pass `?site=Demo` (because getUser() returns siteName = "Demo")
+- A separate `demo@calcheq.com` Supabase account exists for the "Try Demo"
+  button on the sign-in page (must be created manually in Supabase Dashboard)
+
+**New DB tables:**
+```sql
+sites        (id UUID PK, name TEXT UNIQUE, subscription_status, plan, created_at)
+site_members (id UUID PK, site_id FK→sites, user_id UUID, role TEXT, display_name TEXT)
+```
+
+**Site isolation (unchanged mechanism, same security model):**
+- `instruments.created_by` still stores the site name string
+- Backend resolves site from JWT (not from `?site=` query param, except for Demo)
+- `created_by` → `site_id` FK rename is deferred to Phase 0.3+ (Stripe integration)
+
+**Event system (backward compatible):**
+- `caltrack-user-change` DOM event is still dispatched from `onAuthStateChange`
+- Dashboard.jsx and InstrumentList.jsx event listeners still work without changes
+
+**Auth routes:**
+- `GET  /api/auth/check-site?name=IXOM` — public, validates site exists
+- `POST /api/auth/register`             — creates site + admin membership from JWT user_metadata
+- `GET  /api/auth/me`                   — returns current user's site + role
+
+**Gating:**
+- `/app/*` requires a valid Supabase session (enforced by `AuthGuard` component)
+- Unauthenticated visitors are redirected to `/auth/signin`
+- Marketing pages (`/`, `/pricing`, etc.) remain fully public
 
 ---
 
@@ -50,9 +87,9 @@ to every API endpoint, and the backend filters by `Instrument.created_by == site
 database. If a site needs to be renamed, a bulk UPDATE on `created_by` would
 be required. This is an acceptable trade-off for the current stage.
 
-**Future migration path:** Add a `sites` table with id, name, subscription_status.
-Replace `created_by` string with `site_id` FK. This is the right long-term shape
-but is deferred until Supabase Auth is in place.
+**Update (April 2026):** The `sites` table now exists (added during Supabase Auth migration).
+`created_by` string → `site_id` FK rename is deferred to the Stripe integration phase,
+as it requires a schema migration and backfill of all existing instrument rows.
 
 ---
 
@@ -185,41 +222,4 @@ should store the user's UUID and the name should be resolved at query time via a
 
 ## PDF Generation: Client-Side (jsPDF), No Backend Required
 
-**Decision:** Calibration certificates and history reports are generated entirely
-in the browser using jsPDF + jspdf-autotable. No server-side PDF rendering.
-
-**Why:** Avoids adding a PDF dependency (WeasyPrint, Puppeteer, etc.) to the
-Python backend. The data is already in the browser when the user triggers the
-download. Client-side generation is instant and requires no additional API calls
-beyond the data fetch.
-
-**Implementation:** `frontend/src/utils/reportGenerator.js` exports two functions:
-- `generateSingleCalibrationCert(instrument, record)` — one-page cert, triggered
-  from InstrumentDetail history table (per-row "Cert" button)
-- `generateMultiCalibrationReport(instrument, records)` — full history report with
-  trend chart, triggered from InstrumentDetail header ("History Report" button)
-
-**Important:** Both functions require the full `CalibrationRecordResponse` (which
-includes `test_points`), not the list-item shape returned by the history endpoint.
-InstrumentDetail fetches full records via `calApi.get(r.id)` before calling either
-function. Do not pass list-item records — the test point table will be empty.
-
-**Limitation:** Very large reports (100+ calibration records) may be slow or cause
-memory pressure in low-end browsers. If this becomes a problem, move to server-side
-PDF generation (WeasyPrint recommended for Python).
-
----
-
-## Pass/Fail Engine: Duplicated Frontend + Backend
-
-**Decision:** The pass/fail/marginal calculation logic exists in two places:
-- Backend: `backend/calibration_engine.py` (authoritative, used when records are saved)
-- Frontend: `frontend/src/utils/calEngine.js` (used for real-time preview while entering data)
-
-**Why:** Users need to see pass/fail results update in real time as they type
-test point values in CalibrationForm. This requires the logic to run in the browser.
-The backend recalculates on save to ensure the stored result is always correct
-regardless of what the frontend sent.
-
-**Important:** If the pass/fail rules ever change, update BOTH files. The backend
-is the source of truth — the frontend is display-only.
+**Decision:** Calibration certificate

@@ -23,6 +23,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from auth import resolve_site
 from database import get_db
 from models import (
     AsFoundResult,
@@ -124,9 +125,10 @@ def _consecutive_failure_info(
 
 @router.get("/stats", response_model=DashboardStats)
 def get_stats(
-    site: Optional[str] = Query(None, description="Filter by site/organisation"),
-    db: Session = Depends(get_db),
+    resolved_site: str     = Depends(resolve_site),
+    db:            Session = Depends(get_db),
 ) -> DashboardStats:
+    site = resolved_site
     today           = date.today()
     due_soon_cutoff = today + timedelta(days=_DUE_SOON_DAYS)
     thirty_days_ago = today - timedelta(days=30)
@@ -218,9 +220,10 @@ def get_stats(
 
 @router.get("/alerts", response_model=List[Alert])
 def get_alerts(
-    site: Optional[str] = Query(None, description="Filter by site/organisation"),
-    db: Session = Depends(get_db),
+    resolved_site: str     = Depends(resolve_site),
+    db:            Session = Depends(get_db),
 ) -> List[Alert]:
+    site = resolved_site
     today           = date.today()
     due_soon_cutoff = today + timedelta(days=_DUE_SOON_DAYS)
     alerts: List[Alert] = []
@@ -341,9 +344,10 @@ def get_alerts(
 
 @router.get("/compliance-by-area", response_model=List[AreaCompliance])
 def compliance_by_area(
-    site: Optional[str] = Query(None, description="Filter by site/organisation"),
-    db: Session = Depends(get_db),
+    resolved_site: str     = Depends(resolve_site),
+    db:            Session = Depends(get_db),
 ) -> List[AreaCompliance]:
+    site = resolved_site
     today = date.today()
 
     instruments = _active_instruments_query(db, site).all()
@@ -396,9 +400,10 @@ def compliance_by_area(
 
 @router.get("/upcoming", response_model=InstrumentListResponse)
 def upcoming_calibrations(
-    site: Optional[str] = Query(None, description="Filter by site/organisation"),
-    db: Session = Depends(get_db),
+    resolved_site: str     = Depends(resolve_site),
+    db:            Session = Depends(get_db),
 ) -> InstrumentListResponse:
+    site = resolved_site
     today          = date.today()
     thirty_days_on = today + timedelta(days=30)
 
@@ -426,9 +431,10 @@ def upcoming_calibrations(
 
 @router.get("/bad-actors", response_model=List[BadActor])
 def bad_actors(
-    site: Optional[str] = Query(None, description="Filter by site/organisation"),
-    db: Session = Depends(get_db),
+    resolved_site: str     = Depends(resolve_site),
+    db:            Session = Depends(get_db),
 ) -> List[BadActor]:
+    site = resolved_site
     one_year_ago = date.today() - timedelta(days=365)
 
     bad_q = (

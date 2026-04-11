@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import MarketingNav    from '../../components/marketing/MarketingNav'
 import MarketingFooter from '../../components/marketing/MarketingFooter'
 
+// META: Contact Calcheq — get in touch for a demo, support, or pricing enquiries for our instrument calibration management platform.
+
 function InfoCard({ icon, title, body, action, actionLabel }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
@@ -71,8 +73,8 @@ export default function Contact() {
               }
               title="Email us"
               body="For general enquiries, demo requests, or support questions."
-              action="mailto:info@caltrackpro.com"
-              actionLabel="info@caltrackpro.com"
+              action="mailto:info@calcheq.com"
+              actionLabel="info@calcheq.com"
             />
             <InfoCard
               icon={

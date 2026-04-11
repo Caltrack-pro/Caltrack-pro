@@ -3,25 +3,27 @@ import { Link } from 'react-router-dom'
 import MarketingNav    from '../../components/marketing/MarketingNav'
 import MarketingFooter from '../../components/marketing/MarketingFooter'
 
+// META: Frequently asked questions about Calcheq — instrument calibration management software for oil & gas, chemical, pharma, and mining industries.
+
 const SECTIONS = [
   {
     section: 'Getting Started',
     faqs: [
       {
-        q: 'What is CalTrack Pro?',
-        a: 'CalTrack Pro is a web-based calibration management system built for industrial instrumentation teams. It replaces paper logs and spreadsheets with a structured, audit-ready record of every calibration performed — including full test point data, pass/fail calculations, approval workflows, and live dashboards.',
+        q: 'What is Calcheq?',
+        a: 'Calcheq is a web-based calibration management system built for industrial instrumentation teams. It replaces paper logs and spreadsheets with a structured, audit-ready record of every calibration performed — including full test point data, pass/fail calculations, approval workflows, and live dashboards.',
       },
       {
-        q: 'Who is CalTrack Pro designed for?',
-        a: 'CalTrack Pro is built for instrument technicians, reliability engineers, and maintenance supervisors in industries where accurate instrumentation is critical — oil and gas, chemical processing, food and beverage, pharmaceuticals, mining, and power generation.',
+        q: 'Who is Calcheq designed for?',
+        a: 'Calcheq is built for instrument technicians, reliability engineers, and maintenance supervisors in industries where accurate instrumentation is critical — oil and gas, chemical processing, food and beverage, pharmaceuticals, mining, and power generation.',
       },
       {
         q: 'Do I need to install anything?',
-        a: 'No. CalTrack Pro is a web application. You access it from any modern browser — desktop or mobile. There is nothing to install or configure on your local machine.',
+        a: 'No. Calcheq is a fully responsive web application. You access it from any modern browser — desktop, tablet, or mobile. There is nothing to install or configure on your local machine.',
       },
       {
         q: 'How long does it take to get started?',
-        a: 'Most teams are up and running within a day. Create your site, add your instruments (with calibration intervals and tolerances), and your team can start logging calibrations immediately.',
+        a: 'Most teams are up and running within a day. Create your site, add your instruments (with calibration intervals and tolerances), and your team can start logging calibrations immediately. You can also bulk-import your instrument list from a CSV file.',
       },
     ],
   },
@@ -29,12 +31,12 @@ const SECTIONS = [
     section: 'Features & Functionality',
     faqs: [
       {
-        q: 'How does the pass/fail calculation work?',
-        a: 'For each calibration, you define the number of test points, expected outputs, and a tolerance (as % span, % reading, or absolute value). When a technician records as-found and as-left readings, CalTrack Pro automatically calculates the error at each point and assigns a pass, marginal (within 80–100% of tolerance), or fail result. The overall record result is determined by the worst individual point.',
+        q: 'How does multi-point calibration work?',
+        a: 'Calcheq supports 1–20 test points per instrument. For each calibration, you define the expected outputs and a tolerance (as % span, % reading, or absolute value). Technicians record as-found and as-left readings at each point. Calcheq automatically calculates the error at each point and assigns a pass, marginal (within 80–100% of tolerance), or fail result. The overall record result is determined by the worst individual point.',
       },
       {
         q: 'What are the different alert types?',
-        a: 'CalTrack Pro monitors four alert conditions: OVERDUE (past the calibration due date), DUE SOON (within 14 days of due), FAILED (last calibration result was a fail), and CONSECUTIVE FAILURES (two or more consecutive as-found failures — indicating a systematic instrument problem).',
+        a: 'Calcheq monitors four alert conditions: OVERDUE (past the calibration due date), DUE SOON (within 14 days of due), FAILED (last calibration result was a fail), and CONSECUTIVE FAILURES (two or more consecutive as-found failures — indicating a systematic instrument problem).',
       },
       {
         q: 'How does the approval workflow work?',
@@ -42,7 +44,7 @@ const SECTIONS = [
       },
       {
         q: 'Can multiple users access the same site simultaneously?',
-        a: 'Yes. CalTrack Pro supports concurrent multi-user access. Each user\'s name and role is stored separately, so you always know who created, submitted, or approved a record.',
+        a: 'Yes. Calcheq supports concurrent multi-user access. Each user\'s name and role is stored separately, so you always know who created, submitted, or approved a record.',
       },
       {
         q: 'What do the different user roles allow?',
@@ -55,11 +57,11 @@ const SECTIONS = [
     faqs: [
       {
         q: 'Is my data isolated from other organisations?',
-        a: 'Yes. CalTrack Pro uses site-based isolation — every instrument, calibration record, and dashboard is scoped to your specific site. Users from other sites cannot see your data, and users from your site cannot see theirs.',
+        a: 'Yes. Calcheq uses site-based isolation — every instrument, calibration record, and dashboard is scoped to your specific site. Users from other sites cannot see your data, and users from your site cannot see theirs.',
       },
       {
         q: 'Can different sites within our company have separate accounts?',
-        a: 'Yes. Each physical site or operating unit can have its own CalTrack Pro site with its own password, instrument list, and user base. Enterprise customers can get a unified overview across sites — contact us for details.',
+        a: 'Yes. Each physical site or operating unit can have its own Calcheq site with its own password, instrument list, and user base. Enterprise customers can get a unified overview across sites — contact us for details.',
       },
       {
         q: 'How are calibration records stored?',
@@ -71,16 +73,20 @@ const SECTIONS = [
     section: 'Pricing & Billing',
     faqs: [
       {
-        q: 'How much does CalTrack Pro cost?',
+        q: 'How much does Calcheq cost?',
         a: 'Pricing is to be confirmed ahead of general launch. We are currently in early access. Visit the Pricing page for plan details, or contact us to register interest and secure an early-access rate.',
       },
       {
         q: 'Is there a free trial?',
-        a: 'Yes — the demo app is fully functional and free to explore. All features are available with no time limit during the early access period.',
+        a: 'Yes — the demo app is fully functional and free to explore. You can sign up at any time and try all features without a credit card.',
+      },
+      {
+        q: 'What happens if I do not upgrade after the trial?',
+        a: 'Your account will move to read-only mode. You can still view and export your data, but you won\'t be able to add new instruments or calibration records until you upgrade.',
       },
       {
         q: 'What happens to my data if I cancel?',
-        a: 'You retain full access to export your data at any time before cancellation. On cancellation, your data is retained for 30 days before being permanently deleted, giving you time to make a final export.',
+        a: 'You retain full access to export your data at any time. You can download your full calibration history to CSV from the Reports page before or after cancellation.',
       },
     ],
   },
@@ -88,16 +94,16 @@ const SECTIONS = [
     section: 'Compliance & Standards',
     faqs: [
       {
-        q: 'Does CalTrack Pro support ISO/IEC 17025?',
-        a: 'CalTrack Pro\'s calibration workflows — reference standard tracking, as-found/as-left recording, technician identification, and approval audit trail — are designed with ISO/IEC 17025 requirements in mind. Your quality manager should confirm applicability for your specific accreditation scope.',
+        q: 'Does Calcheq support ISO/IEC 17025?',
+        a: 'Calcheq\'s calibration workflows — reference standard tracking, as-found/as-left recording, technician identification, immutable audit trail, and approval workflows — are designed with ISO/IEC 17025 requirements in mind. Your quality manager should confirm applicability for your specific accreditation scope.',
       },
       {
-        q: 'Can CalTrack Pro help with our ISO 9001 calibration requirements?',
-        a: 'ISO 9001 Clause 7.1.5 requires documented evidence of calibration, traceability to measurement standards, and records of calibration status. CalTrack Pro provides all three out of the box.',
+        q: 'Can Calcheq help with our ISO 9001 calibration requirements?',
+        a: 'ISO 9001 Clause 7.1.5 requires documented evidence of calibration, traceability to measurement standards, and records of calibration status. Calcheq provides all three out of the box, with an immutable audit trail and CSV export for compliance records.',
       },
       {
         q: 'Is there an audit trail?',
-        a: 'Yes. Every calibration record captures the technician name, date, test point data, adjustment details, and approver name with timestamp. Records transition through a formal draft → submitted → approved workflow that is fully traceable.',
+        a: 'Yes. Calcheq maintains a complete immutable audit trail of every action — creation, submission, approval, rejection, and editing of instruments and calibration records. Every event is timestamped and tracks who made the change. The audit trail cannot be modified or deleted.',
       },
     ],
   },
@@ -142,7 +148,7 @@ export default function FAQ() {
             Frequently asked questions
           </h1>
           <p className="text-slate-500 text-lg">
-            Everything you need to know about CalTrack Pro. Can't find what you're looking for?{' '}
+            Everything you need to know about Calcheq. Can't find what you're looking for?{' '}
             <Link to="/contact" className="text-blue-600 hover:underline font-medium">Contact us.</Link>
           </p>
         </div>

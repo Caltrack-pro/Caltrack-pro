@@ -1,8 +1,10 @@
 /**
- * CalTrack Pro — API service layer
+ * Calcheq — API service layer
  * All communication with the FastAPI backend goes through here.
  * Base URL reads from the Vite proxy (dev) or an env variable (prod).
  */
+
+import { supabase } from './supabase'
 
 const BASE_URL = '/api'
 
@@ -28,13 +30,22 @@ function toQueryString(params = {}) {
   return s ? `?${s}` : ''
 }
 
+async function _getAuthHeader() {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (session?.access_token) {
+    return { Authorization: `Bearer ${session.access_token}` }
+  }
+  return {}
+}
+
 async function request(path, options = {}) {
   const url = `${BASE_URL}${path}`
+  const authHeader = await _getAuthHeader()
 
   let response
   try {
     response = await fetch(url, {
-      headers: { 'Content-Type': 'application/json', ...options.headers },
+      headers: { 'Content-Type': 'application/json', ...authHeader, ...options.headers },
       ...options,
     })
   } catch (networkErr) {
@@ -107,6 +118,39 @@ export const instruments = {
    */
   calibrationHistory: (id, params = {}) =>
     request(`/instruments/${id}/calibration-history${toQueryString(params)}`),
+
+  driftAnalysis: (id) =>
+    request(`/instruments/${id}/drift`),
+
+  auditLog: (id, params = {}) =>
+    request(`/instruments/${id}/audit-log${toQueryString(params)}`),
+
+  /**
+   * Upload a CSV file for bulk import.
+   * @param {File} file
+   * @param {boolean} dryRun  - true = preview only, no records created
+   */
+  bulkImport: async (file, dryRun = false) => {
+    const authHeader = await _getAuthHeader()
+    const formData = new FormData()
+    formData.append('file', file)
+    let response
+    try {
+      response = await fetch(`${BASE_URL}/instruments/bulk-import?dry_run=${dryRun}`, {
+        method: 'POST',
+        headers: { ...authHeader },  // no Content-Type — let browser set multipart boundary
+        body: formData,
+      })
+    } catch (networkErr) {
+      throw new ApiError('Cannot reach the server', 0, networkErr.message)
+    }
+    if (!response.ok) {
+      let detail = response.statusText
+      try { const b = await response.json(); detail = b.detail ?? detail } catch {}
+      throw new ApiError(`${response.status}: ${detail}`, response.status, detail)
+    }
+    return response.json()
+  },
 }
 
 // ---------------------------------------------------------------------------

@@ -28,8 +28,8 @@ The result was predictable. At any given time, roughly 23% of their instrumented
 A corrective calibration confirmed the instrument was reading 4.2% low — just outside the 3.5% span tolerance. In the right process conditions, that error could have masked a developing overpressure situation. It was classified as a near-miss by the site's HSE team, and the maintenance superintendent was asked to present an improvement plan within 30 days.`
       },
       {
-        heading: 'The Solution: Deploying CalTrack Pro',
-        body: `The maintenance team migrated their instrument register into CalTrack Pro over a long weekend. Rather than re-entering every instrument manually, they uploaded a CSV export from their CMMS (Maximo) and mapped the columns — tag number, description, area, calibration interval, and last calibration date. The migration took approximately six hours.
+        heading: 'The Solution: Deploying Calcheq',
+        body: `The maintenance team migrated their instrument register into Calcheq over a long weekend. Rather than re-entering every instrument manually, they uploaded a CSV export from their CMMS (Maximo) and mapped the columns — tag number, description, area, calibration interval, and last calibration date. The migration took approximately six hours.
 
 With the data loaded, the dashboard immediately showed the full picture: 143 overdue instruments, 31 due within 14 days, and 8 instruments with previous failed calibrations that had not triggered a formal corrective action.
 
@@ -39,7 +39,7 @@ The team set up user accounts for all 12 instrument technicians and 3 supervisor
         heading: 'Results: 90 Days Later',
         body: `Within 90 days of going live, the overdue rate had dropped from 23% to under 4% — and the remaining 4% was almost entirely instruments that were physically inaccessible due to planned shutdown scheduling rather than being genuinely forgotten.
 
-Two additional prevented incidents occurred during this period. CalTrack Pro's consecutive failure detection identified a differential pressure transmitter on a heat exchanger that had failed its as-found calibration twice in 8 months. The pattern had gone unnoticed in the spreadsheet system. A maintenance investigation found that the impulse lines had a partial blockage that was causing periodic zero drift. The instrument was corrected and the root cause resolved — before any process impact.`
+Two additional prevented incidents occurred during this period. Calcheq's consecutive failure detection identified a differential pressure transmitter on a heat exchanger that had failed its as-found calibration twice in 8 months. The pattern had gone unnoticed in the spreadsheet system. A maintenance investigation found that the impulse lines had a partial blockage that was causing periodic zero drift. The instrument was corrected and the root cause resolved — before any process impact.`
       },
       {
         heading: 'Key Takeaways',
@@ -47,7 +47,7 @@ Two additional prevented incidents occurred during this period. CalTrack Pro's c
 
 Visibility: You cannot manage what you cannot see. A real-time dashboard that shows overdue instruments, due-soon alerts, and failure trends is not a luxury — it's the foundation of a functioning calibration program.
 
-Accountability: When calibration records exist only in a shared file, it's easy for items to fall through the cracks. CalTrack Pro's approval workflow means every calibration record is reviewed and signed off by a supervisor before it updates the instrument's status.
+Accountability: When calibration records exist only in a shared file, it's easy for items to fall through the cracks. Calcheq's approval workflow means every calibration record is reviewed and signed off by a supervisor before it updates the instrument's status.
 
 Pattern detection: Single failures can be random. Consecutive failures almost never are. The system's bad actor tracking would have surfaced the heat exchanger transmitter issue months earlier if it had been in place from the start.`
       },
@@ -66,37 +66,37 @@ Pattern detection: Single failures can be random. Consecutive failures almost ne
         heading: 'What Auditors Are Actually Looking For',
         body: `ISO/IEC 17025 is the international standard for testing and calibration laboratories. If your facility uses instruments whose calibration must be traceable to national or international measurement standards — and most industrial sites that are serious about quality need this — then your calibration records are subject to scrutiny.
 
-Many maintenance teams are surprised during their first external audit to find that their calibration records, even when they exist, are missing fields that auditors consider mandatory. Here is a breakdown of what's required and how CalTrack Pro addresses each requirement.`
+Many maintenance teams are surprised during their first external audit to find that their calibration records, even when they exist, are missing fields that auditors consider mandatory. Here is a breakdown of what's required and how Calcheq addresses each requirement.`
       },
       {
         heading: 'Measurement Traceability (Clause 6.5)',
         body: `Every calibration result must be traceable back to national measurement standards. In practice, this means recording the reference standard used for each calibration: its description, serial number, calibration certificate number, and the certificate expiry date.
 
-CalTrack Pro captures all four fields on every calibration record. When a reference standard certificate is approaching expiry, the system can flag this — ensuring your calibrations are never performed with an out-of-date reference standard, which would invalidate the traceability chain entirely.`
+Calcheq captures all four fields on every calibration record. When a reference standard certificate is approaching expiry, the system can flag this — ensuring your calibrations are never performed with an out-of-date reference standard, which would invalidate the traceability chain entirely.`
       },
       {
         heading: 'Uncertainty and Error Documentation (Clause 7.6)',
         body: `Auditors expect to see not just a pass/fail outcome but the actual as-found and as-left readings at each test point, along with the calculated error. A record that says "calibrated and found acceptable" with no supporting data will almost certainly generate a finding.
 
-CalTrack Pro records as-found and as-left outputs at every test point, calculates absolute error and percentage-of-span error automatically, and applies your tolerance settings to determine pass, marginal, or fail at each point. The overall record result is determined by the worst individual point result — no manual judgement required.`
+Calcheq records as-found and as-left outputs at every test point, calculates absolute error and percentage-of-span error automatically, and applies your tolerance settings to determine pass, marginal, or fail at each point. The overall record result is determined by the worst individual point result — no manual judgement required.`
       },
       {
         heading: 'Adjustment Documentation (Clause 7.7)',
-        body: `Where adjustments are made, the standard requires documentation of what was adjusted, why, and confirmation that the instrument was verified post-adjustment. CalTrack Pro handles this through the "as-left" data fields and the adjustment notes section, ensuring there is always a clear before-and-after record for any intervention.
+        body: `Where adjustments are made, the standard requires documentation of what was adjusted, why, and confirmation that the instrument was verified post-adjustment. Calcheq handles this through the "as-left" data fields and the adjustment notes section, ensuring there is always a clear before-and-after record for any intervention.
 
 The system also flags when an adjustment was made versus when a calibration was completed without adjustment — an important distinction for audit purposes.`
       },
       {
         heading: 'Personnel Competency and Record Authorisation',
-        body: `Clause 6.2 requires that calibrations are performed by competent personnel. While CalTrack Pro does not manage personnel qualification records directly, every calibration record captures the technician's name and the supervisor who approved the record. This creates a clear chain of accountability.
+        body: `Clause 6.2 requires that calibrations are performed by competent personnel. While Calcheq does not manage personnel qualification records directly, every calibration record captures the technician's name and the supervisor who approved the record. This creates a clear chain of accountability.
 
-For facilities that need to demonstrate personnel competency to auditors, the CalTrack Pro record set provides the "who did this calibration" evidence. You would supplement this with your own training records linked to the same individual.`
+For facilities that need to demonstrate personnel competency to auditors, the Calcheq record set provides the "who did this calibration" evidence. You would supplement this with your own training records linked to the same individual.`
       },
       {
         heading: 'Preparing for Your Next Audit',
-        body: `If your next ISO/IEC 17025 surveillance audit is approaching, the CalTrack Pro Reports section allows you to generate a complete calibration history for any instrument or date range in seconds. This includes all test point data, reference standard details, approval records, and adjustment notes — everything an auditor needs to verify your compliance, formatted ready to present.
+        body: `If your next ISO/IEC 17025 surveillance audit is approaching, the Calcheq Reports section allows you to generate a complete calibration history for any instrument or date range in seconds. This includes all test point data, reference standard details, approval records, and adjustment notes — everything an auditor needs to verify your compliance, formatted ready to present.
 
-Many of our customers report that audit preparation time dropped from several days to under two hours after deploying CalTrack Pro. The data is always current, always complete, and always in the same format.`
+Many of our customers report that audit preparation time dropped from several days to under two hours after deploying Calcheq. The data is always current, always complete, and always in the same format.`
       },
     ],
   },
@@ -127,17 +127,17 @@ This asset register is the foundation. Everything else builds on it.`
       },
       {
         heading: 'Step 2: Import Your Data',
-        body: `CalTrack Pro accepts a CSV import for bulk instrument creation. Once you have your spreadsheet in the right format, uploading 500 instruments takes the same time as uploading 5. Your system will be populated on day one rather than month six.
+        body: `Calcheq accepts a CSV import for bulk instrument creation. Once you have your spreadsheet in the right format, uploading 500 instruments takes the same time as uploading 5. Your system will be populated on day one rather than month six.
 
-Map your columns to CalTrack Pro's fields: tag_number, description, area, unit, instrument_type, manufacturer, model, serial_number, calibration_interval_days, last_calibration_date, last_calibration_result. Any unmapped fields can be filled in later — the goal is to get working, not to achieve perfection before you start.`
+Map your columns to Calcheq's fields: tag_number, description, area, unit, instrument_type, manufacturer, model, serial_number, calibration_interval_days, last_calibration_date, last_calibration_result. Any unmapped fields can be filled in later — the goal is to get working, not to achieve perfection before you start.`
       },
       {
         heading: 'Step 3: Establish Your Workflow',
         body: `Before going live, agree with your team on how the new workflow will look. The two most common approaches are:
 
-Parallel operation (lower risk): Continue paper records for one to two months while technicians enter records into CalTrack Pro as well. This gives the team time to build confidence and identify any gaps before the paper system is retired.
+Parallel operation (lower risk): Continue paper records for one to two months while technicians enter records into Calcheq as well. This gives the team time to build confidence and identify any gaps before the paper system is retired.
 
-Direct cutover (faster): Stop paper records on a set date and move fully to CalTrack Pro. This works well for teams with strong buy-in and where the maintenance supervisor is championing the change actively.
+Direct cutover (faster): Stop paper records on a set date and move fully to Calcheq. This works well for teams with strong buy-in and where the maintenance supervisor is championing the change actively.
 
 For most teams, a two-week parallel period is a good balance — long enough to catch issues, short enough that people don't revert to only doing the paper version.`
       },
@@ -147,11 +147,11 @@ For most teams, a two-week parallel period is a good balance — long enough to 
 
 Focus the technician training on two things: how to check what is due today, and how to enter a calibration result after completing the work. Those two actions cover 95% of daily usage. Everything else — reports, approvals, trend charts — is for supervisors and can be covered separately.
 
-CalTrack Pro's mobile-friendly interface means technicians can enter records on a tablet in the field immediately after completing the calibration, rather than writing it on paper and re-entering it later. This alone eliminates a major source of transcription error and data loss.`
+Calcheq's mobile-friendly interface means technicians can enter records on a tablet in the field immediately after completing the calibration, rather than writing it on paper and re-entering it later. This alone eliminates a major source of transcription error and data loss.`
       },
       {
         heading: 'Step 5: Retire the Paper',
-        body: `Once the team is comfortable and you have two to four weeks of digital records in the system, agree on a formal date to retire the paper process. Archive existing paper records per your document retention policy (typically 7 years for quality records in Australia) and make CalTrack Pro the single source of truth from that point forward.
+        body: `Once the team is comfortable and you have two to four weeks of digital records in the system, agree on a formal date to retire the paper process. Archive existing paper records per your document retention policy (typically 7 years for quality records in Australia) and make Calcheq the single source of truth from that point forward.
 
 The first audit cycle after going digital is when the real value becomes apparent. Instead of assembling folders of paper records, you generate a report. It takes minutes. It covers everything.`
       },
@@ -172,11 +172,11 @@ The first audit cycle after going digital is when the real value becomes apparen
 
 Two consecutive as-found failures — where the instrument has been calibrated, adjusted back into tolerance, and then failed again on the very next calibration — is a pattern. It tells you something systematic is happening to this instrument.
 
-CalTrack Pro's consecutive failure detection is designed to surface this pattern automatically, without requiring anyone to manually cross-reference calibration history.`
+Calcheq's consecutive failure detection is designed to surface this pattern automatically, without requiring anyone to manually cross-reference calibration history.`
       },
       {
         heading: 'How It Works',
-        body: `When a calibration record is submitted and approved with an as-found result of "fail", CalTrack Pro checks the previous approved calibration record for the same instrument. If that record also shows an as-found result of "fail", the instrument is flagged with a consecutive failure alert.
+        body: `When a calibration record is submitted and approved with an as-found result of "fail", Calcheq checks the previous approved calibration record for the same instrument. If that record also shows an as-found result of "fail", the instrument is flagged with a consecutive failure alert.
 
 This alert appears on the main dashboard, in the Alerts page, and is visible on the instrument's detail page. It persists until the instrument records a passing as-found result on its next calibration — confirming that the systematic problem has been resolved.
 
@@ -196,7 +196,7 @@ If the instrument passes consistently after the maintenance intervention, the co
         heading: 'Real-World Example',
         body: `A food processing facility in Victoria was seeing intermittent quality holds on a batch product line. The process team suspected the flow measurement on the main additive dosing line but couldn't pin it down because the issue was not consistent.
 
-When they deployed CalTrack Pro and loaded their calibration history, the consecutive failure detection immediately flagged the additive flow transmitter: it had failed its as-found calibration on two consecutive quarterly calibrations, each time reading approximately 2.8% high. The pattern had not been noticed because the two records were in different paper binders from different quarters.
+When they deployed Calcheq and loaded their calibration history, the consecutive failure detection immediately flagged the additive flow transmitter: it had failed its as-found calibration on two consecutive quarterly calibrations, each time reading approximately 2.8% high. The pattern had not been noticed because the two records were in different paper binders from different quarters.
 
 Investigation found that the meter tube had a build-up of process material affecting the sensor. After cleaning and re-verification, the instrument calibrated perfectly. The product quality issues resolved.
 
@@ -227,7 +227,7 @@ This article focuses on 21 CFR Part 11 as the most commonly referenced standard,
 
 Key requirements include: access controls with unique user IDs and passwords; audit trails that capture who created, modified, or deleted records and when; the ability to generate accurate and complete copies of records for review and inspection; and, where signatures are required, a link between the signature and the signed record such that the signature cannot be copied to another record.
 
-CalTrack Pro's current implementation covers user identity tracking (every record captures who created and approved it), an approval workflow that creates a supervisor sign-off event on each record, and a complete audit trail. For full 21 CFR Part 11 compliance, the authentication system must use unique user IDs with password controls — which is addressed in CalTrack Pro's Supabase Auth implementation.`
+Calcheq's current implementation covers user identity tracking (every record captures who created and approved it), an approval workflow that creates a supervisor sign-off event on each record, and a complete audit trail. For full 21 CFR Part 11 compliance, the authentication system must use unique user IDs with password controls — which is addressed in Calcheq's Supabase Auth implementation.`
       },
       {
         heading: 'The Validation Requirement',
@@ -235,15 +235,15 @@ CalTrack Pro's current implementation covers user identity tracking (every recor
 
 This typically involves an Installation Qualification (IQ) confirming the system was installed correctly, an Operational Qualification (OQ) confirming the system operates as specified, and a Performance Qualification (PQ) confirming the system performs as intended in the specific use environment.
 
-For a SaaS product like CalTrack Pro, the vendor is responsible for the IQ and much of the OQ for the underlying infrastructure. The customer is responsible for the user acceptance testing portion of the OQ and the PQ. CalTrack Pro can provide a validation documentation package that covers the platform-side IQ/OQ documentation, reducing the validation burden on the customer significantly.`
+For a SaaS product like Calcheq, the vendor is responsible for the IQ and much of the OQ for the underlying infrastructure. The customer is responsible for the user acceptance testing portion of the OQ and the PQ. Calcheq can provide a validation documentation package that covers the platform-side IQ/OQ documentation, reducing the validation burden on the customer significantly.`
       },
       {
         heading: 'Practical Steps for Pharma Customers',
-        body: `If you are deploying CalTrack Pro in a GMP environment, the recommended approach is:
+        body: `If you are deploying Calcheq in a GMP environment, the recommended approach is:
 
 First, review your site's CSV (Computer System Validation) SOPs to understand what documentation is required before going live. Most sites have a template for this process.
 
-Second, request CalTrack Pro's IQ/OQ documentation package. This covers the platform infrastructure, security architecture, backup procedures, and system specifications.
+Second, request Calcheq's IQ/OQ documentation package. This covers the platform infrastructure, security architecture, backup procedures, and system specifications.
 
 Third, develop your own OQ test scripts covering the specific workflows your team will use: creating an instrument, entering a calibration record, triggering a fail result, approving a record, and generating a calibration report. Execute these scripts and record the results — this becomes your OQ execution evidence.
 
@@ -253,9 +253,9 @@ Fourth, complete your PQ with real production-like data before going fully live.
         heading: 'Electronic Signatures vs. Electronic Records',
         body: `A common point of confusion: 21 CFR Part 11 distinguishes between electronic records (required for most pharma operations) and electronic signatures (required only when a signature is specified in the relevant regulation or guidance).
 
-For routine calibration records, most facilities require a supervisor review and approval — but this does not necessarily require a legally binding electronic signature under Part 11. A user logging in with a unique credential and clicking "Approve" in CalTrack Pro creates an auditable record of that approval action, which satisfies most calibration-related approval requirements in practice.
+For routine calibration records, most facilities require a supervisor review and approval — but this does not necessarily require a legally binding electronic signature under Part 11. A user logging in with a unique credential and clicking "Approve" in Calcheq creates an auditable record of that approval action, which satisfies most calibration-related approval requirements in practice.
 
-If your site's procedure requires a full Part 11 compliant electronic signature (with a second authentication step confirming the signature), this is a specific feature that should be discussed with the CalTrack Pro team before deployment.`
+If your site's procedure requires a full Part 11 compliant electronic signature (with a second authentication step confirming the signature), this is a specific feature that should be discussed with the Calcheq team before deployment.`
       },
     ],
   },
@@ -264,7 +264,7 @@ If your site's procedure requires a full Part 11 compliant electronic signature 
     tag: 'Guide',
     tagColor: 'bg-amber-100 text-amber-700',
     emoji: '🔧',
-    title: 'A Day in the Life: How Field Technicians Use CalTrack Pro',
+    title: 'A Day in the Life: How Field Technicians Use Calcheq',
     date: 'October 2025',
     readTime: '5 min read',
     sections: [
@@ -272,15 +272,15 @@ If your site's procedure requires a full Part 11 compliant electronic signature 
         heading: '7:30 AM — Start of Shift: Check What\'s Due',
         body: `The first thing most instrument technicians do when they arrive on site is figure out what they need to do today. With a paper system, this means finding the calibration binder, flipping to the current week, and hoping whoever updated it last did so accurately.
 
-With CalTrack Pro, it takes about 30 seconds. Opening the dashboard on a tablet shows the upcoming calibrations sorted by due date. Today's list is immediately visible. For each instrument due this week, the tag number, description, area, and calibration interval are all displayed — enough to plan the day's workload and decide in what order to tackle the jobs.
+With Calcheq, it takes about 30 seconds. Opening the dashboard on a tablet shows the upcoming calibrations sorted by due date. Today's list is immediately visible. For each instrument due this week, the tag number, description, area, and calibration interval are all displayed — enough to plan the day's workload and decide in what order to tackle the jobs.
 
 The alerts panel also shows any instruments that are overdue or have active failure alerts. These get prioritised.`
       },
       {
         heading: '9:15 AM — In the Field: Logging the First Calibration',
-        body: `Technician arrives at PT-205, a differential pressure transmitter on a heat exchanger inlet. She pulls up the instrument in CalTrack Pro on her tablet and taps "New Calibration." The form pre-populates the expected output values for each of the five test points based on the instrument's configured range and tolerance settings.
+        body: `Technician arrives at PT-205, a differential pressure transmitter on a heat exchanger inlet. She pulls up the instrument in Calcheq on her tablet and taps "New Calibration." The form pre-populates the expected output values for each of the five test points based on the instrument's configured range and tolerance settings.
 
-She works through the as-found test, applying each stimulus value using her calibrated reference standard and entering the actual transmitter reading at each point. CalTrack Pro calculates the error at each point in real time and highlights any that are outside tolerance in red. Three of five test points show pass, two show marginal. The overall as-found result is automatically set to "marginal."
+She works through the as-found test, applying each stimulus value using her calibrated reference standard and entering the actual transmitter reading at each point. Calcheq calculates the error at each point in real time and highlights any that are outside tolerance in red. Three of five test points show pass, two show marginal. The overall as-found result is automatically set to "marginal."
 
 She makes a small zero adjustment, then runs the as-left sweep. All five test points pass. She records her reference standard details, adds a brief note about the adjustment, and taps "Save Draft."`
       },
@@ -292,7 +292,7 @@ Submitting the records updates the instrument list to reflect the new calibratio
       },
       {
         heading: '1:30 PM — Afternoon Jobs: Following Up a Failed Instrument',
-        body: `One of the afternoon's jobs has an alert on it — a pressure switch (PSH-412) that failed its previous calibration three months ago. CalTrack Pro shows the full calibration history on the instrument page, including the last failed record with the exact as-found readings and the corrective action that was logged at the time.
+        body: `One of the afternoon's jobs has an alert on it — a pressure switch (PSH-412) that failed its previous calibration three months ago. Calcheq shows the full calibration history on the instrument page, including the last failed record with the exact as-found readings and the corrective action that was logged at the time.
 
 She reviews the previous record before starting her calibration to understand what happened last time and what to look for. This context, which would be buried in a paper binder on the old system, is immediately visible.
 
@@ -388,7 +388,7 @@ export default function BlogPost() {
           {/* CTA */}
           <div className="mt-12 bg-blue-600 rounded-2xl px-8 py-8 text-center">
             <p className="text-white font-bold text-xl mb-2">Ready to modernise your calibration program?</p>
-            <p className="text-blue-200 text-sm mb-5">See CalTrack Pro in action — no sign-up required.</p>
+            <p className="text-blue-200 text-sm mb-5">See Calcheq in action — no sign-up required.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 to="/app"
