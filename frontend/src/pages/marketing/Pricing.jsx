@@ -107,10 +107,12 @@ function AccordionFaqItem({ q, a }) {
 }
 
 export default function Pricing() {
+  const [isAnnual, setIsAnnual] = useState(true)
+
   useEffect(() => {
     document.title = 'Pricing — Calcheq Instrument Calibration Management'
     const desc = document.querySelector('meta[name="description"]')
-    const content = 'Simple, transparent pricing for Calcheq — instrument calibration management software. Site-based plans starting from $99/month with a free 30-day trial. No credit card required.'
+    const content = 'Transparent pricing for Australian processing plants. Calcheq instrument calibration management — scale from 50 to unlimited instruments. No surprises. Cancel anytime.'
     if (desc) desc.setAttribute('content', content)
     else { const m = document.createElement('meta'); m.name = 'description'; m.content = content; document.head.appendChild(m) }
   }, [])
@@ -123,162 +125,215 @@ export default function Pricing() {
       <section className="pt-32 pb-16 px-4 sm:px-6 text-center bg-gradient-to-b from-slate-50 to-white">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
-            Simple, honest pricing
+            Transparent pricing for Australian processing plants
           </h1>
-          <p className="text-slate-500 text-lg">
-            No per-instrument fees. No surprise add-ons. One flat price per site, per month.
-          </p>
-          <p className="mt-3 text-sm text-amber-600 font-semibold">
-            🎉 Early access pricing — lock in your rate before our general launch.
+          <p className="text-slate-500 text-lg leading-relaxed">
+            Scale from 50 instruments to unlimited. No surprises. Cancel anytime.
           </p>
         </div>
       </section>
 
-      {/* Compliance trust strip */}
-      <section className="py-0 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {[
-              { label: "ISO 9001", sub: "Quality Management" },
-              { label: "ISO/IEC 17025", sub: "Calibration Labs" },
-              { label: "ISA-5.1", sub: "Instrument Tagging" },
-              { label: "PSSR 2000", sub: "Pressure Systems" },
-              { label: "AS/NZS Aligned", sub: "Australian Standards" },
-            ].map(({ label, sub }) => (
-              <div key={label} className="flex flex-col items-center bg-white border border-blue-100 rounded-xl px-5 py-3 shadow-sm">
-                <span className="text-xs font-bold text-blue-700">{label}</span>
-                <span className="text-[10px] text-slate-400 mt-0.5">{sub}</span>
-              </div>
-            ))}
+      {/* Billing toggle */}
+      <section className="py-12 px-4 sm:px-6 text-center bg-white">
+        <div className="max-w-md mx-auto">
+          <div className="inline-flex items-center gap-4 bg-slate-100 p-1 rounded-lg">
+            <button
+              onClick={() => setIsAnnual(false)}
+              className={`px-6 py-2 rounded-md font-semibold text-sm transition-all ${
+                !isAnnual
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setIsAnnual(true)}
+              className={`px-6 py-2 rounded-md font-semibold text-sm transition-all relative ${
+                isAnnual
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Annual
+              {isAnnual && (
+                <span className="absolute -top-6 right-0 bg-amber-400 text-amber-900 text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                  Save 2 months
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </section>
 
       {/* Plans */}
-      <section className="py-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6 items-start">
+      <section className="py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6 items-start">
 
           <PlanCard
             name="Starter"
-            price="TBC"
-            priceNote="/ site / month"
-            description="Perfect for a single site with a small team managing a modest instrument fleet."
+            price={isAnnual ? '$199' : '$239'}
+            priceNote="/mo AUD"
+            description="Perfect for smaller operations with up to 150 instruments and basic compliance needs."
             features={[
-              { text: 'Up to 100 instruments',           included: true },
-              { text: 'Up to 5 users',                    included: true },
-              { text: 'Calibration records & history',    included: true },
-              { text: 'Dashboard & alerts',               included: true },
-              { text: 'CSV export',                       included: true },
-              { text: 'Multi-site support',               included: false },
-              { text: 'Advanced reports',                 included: false },
-              { text: 'Priority support',                 included: false },
+              { text: 'Up to 150 instruments', included: true },
+              { text: 'Up to 5 users', included: true },
+              { text: 'Real-time dashboard', included: true },
+              { text: 'Automated alerts', included: true },
+              { text: 'Certificate generation (AS/NZS ISO 17025)', included: true },
+              { text: 'CSV/Excel import wizard', included: true },
+              { text: 'Multi-site management', included: false },
+              { text: 'Criticality ranking', included: false },
             ]}
             cta="Get Started"
           />
 
           <PlanCard
             name="Professional"
-            price="TBC"
-            priceNote="/ site / month"
-            badge="Most Popular"
+            price={isAnnual ? '$449' : '$539'}
+            priceNote="/mo AUD"
+            badge="MOST POPULAR"
             highlight
-            description="For established maintenance teams who need the full feature set and serious reporting."
+            description="Everything you need: predictive alerts, criticality ranking, and unlimited users. Trusted by mid-market sites."
             features={[
-              { text: 'Unlimited instruments',            included: true },
-              { text: 'Unlimited users',                  included: true },
-              { text: 'Calibration records & history',    included: true },
-              { text: 'Dashboard & alerts',               included: true },
-              { text: 'CSV export',                       included: true },
-              { text: 'Multi-site support',               included: true },
-              { text: 'Advanced reports & trend charts',  included: true },
-              { text: 'Priority email support',           included: true },
+              { text: 'Up to 500 instruments', included: true },
+              { text: 'Unlimited users', included: true },
+              { text: 'Criticality ranking (Red/Yellow/Green)', included: true },
+              { text: 'Predictive degradation alerts', included: true },
+              { text: 'Beamex/Fluke CSV integration', included: true },
+              { text: 'Multi-site management', included: true },
+              { text: 'Mobile field app', included: true },
+              { text: 'Advanced reporting', included: true },
+              { text: 'Priority support', included: true },
             ]}
-            cta="Get Started"
+            cta="Start Free 30-Day Pilot"
           />
 
           <PlanCard
             name="Enterprise"
             price="Custom"
-            description="Multi-site organisations, custom integrations, and white-glove onboarding for large teams."
+            description="Unlimited instruments, advanced integrations, and dedicated support for large multi-site deployments."
             features={[
-              { text: 'Everything in Professional',       included: true },
-              { text: 'Multiple sites included',          included: true },
-              { text: 'Custom integrations (CMMS/ERP)',   included: true },
-              { text: 'Dedicated account manager',        included: true },
-              { text: 'On-site training',                 included: true },
-              { text: 'SLA-backed uptime',                included: true },
-              { text: 'Custom reporting',                 included: true },
-              { text: 'SSO / LDAP',                       included: true },
+              { text: 'Unlimited instruments', included: true },
+              { text: 'Unlimited users', included: true },
+              { text: 'All Professional features', included: true },
+              { text: 'SAP/MEX/Maximo integration', included: true },
+              { text: 'Custom workflows & reporting', included: true },
+              { text: 'On-site training included', included: true },
+              { text: 'SLA guarantee (99.5%)', included: true },
+              { text: 'Dedicated account manager', included: true },
             ]}
-            cta="Book a Demo →"
+            cta="Request Quote"
           />
 
+        </div>
+      </section>
+
+      {/* Info box */}
+      <section className="py-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <p className="text-sm text-slate-700 leading-relaxed">
+            <strong>All prices in AUD including GST.</strong> Annual billing saves you 2 months. You can upgrade, downgrade, or cancel anytime. Free 30-day trial includes full Professional plan features.
+          </p>
+        </div>
+      </section>
+
+      {/* Feature comparison table */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-extrabold text-slate-900 mb-10 text-center">Feature Comparison</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-slate-200">
+                  <th className="text-left py-4 px-4 font-semibold text-slate-900">Feature</th>
+                  <th className="text-left py-4 px-4 font-semibold text-slate-900">Starter</th>
+                  <th className="text-left py-4 px-4 font-semibold text-slate-900">Professional</th>
+                  <th className="text-left py-4 px-4 font-semibold text-slate-900">Enterprise</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { feature: 'Max Instruments', starter: true, prof: true, ent: true, value: '150 / 500 / Unlimited' },
+                  { feature: 'Max Users', starter: '5', prof: 'Unlimited', ent: 'Unlimited', valueOnly: true },
+                  { feature: 'Dashboard & Alerts', starter: true, prof: true, ent: true },
+                  { feature: 'Criticality Ranking', starter: false, prof: true, ent: true },
+                  { feature: 'Predictive Degradation', starter: false, prof: true, ent: true },
+                  { feature: 'Calibrator Integration (Beamex/Fluke)', starter: false, prof: true, ent: true },
+                  { feature: 'Mobile Field App', starter: false, prof: true, ent: true },
+                  { feature: 'Multi-Site Management', starter: false, prof: true, ent: true },
+                  { feature: 'SAP/MEX/Maximo Integration', starter: false, prof: false, ent: true },
+                  { feature: 'On-Site Training', starter: false, prof: false, ent: true },
+                  { feature: 'SLA Guarantee', starter: false, prof: false, ent: true },
+                ].map(({ feature, starter, prof, ent, valueOnly }) => (
+                  <tr key={feature} className="border-b border-slate-200 hover:bg-white transition-colors">
+                    <td className="py-4 px-4 font-medium text-slate-900">{feature}</td>
+                    <td className="py-4 px-4 text-slate-600">
+                      {valueOnly ? starter : (starter ? <Check /> : <Cross />)}
+                    </td>
+                    <td className="py-4 px-4 text-slate-600">
+                      {valueOnly ? prof : (prof ? <Check /> : <Cross />)}
+                    </td>
+                    <td className="py-4 px-4 text-slate-600">
+                      {valueOnly ? ent : (ent ? <Check /> : <Cross />)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
       {/* Pricing FAQ */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 mt-10">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl font-extrabold text-slate-900 mb-8 text-center">Pricing FAQ</h2>
-          <FaqRow
-            q="When will pricing be finalised?"
-            a="We're currently in early access. Pricing will be confirmed ahead of general launch. Contact us to register interest and lock in an early-access rate."
-          />
-          <FaqRow
-            q="Is there a free trial?"
-            a="Yes — you can use the demo app right now with full functionality. All features are available to try before you commit."
-          />
-          <FaqRow
-            q="What counts as a 'site'?"
-            a="A site is a single physical or logical installation — a refinery, a processing plant, a manufacturing facility. Each site has its own isolated instrument database and user list."
-          />
-          <FaqRow
-            q="Can I change plans later?"
-            a="Absolutely. You can upgrade or downgrade your plan at any time. Changes take effect at the next billing cycle."
-          />
-          <FaqRow
-            q="Do you offer annual billing?"
-            a="Yes — annual billing will be available at a discount versus monthly. Exact rates will be confirmed at launch."
-          />
-        </div>
-      </section>
-
-      {/* General FAQ */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl font-extrabold text-slate-900 mb-8 text-center">Frequently Asked Questions</h2>
+          <h2 className="text-2xl font-extrabold text-slate-900 mb-8 text-center">Pricing FAQ</h2>
           <div className="space-y-1">
             <AccordionFaqItem
-              q="Is my data secure?"
-              a="Yes. All data is isolated per organisation — no other company can see your instruments or calibration records. Data is stored in a managed PostgreSQL database on Supabase with encryption at rest and in transit. We do not share or sell your data."
+              q="Is there a free trial?"
+              a="Yes. Start a 30-day free trial with the full Professional plan. No credit card required. After 30 days, you can choose to upgrade to a paid plan, downgrade to Starter, or cancel."
             />
             <AccordionFaqItem
-              q="Can I export my data?"
-              a="Absolutely. You can export your full calibration history to CSV at any time from the Reports page. You're never locked in — your data is yours."
+              q="Can I change plans anytime?"
+              a="Yes. Upgrade to Professional or Enterprise anytime. Downgrade to Starter at the end of your billing cycle. No early-termination fees, no lock-in contracts."
             />
             <AccordionFaqItem
-              q="What happens at the end of my free trial?"
-              a="You'll be prompted to select a plan. If you don't upgrade, your account moves to read-only mode — you can still view and export your data, but won't be able to add new calibration records."
+              q="What's included in the pilot?"
+              a="Full Professional plan: 500 instruments, unlimited users, criticality ranking, degradation alerts, mobile app, multi-site, and priority onboarding. Your 48-hour setup is included."
             />
             <AccordionFaqItem
-              q="Do I need to sign a contract?"
-              a="No long-term contracts. All plans are month-to-month and can be cancelled at any time from your account settings."
+              q="How does annual billing work?"
+              a="Annual plans are billed once per year and give you 2 months free (you pay for 10 months, get 12). Monthly plans renew each month. You can switch from monthly to annual anytime."
             />
             <AccordionFaqItem
-              q="Can I change plans later?"
-              a="Yes, you can upgrade or downgrade at any time. Changes take effect at the start of your next billing cycle."
+              q="What if I outgrow my plan?"
+              a="Upgrade instantly. You'll be billed the difference for the remainder of your billing cycle. No penalty, no waiting."
+            />
+            <AccordionFaqItem
+              q="Is there a discount for non-profits or education?"
+              a="Contact us at info@calcheq.com to discuss special pricing for non-profit research institutions and technical colleges."
             />
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-16 px-4 sm:px-6 text-center bg-white">
-        <h2 className="text-2xl font-extrabold text-slate-900 mb-4">Not sure which plan is right for you?</h2>
-        <p className="text-slate-500 mb-6">Talk to us — we'll help you find the right fit.</p>
-        <Link to="/contact" className="inline-block px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
-          Contact us →
-        </Link>
+      {/* Final CTA */}
+      <section className="py-20 px-4 sm:px-6 text-center bg-gradient-to-b from-white to-slate-50">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-3xl font-extrabold text-slate-900 mb-4">
+            Ready to simplify calibration management?
+          </h2>
+          <p className="text-lg text-slate-600 mb-8">
+            Start your 30-day free trial today. No credit card required.
+          </p>
+          <Link
+            to="/contact"
+            className="inline-block px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-md"
+          >
+            Start Your Free Pilot
+          </Link>
+        </div>
       </section>
 
       <MarketingFooter />

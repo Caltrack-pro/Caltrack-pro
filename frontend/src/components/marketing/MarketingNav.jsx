@@ -6,10 +6,11 @@ export default function MarketingNav() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   const links = [
-    { to: '/pricing', label: 'Pricing'   },
-    { to: '/blog',    label: 'Use Cases' },
-    { to: '/faq',     label: 'FAQ'       },
-    { to: '/contact', label: 'Contact'   },
+    { to: '/how-it-works', label: 'How It Works' },
+    { to: '/pricing',      label: 'Pricing'      },
+    { to: '/resources',    label: 'Resources'    },
+    { to: '/faq',          label: 'FAQ'          },
+    { to: '/contact',      label: 'Contact'      },
   ]
 
   return (
@@ -51,7 +52,7 @@ export default function MarketingNav() {
           {/* CTA buttons — desktop */}
           <div className="hidden md:flex items-center gap-3">
             <Link
-              to="/auth/sign-in"
+              to="/auth/signin"
               className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
             >
               Sign In
@@ -60,7 +61,7 @@ export default function MarketingNav() {
               to="/contact"
               className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
-              Get Started
+              Start Free Trial
             </Link>
           </div>
 
@@ -92,7 +93,7 @@ export default function MarketingNav() {
             ))}
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
               <Link
-                to="/auth/sign-in"
+                to="/auth/signin"
                 onClick={() => setMenuOpen(false)}
                 className="block px-4 py-2.5 text-sm text-center text-slate-600 border border-slate-200 rounded-lg"
               >
@@ -103,7 +104,7 @@ export default function MarketingNav() {
                 onClick={() => setMenuOpen(false)}
                 className="block px-4 py-2.5 text-sm font-semibold text-center bg-blue-600 text-white rounded-lg"
               >
-                Get Started Free
+                Start Free Trial
               </Link>
             </div>
           </div>
