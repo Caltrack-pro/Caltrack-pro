@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  getUser, setUser, signOut,
-  getSiteMembers, saveMember,
-  ROLES, DEMO_SITE,
-} from '../utils/userContext'
+import { getUser, signOut, ROLES, DEMO_SITE } from '../utils/userContext'
 
 // ── Role colours ──────────────────────────────────────────────────────────────
 
@@ -25,8 +21,6 @@ function RoleBadge({ role }) {
   )
 }
 
-// ── Icons ────────────────────────────────────────────────────────────────────
-
 function IconUser() {
   return (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -41,75 +35,15 @@ function IconUser() {
 export default function Profile() {
   const navigate = useNavigate()
   const [user, setUserState] = useState(() => getUser())
-  const [members, setMembers] = useState([])
-
-  // Edit own profile
-  const [editingName, setEditingName] = useState(false)
-  const [newName,     setNewName]     = useState('')
-  const [newRole,     setNewRole]     = useState('')
-  const [nameErr,     setNameErr]     = useState('')
-
-  // Add team member
-  const [showAddMember, setShowAddMember] = useState(false)
-  const [memberName,    setMemberName]    = useState('')
-  const [memberRole,    setMemberRole]    = useState('technician')
-  const [memberErr,     setMemberErr]     = useState('')
-  const [addSuccess,    setAddSuccess]    = useState('')
 
   const isDemo = user?.siteName?.toLowerCase() === DEMO_SITE.toLowerCase()
 
+  // Keep in sync with Supabase auth state changes
   useEffect(() => {
-    function onUserChange(e) {
-      setUserState(e.detail)
-    }
+    function onUserChange(e) { setUserState(e.detail) }
     window.addEventListener('caltrack-user-change', onUserChange)
     return () => window.removeEventListener('caltrack-user-change', onUserChange)
   }, [])
-
-  useEffect(() => {
-    if (user?.siteName) {
-      setMembers(getSiteMembers(user.siteName))
-    }
-  }, [user])
-
-  function refreshMembers() {
-    if (user?.siteName) setMembers(getSiteMembers(user.siteName))
-  }
-
-  // ── Save own profile edits ────────────────────────────────────────────────
-  function handleSaveProfile() {
-    const trimmed = newName.trim()
-    if (!trimmed) { setNameErr('Name is required'); return }
-    saveMember(user.siteName, trimmed, newRole)
-    const updated = { ...user, userName: trimmed, role: newRole }
-    setUser(updated)
-    setUserState(updated)
-    setEditingName(false)
-    setNameErr('')
-    refreshMembers()
-  }
-
-  function startEditProfile() {
-    setNewName(user?.userName ?? '')
-    setNewRole(user?.role ?? 'technician')
-    setEditingName(true)
-  }
-
-  // ── Add team member ───────────────────────────────────────────────────────
-  function handleAddMember() {
-    const trimmed = memberName.trim()
-    if (!trimmed) { setMemberErr('Name is required'); return }
-    const existing = members.find(m => m.userName.toLowerCase() === trimmed.toLowerCase())
-    if (existing) { setMemberErr('A member with that name already exists'); return }
-    saveMember(user.siteName, trimmed, memberRole)
-    setMemberErr('')
-    setMemberName('')
-    setMemberRole('technician')
-    setShowAddMember(false)
-    setAddSuccess(`${trimmed} has been added to ${user.siteName}.`)
-    setTimeout(() => setAddSuccess(''), 4000)
-    refreshMembers()
-  }
 
   function handleSignOut() {
     signOut()
@@ -135,10 +69,8 @@ export default function Profile() {
 
       {/* ── Page header ── */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Profile & Team</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Manage your profile and the members of your site.
-        </p>
+        <h1 className="text-2xl font-bold text-slate-800">My Profile</h1>
+        <p className="text-sm text-slate-500 mt-1">Your account details and session information.</p>
       </div>
 
       {/* Demo site banner */}
@@ -150,29 +82,18 @@ export default function Profile() {
           <div>
             <p className="text-sm font-semibold text-amber-800">You are using the Demo site</p>
             <p className="text-sm text-amber-700 mt-0.5">
-              The Demo site is public — anyone can access it. To set up your own private, password-protected site,{' '}
-              <button
-                onClick={() => navigate('/contact')}
-                className="underline font-medium hover:text-amber-900"
-              >
+              The Demo site is read-only. To set up your own site,{' '}
+              <button onClick={() => navigate('/contact')} className="underline font-medium hover:text-amber-900">
                 get in touch
-              </button>{' '}
-              or sign in with a new site name from the app header.
+              </button>.
             </p>
           </div>
         </div>
       )}
 
-      {/* Success toast */}
-      {addSuccess && (
-        <div className="bg-green-50 border border-green-200 rounded-xl px-5 py-3 text-sm text-green-800 font-medium">
-          ✓ {addSuccess}
-        </div>
-      )}
-
       {/* ── Site card ── */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-slate-100">
           <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Site</h2>
         </div>
         <div className="px-5 py-5 flex items-center gap-4">
@@ -184,180 +105,53 @@ export default function Profile() {
           </div>
           <div>
             <p className="text-lg font-bold text-slate-800">{user.siteName}</p>
-            <p className="text-sm text-slate-400">
-              {members.length} team member{members.length !== 1 ? 's' : ''} registered on this device
-            </p>
+            <p className="text-sm text-slate-400">Your organisation site</p>
           </div>
         </div>
       </div>
 
-      {/* ── Your profile card ── */}
+      {/* ── Profile card ── */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-slate-100">
           <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Your Profile</h2>
-          {!editingName && (
-            <button
-              onClick={startEditProfile}
-              className="text-xs text-blue-600 hover:underline font-medium"
-            >
-              Edit
-            </button>
-          )}
         </div>
-
-        {editingName ? (
-          <div className="px-5 py-5 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1">Your Name</label>
-              <input
-                type="text"
-                value={newName}
-                onChange={e => { setNewName(e.target.value); setNameErr('') }}
-                className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  nameErr ? 'border-red-400' : 'border-slate-200'
-                }`}
-                autoFocus
-              />
-              {nameErr && <p className="text-xs text-red-600 mt-1">{nameErr}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1">Role</label>
-              <select
-                value={newRole}
-                onChange={e => setNewRole(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
-            </div>
-            <div className="flex gap-3 pt-1">
-              <button
-                onClick={handleSaveProfile}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Save Changes
-              </button>
-              <button
-                onClick={() => { setEditingName(false); setNameErr('') }}
-                className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="px-5 py-5 flex items-center gap-4">
+        <div className="px-5 py-5 space-y-4">
+          <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-400">
               <IconUser />
             </div>
             <div>
               <p className="text-base font-bold text-slate-800">{user.userName}</p>
-              <div className="mt-1">
+              <p className="text-sm text-slate-400 mt-0.5">{user.email}</p>
+              <div className="mt-2">
                 <RoleBadge role={user.role} />
               </div>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* ── Team members card ── */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Team Members</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Everyone who has signed into <strong>{user.siteName}</strong> on this device
-            </p>
+          <div className="border-t border-slate-100 pt-4 grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Name</p>
+              <p className="text-slate-800 font-medium">{user.userName}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Email</p>
+              <p className="text-slate-800">{user.email}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Role</p>
+              <RoleBadge role={user.role} />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Site</p>
+              <p className="text-slate-800 font-medium">{user.siteName}</p>
+            </div>
           </div>
-          {!isDemo && !showAddMember && (
-            <button
-              onClick={() => setShowAddMember(true)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 px-3 py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Add Member
-            </button>
-          )}
+
+          <p className="text-xs text-slate-400 pt-1">
+            To update your name or role, contact your site administrator.
+          </p>
         </div>
-
-        {/* Add member form */}
-        {showAddMember && (
-          <div className="px-5 py-4 bg-slate-50 border-b border-slate-100 space-y-3">
-            <p className="text-sm font-medium text-slate-700">Add a new team member</p>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={memberName}
-                  onChange={e => { setMemberName(e.target.value); setMemberErr('') }}
-                  placeholder="Full name"
-                  onKeyDown={e => e.key === 'Enter' && handleAddMember()}
-                  className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    memberErr ? 'border-red-400' : 'border-slate-200'
-                  }`}
-                  autoFocus
-                />
-              </div>
-              <select
-                value={memberRole}
-                onChange={e => setMemberRole(e.target.value)}
-                className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
-            </div>
-            {memberErr && <p className="text-xs text-red-600">{memberErr}</p>}
-            <div className="flex gap-2">
-              <button
-                onClick={handleAddMember}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Add Member
-              </button>
-              <button
-                onClick={() => { setShowAddMember(false); setMemberName(''); setMemberErr('') }}
-                className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Members list */}
-        {members.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-slate-400">
-            No members registered yet. Members are added automatically when they sign in.
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {members.map(member => (
-              <div
-                key={member.userName}
-                className={`flex items-center justify-between px-5 py-3.5 ${
-                  member.userName === user.userName ? 'bg-blue-50/50' : ''
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0">
-                    <IconUser />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">
-                      {member.userName}
-                      {member.userName === user.userName && (
-                        <span className="ml-2 text-xs text-blue-600 font-normal">you</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <RoleBadge role={member.role} />
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* ── Sign out ── */}
@@ -368,9 +162,7 @@ export default function Profile() {
         <div className="px-5 py-5 flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-slate-700">Sign out of {user.siteName}</p>
-            <p className="text-xs text-slate-400 mt-0.5">
-              You will be returned to the homepage. Your data is not affected.
-            </p>
+            <p className="text-xs text-slate-400 mt-0.5">You will be returned to the homepage. Your data is not affected.</p>
           </div>
           <button
             onClick={handleSignOut}
