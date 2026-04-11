@@ -1,5 +1,13 @@
 # Calcheq — Project Master Reference
 
+## Local Development Path (Windows)
+- Project folder: `C:\Users\nfish\OneDrive\Documents\AI Projects\Caltrack-pro`
+- GitHub remote: `https://github.com/Caltrack-pro/Caltrack-pro.git` (branch: main)
+- To push changes: open PowerShell in the project folder → `git push`
+- Railway auto-deploys on every push to main (allow 2–3 min for build)
+
+---
+
 ## What This Project Is
 Calcheq is an industrial instrument calibration management web application.
 It is a full-stack application with a React frontend and a Python FastAPI backend,
