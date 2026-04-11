@@ -159,6 +159,15 @@ export function signOut() {
   return supabase.auth.signOut()
 }
 
+/** Signs in as the demo account using env-var credentials. */
+export async function signInAsDemo() {
+  const { error } = await supabase.auth.signInWithPassword({
+    email:    import.meta.env.VITE_DEMO_EMAIL    ?? 'demo@calcheq.com',
+    password: import.meta.env.VITE_DEMO_PASSWORD ?? '',
+  })
+  if (error) throw error
+}
+
 // ---------------------------------------------------------------------------
 // Roles
 // ---------------------------------------------------------------------------

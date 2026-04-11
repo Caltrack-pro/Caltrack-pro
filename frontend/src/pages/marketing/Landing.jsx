@@ -193,8 +193,12 @@ function DashboardMockup() {
 export default function Landing() {
   const navigate = useNavigate()
 
-  function openDemo() {
-    signInAsDemo()
+  async function openDemo() {
+    try {
+      await signInAsDemo()
+    } catch {
+      // If demo sign-in fails, still navigate — AuthGuard will redirect to sign-in
+    }
     navigate('/app')
   }
 
