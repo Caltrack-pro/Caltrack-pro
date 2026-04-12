@@ -30,6 +30,7 @@ import PendingApprovals from './pages/PendingApprovals'
 import BadActors          from './pages/BadActors'
 import Profile            from './pages/Profile'
 import ImportInstruments  from './pages/ImportInstruments'
+import ImportCalibratorCSV from './pages/ImportCalibratorCSV'
 
 export default function App() {
   return (
@@ -60,7 +61,8 @@ export default function App() {
           <Route path="instruments/new"          element={<InstrumentForm />} />
           <Route path="instruments/:id/edit"     element={<InstrumentForm />} />
           <Route path="instruments/:id"          element={<InstrumentDetail />} />
-          <Route path="calibrations/new/:instrumentId" element={<CalibrationForm />} />
+          <Route path="calibrations/new/:instrumentId"  element={<CalibrationForm />} />
+          <Route path="calibrations/import-csv"        element={<ImportCalibratorCSV />} />
           <Route path="alerts"                   element={<Alerts />} />
           <Route path="approvals"                element={<PendingApprovals />} />
           <Route path="reports"                  element={<Reports />} />

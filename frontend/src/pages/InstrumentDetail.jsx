@@ -845,6 +845,19 @@ export default function InstrumentDetail() {
           )}
           {userCanCalibrate && (
             <Link
+              to={`/app/calibrations/import-csv?instrumentId=${i.id}`}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
+              title="Import test point data from a Beamex or Fluke calibrator CSV export"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/>
+              </svg>
+              Import CSV
+            </Link>
+          )}
+          {userCanCalibrate && (
+            <Link
               to={`/app/calibrations/new/${i.id}`}
               className="px-4 py-2 text-sm bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
             >

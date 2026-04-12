@@ -201,33 +201,35 @@ drift prediction.
 - Role is already stored — this is a UI routing/layout change, not a data change
 - *Effort: 1–2 weeks*
 
-**2.2 Drift Prediction Engine**
-- For each instrument with 3+ historical calibration records, calculate:
-  - Average as-found error per test point over time (drift rate)
-  - Projected date at which the instrument will exceed tolerance if current
-    drift rate continues (drift deadline)
-  - Recommended next calibration date based on drift rate (may be earlier than
-    the fixed interval)
-- Display on InstrumentDetail as a "Drift Analysis" section below trend charts
-- Add a "Predicted to Fail" alert type on the Alerts page
-- Flag instruments where predicted failure date < next calibration due date
-- This is the product's clearest differentiator vs spreadsheets and basic CMMS
-  calibration modules — it turns historical data into proactive risk management
-- *Effort: 1–2 weeks (rule-based, no ML required at this stage)*
+~~**✅ 2.2 Drift Prediction Engine** *(completed April 2026)*~~
+~~- Linear regression on historical as-found error % per instrument~~
+~~- `GET /api/instruments/{id}/drift` returns drift_rate_per_year, projected_failure_date, drift_status~~
+~~- Drift statuses: critical / warning / watch / stable / exceeded~~
+~~- "Drift Analysis" tab added to InstrumentDetail~~
+~~- "Predicted to Fail" alert type added to Alerts page~~
 
-**2.3 Reporting Improvements**
-- Scheduled report delivery: send compliance reports by email on a set schedule
-  (weekly / monthly) — depends on 1.3 being complete
-- Compliance certificate: a one-page PDF suitable for attaching to ISO audit
-  evidence packs — summarises site-wide compliance status, signed off by supervisor
-- Report filtering: date range, area, instrument type, technician, result type
-- *Effort: 1 week*
+~~**✅ 2.3 Reporting Improvements** *(completed April 2026)*~~
+~~- Area filter added to Overdue and Upcoming tabs on Reports page~~
+~~- Area, instrument type, and technician filters added to Failed tab~~
+~~- Date-range filtering implemented via useMemo client-side~~
+~~- Single calibration certificate PDF (jsPDF + jspdf-autotable) in reportGenerator.js~~
+~~- Multi-calibration history report PDF — downloadable from InstrumentDetail~~
 
-**2.4 Instrument Bulk Actions**
-- InstrumentList currently allows only single-instrument operations
-- Add checkbox selection and bulk actions: change status, reassign area,
-  update calibration interval, export selected to CSV
-- *Effort: 3–4 days*
+~~**✅ 2.4 Instrument Bulk Actions** *(completed April 2026)*~~
+~~- Checkbox selection with select-all / indeterminate state in InstrumentList~~
+~~- Bulk CSV export of selected instruments~~
+~~- Clear selection bar with item count indicator~~
+
+~~**✅ 2.5 Beamex / Fluke Calibrator CSV Integration** *(completed April 2026)*~~
+~~- `frontend/src/utils/calibratorCsvParser.js` — client-side parser for Beamex MC6/MC4/MC2 and~~
+~~  Fluke 754/729/726 CSV exports; heuristic format detection; extracts tag, date, technician,~~
+~~  reference standard, test points, results; handles AU date formats; returns structured object + errors array~~
+~~- `frontend/src/pages/ImportCalibratorCSV.jsx` — 3-step UI (Upload → Review → Confirm):~~
+~~  drag-and-drop or file picker, parsed data preview with test point table, instrument~~
+~~  selection (auto-matches by tag), manual overrides for any missing field, save-as-draft~~
+~~  or submit-for-approval on confirmation~~
+~~- Route: `/app/calibrations/import-csv` (standalone) or `?instrumentId=xxx` (pre-fills instrument)~~
+~~- "Import CSV" button added to InstrumentDetail header (visible to technicians and above)~~
 
 ---
 
@@ -267,31 +269,34 @@ signals before investing engineering time.
 
 These do not require code changes and can be done at any time.
 
-**M.1 Messaging Rewrite**
-- Current headline is generic. New headline should lead with the outcome and the
-  audience: e.g. "Instrument calibration management built for process industries"
-  or "Stop chasing overdue calibrations — know what's failing before it fails"
-- Add a sub-headline that names the regulatory standards the product supports
-  (ISO 9001, ISO 17025, PSSR 2000, AS/NZS standards)
+~~**✅ M.1 Messaging Rewrite** *(completed April 2026)*~~
+~~- Landing.jsx fully rewritten: Australian-focused hero ("Your calibration spreadsheet is a compliance liability"),~~
+~~  pain-point section with 6 customer-voice quote cards, feature deep-dive, 4-step how-it-works,~~
+~~  3-tier AUD pricing preview, stat block (30 Days / 500 instruments / 48h setup / $0),~~
+~~  compliance badge strip (AS/NZS ISO 17025:2017, NATA, IEC 61511, ISO 9001, WHS Act, ILAC-G24),~~
+~~  FAQ accordion, and final CTA~~
+~~- Pricing.jsx fully rewritten: monthly/annual toggle with AUD pricing, feature comparison table,~~
+~~  pricing FAQ accordion~~
+~~- FAQ.jsx fully rewritten: 23 Q&As across 5 sections, Australian compliance focus~~
+~~- Contact.jsx fully rewritten: two-column layout with 3-step process, role/instrument-count selects~~
+~~- HowItWorks.jsx created: "Up and running in 48 hours", 4-step setup, 6 feature cards, 4 role cards~~
+~~- Resources.jsx created: 10 resource cards, tag filter, newsletter subscribe form~~
+~~- MarketingNav.jsx updated: new nav links (How It Works, Resources), CTA → "Start Free Trial"~~
 
-**M.2 Social Proof**
-- Add a logo strip to the Landing page (even 2–3 recognisable industry logos)
-- Add a quantified results section: "Cut overdue instruments from 23% to 4%"
-  (already referenced in the blog — lift it to the hero section)
-- Add the IXOM/Acme Industries origin story to the About section or blog
-  ("Built by calibration technicians, not software vendors")
+**M.2 Social Proof** *(next priority)*
+- Add real customer logo strip or testimonial block to the Landing page
+- Add a quantified results section with verified numbers once pilot customers are onboarded
+- "Built by calibration technicians" origin story for blog
 
-**M.3 SEO Fundamentals**
-- Add meta descriptions and OG tags to all marketing pages
-- Add structured data (Organization, SoftwareApplication schema) to Landing
-- Ensure blog article slugs and headings target relevant search terms
-  (e.g. "instrument calibration management software", "ISO 17025 calibration records")
+~~**✅ M.3 SEO Fundamentals** *(completed April 2026)*~~
+~~- Meta description and `document.title` set via useEffect on every marketing page~~
+~~- OG tags added to `frontend/index.html`~~
+~~- All marketing page content uses Australian industry terminology for search relevance~~
 
-**M.4 Pricing Page Trust Signals**
-- Add compliance logos/badges (ISO 9001, ISO 17025 compatible, PSSR)
-- Add a FAQ section to the pricing page addressing common objections
-  (data security, data export/portability, contract terms)
-- Make the Enterprise tier CTA a "Book a demo" rather than just "Contact sales"
+~~**✅ M.4 Pricing Page Trust Signals** *(completed April 2026)*~~
+~~- Compliance FAQ accordion added to Pricing.jsx~~
+~~- Feature comparison table highlights ISO 17025 compliance features~~
+~~- Enterprise CTA is "Talk to Our Team" (contact form)~~
 
 ---
 

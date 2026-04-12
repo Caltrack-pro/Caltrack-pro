@@ -49,19 +49,22 @@ All routes are defined here. Two layout trees: marketing (no sidebar) and app (w
 - InstrumentForm.jsx     — create and edit instrument (shared form)
 - InstrumentDetail.jsx   — single instrument view with calibration history and trend charts
 - CalibrationForm.jsx    — enter calibration results (as-found / as-left test points)
-- Alerts.jsx             — overdue, due-soon, failed, consecutive-failure alerts
+- ImportCalibratorCSV.jsx — 3-step Beamex/Fluke CSV import: Upload → Review → Confirm; heuristic format detection, test point preview, instrument auto-match by tag; route: /app/calibrations/import-csv
+- Alerts.jsx             — overdue, due-soon, failed, consecutive-failure, predicted-to-fail alerts
 - PendingApprovals.jsx   — supervisor approval queue for submitted calibration records
 - Reports.jsx            — compliance reporting and calibration history export
 - BadActors.jsx          — ranked list of instruments with repeated as-found failures
 - Profile.jsx            — user profile page (route: /app/profile)
 
 ### Frontend — src/pages/marketing/ (public pages, no /app prefix)
-- Landing.jsx            — homepage with hero, features, industries, testimonials, CTA
-- Pricing.jsx            — 3-tier pricing (Starter / Professional / Enterprise)
-- Blog.jsx               — article index with tag filters
+- Landing.jsx            — homepage: Australian-focused hero, 6 pain-point cards, features, 4-step setup, AUD pricing preview, compliance badge strip, FAQ strip, CTA (full rewrite Apr 2026)
+- Pricing.jsx            — 3-tier pricing (Starter / Professional / Enterprise) with monthly/annual toggle (AUD), feature comparison table, pricing FAQ accordion (full rewrite Apr 2026)
+- HowItWorks.jsx         — "Up and running in 48 hours" — 4-step setup, 6 feature deep-dive cards, 4 role cards, CTA (created Apr 2026)
+- Resources.jsx          — resource library: 10 cards, tag filter (Case Study / Guide / Compliance / Industry Insights), newsletter subscribe (created Apr 2026)
+- Blog.jsx               — article index with tag filters (legacy — still active)
 - BlogPost.jsx           — individual article page, content keyed by slug
-- FAQ.jsx                — accordion FAQ across 5 sections
-- Contact.jsx            — enquiry form with type selector
+- FAQ.jsx                — accordion FAQ: 23 Q&As across 5 sections (Getting Started / Features / Compliance / Data & Security / Pricing) (full rewrite Apr 2026)
+- Contact.jsx            — two-column enquiry form: role select, instrument count select, "What Happens Next" 3-step process (full rewrite Apr 2026)
 
 ### Frontend — src/components/
 - Layout.jsx             — app shell: wraps Sidebar + Header + <Outlet>
@@ -75,12 +78,13 @@ All routes are defined here. Two layout trees: marketing (no sidebar) and app (w
 - marketing/MarketingFooter.jsx — shared footer for all marketing pages
 
 ### Frontend — src/utils/
-- supabase.js         — Supabase client (createClient with VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)
-- userContext.js      — getUser(), onAuthStateChange, demo mode toggle; backward-compatible with all pages
-- api.js              — all API calls; auto-injects Authorization: Bearer <JWT> header on every request
-- calEngine.js        — pass/fail/marginal calculation logic (mirrors backend rules)
-- formatting.js       — shared date and number formatting helpers
-- reportGenerator.js  — jsPDF-based PDF generation: single calibration cert + multi-calibration history report
+- supabase.js             — Supabase client (createClient with VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)
+- userContext.js          — getUser(), onAuthStateChange, demo mode toggle; backward-compatible with all pages
+- api.js                  — all API calls; auto-injects Authorization: Bearer <JWT> header on every request
+- calEngine.js            — pass/fail/marginal calculation logic (mirrors backend rules)
+- formatting.js           — shared date and number formatting helpers
+- reportGenerator.js      — jsPDF-based PDF generation: single calibration cert + multi-calibration history report
+- calibratorCsvParser.js  — client-side CSV parser for Beamex MC6/MC4/MC2 and Fluke 754/729/726 exports; exports parseCalibratorCSV(text) → { format, tag, date, technician, referenceStandard, referenceStandardSerial, testPoints, overallResult, errors }
 
 ### Backend — backend/
 - main.py               — FastAPI app entry point, CORS, router registration
@@ -112,29 +116,32 @@ All routes are defined here. Two layout trees: marketing (no sidebar) and app (w
 | /auth/reset-password    | ResetPassword      | Handles reset link from email      |
 
 ### Marketing routes (no sidebar/header)
-| Path          | Component     | Notes                                      |
-|---------------|---------------|--------------------------------------------|
-| /             | Landing       | Homepage                                   |
-| /pricing      | Pricing       | 3-tier pricing page                        |
-| /blog         | Blog          | Article index                              |
-| /blog/:slug   | BlogPost      | Full article, content stored in BlogPost.jsx |
-| /faq          | FAQ           | Accordion FAQ                              |
-| /contact      | Contact       | Enquiry form                               |
+| Path            | Component     | Notes                                           |
+|-----------------|---------------|-------------------------------------------------|
+| /               | Landing       | Homepage (Australian-focused, full rewrite Apr 2026) |
+| /pricing        | Pricing       | 3-tier AUD pricing with monthly/annual toggle   |
+| /how-it-works   | HowItWorks    | 4-step setup, feature deep-dive, role cards     |
+| /resources      | Resources     | Resource library with tag filter (replaces /blog index) |
+| /blog           | Blog          | Legacy article index (still active)             |
+| /blog/:slug     | BlogPost      | Full article, content stored in BlogPost.jsx    |
+| /faq            | FAQ           | Accordion FAQ — 23 Q&As across 5 sections       |
+| /contact        | Contact       | Enquiry form with role/instrument-count selects |
 
 ### App routes (inside Layout with Sidebar + Header)
-| Path                              | Component        | Notes                          |
-|-----------------------------------|------------------|--------------------------------|
-| /app                              | Dashboard        | index route                    |
-| /app/instruments                  | InstrumentList   | accepts ?site=, ?calibration_status= etc |
-| /app/instruments/new              | InstrumentForm   | create mode                    |
-| /app/instruments/:id              | InstrumentDetail | detail + history               |
-| /app/instruments/:id/edit         | InstrumentForm   | edit mode                      |
-| /app/calibrations/new/:instrumentId | CalibrationForm | new calibration for an instrument |
-| /app/alerts                       | Alerts           |                                |
-| /app/approvals                    | PendingApprovals |                                |
-| /app/reports                      | Reports          |                                |
-| /app/bad-actors                   | BadActors        | ranked failure list            |
-| /app/profile                      | Profile          | user profile page              |
+| Path                                    | Component           | Notes                                         |
+|-----------------------------------------|---------------------|-----------------------------------------------|
+| /app                                    | Dashboard           | index route                                   |
+| /app/instruments                        | InstrumentList      | accepts ?site=, ?calibration_status= etc      |
+| /app/instruments/new                    | InstrumentForm      | create mode                                   |
+| /app/instruments/:id                    | InstrumentDetail    | detail + history; "Import CSV" button in header |
+| /app/instruments/:id/edit               | InstrumentForm      | edit mode                                     |
+| /app/calibrations/new/:instrumentId     | CalibrationForm     | new calibration for an instrument             |
+| /app/calibrations/import-csv            | ImportCalibratorCSV | Beamex/Fluke CSV import; ?instrumentId= pre-fills |
+| /app/alerts                             | Alerts              |                                               |
+| /app/approvals                          | PendingApprovals    |                                               |
+| /app/reports                            | Reports             |                                               |
+| /app/bad-actors                         | BadActors           | ranked failure list                           |
+| /app/profile                            | Profile             | user profile page                             |
 
 ### Legacy redirects (old bookmarks still work)
 /dashboard → /app | /instruments → /app/instruments | /alerts → /app/alerts
@@ -388,9 +395,11 @@ is documented in ROADMAP.md. Summary of priorities below.
 - ✅ **Drift prediction engine** — COMPLETE (April 2026). Linear regression on historical as-found error % per instrument. `GET /api/instruments/{id}/drift` returns drift_rate_per_year, projected_failure_date, drift_status (critical/warning/watch/stable/exceeded). DriftAnalysis tab added to InstrumentDetail. "Predicted to Fail" alert type added to Alerts page.
 - ✅ **Reporting improvements** — COMPLETE (April 2026). Area filter on Overdue/Upcoming tabs; area, instrument type, and technician filters on Failed tab. Date-range filtering via useMemo client-side.
 - ✅ **Instrument bulk actions** — COMPLETE (April 2026). Checkbox selection with select-all/indeterminate state, bulk CSV export, clear selection bar added to InstrumentList.
+- ✅ **Compliance certificate PDF** — COMPLETE (prior). `reportGenerator.js` (jsPDF + jspdf-autotable): `generateSingleCalibrationCert()` and `generateMultiCalibrationReport()`. "Download Calibration Certificate" in SlidePanel; "History Report" in InstrumentDetail header.
+- ✅ **Beamex / Fluke calibrator CSV integration** — COMPLETE (April 2026). `calibratorCsvParser.js` parses CSV exports from Beamex MC6/MC4/MC2 and Fluke 754/729/726. `ImportCalibratorCSV.jsx` 3-step UI at `/app/calibrations/import-csv`. "Import CSV" button on InstrumentDetail. Auto-matches instrument by tag number, previews all test points, saves as draft or submits for approval.
+- ✅ **Marketing site overhaul** — COMPLETE (April 2026). Landing, Pricing, FAQ, Contact fully rewritten. HowItWorks and Resources created. Nav updated. All pages have Australian focus, AUD pricing, compliance badge strip.
 - **Role-based views** — technician task queue vs manager compliance dashboard vs planner schedule.
 - **Scheduled report delivery** — weekly/monthly compliance PDF by email to supervisors (requires Resend — item 4 done).
-- **Compliance certificate PDF** — one-page cert suitable for ISO audit evidence packs.
 
 ### Phase 3 — Ecosystem (3–6 months post-launch)
 - CMMS integration (MEX first, then Maximo / SAP PM)
