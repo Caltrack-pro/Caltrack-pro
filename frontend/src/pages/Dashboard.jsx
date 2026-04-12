@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { dashboard as dashApi, calibrations as calsApi } from '../utils/api'
+import { dashboard as dashApi, calibrations as calsApi, instruments as instrApi } from '../utils/api'
 import { getUser } from '../utils/userContext'
 import { fmtDate } from '../utils/formatting'
 
@@ -57,10 +57,11 @@ function useDashboard() {
       dashApi.complianceByArea(site),
       dashApi.upcoming(site),
       calsApi.list({ record_status: 'submitted', limit: 1 }),
+      instrApi.list({ last_calibration_result: 'marginal', status: 'active', limit: 1 }),
     ])
-      .then(([stats, alerts, areas, upcoming, pendingCals]) => {
+      .then(([stats, alerts, areas, upcoming, pendingCals, marginalInstr]) => {
         if (!cancelled) {
-          setData({ stats, alerts, areas, upcoming, pendingCount: pendingCals?.total ?? 0 })
+          setData({ stats, alerts, areas, upcoming, pendingCount: pendingCals?.total ?? 0, driftCount: marginalInstr?.total ?? 0 })
           setLoading(false)
         }
       })
@@ -145,7 +146,7 @@ function DemoBanner() {
     }}>
       🔍 DEMO ENVIRONMENT — Fictional data only. Site:{' '}
       <span style={{ background: 'rgba(0,0,0,0.15)', padding: '2px 10px', borderRadius: 12, margin: '0 6px' }}>
-        Pilbara Minerals Processing Pty Ltd (Demo)
+        Riverdale Water Treatment Authority (Demo)
       </span>
       — This company does not exist.
     </div>
@@ -440,12 +441,12 @@ export default function Dashboard() {
   if (loading) return <DashboardSkeleton />
   if (error)   return <ErrorState message={error} onRetry={retry} />
 
-  const { stats, alerts, areas, upcoming, pendingCount } = data
+  const { stats, alerts, areas, upcoming, pendingCount, driftCount } = data
 
   // Derived counts
   const dueWithin30      = upcoming.total
   const currentCount     = Math.max(0, stats.total_instruments - stats.overdue_count - dueWithin30)
-  const degradationCount = alerts.filter(a => a.alert_type === 'PREDICTED_TO_FAIL').length
+  const degradationCount = driftCount  // marginal active instruments = drift trend candidates
   const dueThisWeek      = (upcoming.results ?? []).filter(i => i.days_until_due != null && i.days_until_due <= 7).length
   const dueSoonCount     = alerts.filter(a => a.alert_type === 'DUE_SOON').length
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { instruments as instrApi, calibrations as calApi } from '../utils/api'
 import { CalStatusBadge, ResultBadge, RecordStatusBadge, CriticalityBadge } from '../components/Badges'
 import { fmtDate, fmtPct, fmtNum, humanise } from '../utils/formatting'
@@ -697,15 +697,30 @@ function TabTechnical({ instrument: i, userCanEdit }) {
 // Main page
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Map URL ?tab= param values → TABS array indices
+const TAB_PARAM_MAP = {
+  'overview':       0,
+  'history':        1,
+  'trends':         2,
+  'drift-analysis': 3,
+  'audit':          4,
+  'technical':      5,
+}
+
 export default function InstrumentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  // Resolve initial tab from URL param (e.g. ?tab=drift-analysis)
+  const paramTab = searchParams.get('tab')
+  const initialTab = TAB_PARAM_MAP[paramTab] ?? 0
 
   const [instrument,    setInstrument]    = useState(null)
   const [history,       setHistory]       = useState(null)
   const [loading,       setLoading]       = useState(true)
   const [error,         setError]         = useState(null)
-  const [activeTab,     setActiveTab]     = useState(0)
+  const [activeTab,     setActiveTab]     = useState(initialTab)
   const [slideId,       setSlideId]       = useState(null)
   const [genReport,     setGenReport]     = useState(false)
 

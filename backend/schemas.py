@@ -459,3 +459,54 @@ class BulkImportResponse(BaseModel):
     skipped:  int
     errors:   int
     rows:     List[ImportRowResult]
+
+
+# ===========================================================================
+# Calibration Queue schemas
+# ===========================================================================
+
+class QueueInstrumentSummary(BaseModel):
+    """Instrument fields embedded in each queue item response."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id:                        UUID
+    tag_number:                str
+    description:               Optional[str]
+    area:                      Optional[str]
+    criticality:               Optional[Criticality]
+    status:                    InstrumentStatus
+    calibration_due_date:      Optional[date]
+    last_calibration_date:     Optional[date]
+    last_calibration_result:   CalibrationResultStatus
+    calibration_interval_days: Optional[int]
+    tolerance_value:           Optional[float]
+    days_overdue:              int   # computed — injected by route
+    days_until_due:            Optional[int]  # computed — injected by route
+    alert_status:              str
+
+
+class QueueItemResponse(BaseModel):
+    """One item in the calibration queue with embedded instrument data."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id:            UUID
+    instrument_id: UUID
+    added_by_name: str
+    added_at:      datetime
+    priority:      int
+    notes:         Optional[str]
+    instrument:    QueueInstrumentSummary
+
+
+class QueueListResponse(BaseModel):
+    total: int
+    items: List[QueueItemResponse]
+
+
+class QueueAddPayload(BaseModel):
+    instrument_id: UUID
+    notes:         Optional[str] = None
+
+
+class QueuePriorityPayload(BaseModel):
+    priority: int

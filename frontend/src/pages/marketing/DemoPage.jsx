@@ -85,7 +85,7 @@ export default function DemoPage() {
           See CalCheq in Action
         </h1>
         <p style={{ fontSize: '1.1rem', maxWidth: 700, margin: '0 auto', color: 'rgba(255,255,255,0.9)' }}>
-          Live demo environment with realistic data from Pilbara Minerals Processing Plant.
+          Live demo environment with realistic data from Riverdale Water Treatment Authority.
           Explore the dashboard, recording workflows, and compliance reporting.
         </p>
         <button
@@ -129,9 +129,9 @@ export default function DemoPage() {
               What You'll See in This Demo
             </h3>
             <p style={{ color: C.muted, fontSize: '0.95rem', lineHeight: 1.7 }}>
-              We've set up a realistic calibration environment for Pilbara Minerals — a large processing plant
-              with 300+ instruments across pressure, temperature, and flow measurement. The demo shows live
-              instrument data patterns, actual overdue/compliant instruments, and how CalCheq handles daily workflows.
+              We've set up a realistic calibration environment for Riverdale Water Treatment Authority — a large
+              water treatment facility with 130+ instruments across pressure, temperature, flow, and analyser
+              measurement. The demo shows live instrument data patterns, actual overdue/compliant instruments, and how CalCheq handles daily workflows.
             </p>
             <p style={{ color: C.muted, fontSize: '0.95rem', lineHeight: 1.7, marginTop: '1rem' }}>
               The data is <strong>fictional but realistic</strong>. All instruments, readings, and technician names
@@ -147,8 +147,8 @@ export default function DemoPage() {
             marginBottom: '3rem',
           }}>
             <CalloutBox title="Fictional Client">
-              Pilbara Minerals Processing Plant — a large mining operation with multiple process lines,
-              SIS instruments, and complex compliance requirements.
+              Riverdale Water Treatment Authority — a large water treatment facility with multiple process areas,
+              SIS instruments, and strict compliance requirements.
             </CalloutBox>
             <CalloutBox title="Realistic Data Patterns">
               Instruments with varying due dates, criticality levels (Red/Yellow/Green), and calibration
@@ -187,11 +187,11 @@ export default function DemoPage() {
               <FeatureItem num="4" title="Generate Reports">
                 Run an audit-ready compliance report showing all instruments, due dates, and technician sign-offs.
               </FeatureItem>
-              <FeatureItem num="5" title="Check Alerts">
-                See how predictive degradation alerts work: instruments showing drift toward tolerance limits are flagged automatically.
+              <FeatureItem num="5" title="Check Drift Alerts">
+                See how drift trend analysis works: instruments showing escalating as-found error across calibrations are flagged automatically before they fail.
               </FeatureItem>
-              <FeatureItem num="6" title="Multi-Site View">
-                See how a corporate dashboard rolls up compliance across multiple locations.
+              <FeatureItem num="6" title="Approve Calibration Records">
+                See the approval workflow: submitted calibration records are reviewed and signed off by supervisors before they are locked into the register.
               </FeatureItem>
             </div>
           </div>

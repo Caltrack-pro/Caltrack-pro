@@ -243,6 +243,23 @@ class NotificationPreference(Base):
     updated_at             = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
 
+class CalibrationQueue(Base):
+    """
+    Shared calibration work queue — instruments added by planners/technicians
+    to be calibrated. Auto-cleaned when a new calibration is recorded.
+    Site-isolated via site_name (matches instruments.created_by).
+    """
+    __tablename__ = "calibration_queue"
+
+    id            = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    site_name     = Column(String(100), nullable=False, index=True)
+    instrument_id = Column(UUID(as_uuid=True), ForeignKey("instruments.id", ondelete="CASCADE"), nullable=False, index=True)
+    added_by_name = Column(String(100), nullable=False, server_default="''")
+    added_at      = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    priority      = Column(Integer, nullable=False, server_default="0")
+    notes         = Column(Text)
+
+
 class CalTestPoint(Base):
     __tablename__ = "cal_test_points"
 

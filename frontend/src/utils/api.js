@@ -221,8 +221,32 @@ export const dashboard = {
 }
 
 // ---------------------------------------------------------------------------
+// Calibration Queue
+// ---------------------------------------------------------------------------
+
+export const queue = {
+  /** List all queued instruments for the site (auto-cleans completed items). */
+  list: () => request('/queue'),
+
+  /** Add an instrument to the queue. */
+  add: (instrumentId, notes = null) =>
+    post('/queue', { instrument_id: instrumentId, notes }),
+
+  /** Remove an instrument from the queue by instrument ID. */
+  remove: (instrumentId) =>
+    del(`/queue/${instrumentId}`),
+
+  /** Update a queue item's priority. */
+  setPriority: (instrumentId, priority) =>
+    request(`/queue/${instrumentId}/priority`, {
+      method: 'PATCH',
+      body: JSON.stringify({ priority }),
+    }),
+}
+
+// ---------------------------------------------------------------------------
 // Convenience re-export for one-line imports
 // ---------------------------------------------------------------------------
 
-const api = { instruments, calibrations, dashboard }
+const api = { instruments, calibrations, dashboard, queue }
 export default api

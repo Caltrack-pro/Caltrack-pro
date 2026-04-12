@@ -141,14 +141,15 @@ def _get_or_404(instrument_id: UUID, db: Session) -> Instrument:
 
 @router.get("", response_model=InstrumentListResponse)
 def list_instruments(
-    area:                Optional[str]         = Query(None, description="Filter by area"),
-    type:                Optional[str]         = Query(None, description="Filter by instrument_type enum value"),
-    status:              Optional[str]         = Query(None, description="Filter by status enum value"),
-    calibration_status:  Optional[str]         = Query(None, description="overdue | due_soon | current | not_calibrated | all"),
-    skip:                int                   = Query(0, ge=0),
-    limit:               int                   = Query(100, ge=1, le=500),
-    resolved_site:       str                   = Depends(resolve_site),
-    db:                  Session               = Depends(get_db),
+    area:                   Optional[str]         = Query(None, description="Filter by area"),
+    type:                   Optional[str]         = Query(None, description="Filter by instrument_type enum value"),
+    status:                 Optional[str]         = Query(None, description="Filter by status enum value"),
+    last_calibration_result: Optional[str]        = Query(None, description="Filter by last_calibration_result: pass | fail | marginal | not_calibrated"),
+    calibration_status:     Optional[str]         = Query(None, description="overdue | due_soon | current | not_calibrated | all"),
+    skip:                   int                   = Query(0, ge=0),
+    limit:                  int                   = Query(100, ge=1, le=500),
+    resolved_site:          str                   = Depends(resolve_site),
+    db:                     Session               = Depends(get_db),
 ) -> InstrumentListResponse:
 
     q = db.query(Instrument)
@@ -163,6 +164,8 @@ def list_instruments(
         q = q.filter(Instrument.instrument_type == type)
     if status:
         q = q.filter(Instrument.status == status)
+    if last_calibration_result:
+        q = q.filter(Instrument.last_calibration_result == last_calibration_result)
 
     # --- calibration_status filter (SQL-level where possible) ---
     if calibration_status and calibration_status != "all":
