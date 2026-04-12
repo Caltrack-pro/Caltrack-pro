@@ -4,16 +4,30 @@ Auth routes
 GET  /api/auth/check-site   check if a site name exists (public — used in sign-in step 1)
 POST /api/auth/register     create a new site for a first-time user (reads JWT user_metadata)
 GET  /api/auth/me           return the current user's site + role (requires auth)
+GET  /api/auth/members      list all members for the current site (admin/supervisor)
+POST /api/auth/invite       invite a new member to the current site (admin only)
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import json
+import logging
+import os
+import urllib.request
+import urllib.error
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from auth import UserContext, get_current_user, get_jwt_claims, get_optional_user
 from database import get_db
 from models import Site, SiteMember
-from fastapi import Request
+import notifications
+
+logger = logging.getLogger(__name__)
+
+SUPABASE_URL              = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -131,4 +145,151 @@ def me(
         "site_name":    current_user.site_name,
         "role":         current_user.role,
         "display_name": current_user.display_name,
+    }
+
+
+# ---------------------------------------------------------------------------
+# GET /api/auth/members
+# ---------------------------------------------------------------------------
+
+@router.get("/members")
+def list_members(
+    current_user: UserContext = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns all members of the current user's site.
+    Accessible to admin and supervisor roles only.
+    """
+    if current_user.role not in ("admin", "supervisor"):
+        raise HTTPException(status_code=403, detail="Admin or supervisor access required.")
+
+    members = (
+        db.query(SiteMember)
+        .filter(SiteMember.site_id == current_user.site_id)
+        .order_by(SiteMember.created_at)
+        .all()
+    )
+
+    return [
+        {
+            "id":           str(m.id),
+            "display_name": m.display_name,
+            "email":        m.email,
+            "role":         m.role,
+            "created_at":   m.created_at.isoformat() if m.created_at else None,
+        }
+        for m in members
+    ]
+
+
+# ---------------------------------------------------------------------------
+# POST /api/auth/invite
+# ---------------------------------------------------------------------------
+
+class InviteRequest(BaseModel):
+    email: str
+    display_name: str
+    role: str
+    temp_password: str
+
+
+@router.post("/invite", status_code=201)
+def invite_member(
+    payload: InviteRequest,
+    current_user: UserContext = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Invites a new user to the current site.
+    Admin only. Creates a Supabase Auth user (via Admin API) then a site_members row.
+    Sends a welcome email with login details via Resend.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required to invite members.")
+
+    if current_user.site_name == "Demo":
+        raise HTTPException(status_code=403, detail="Cannot invite members to the Demo site.")
+
+    valid_roles = {"admin", "supervisor", "technician", "planner", "readonly"}
+    if payload.role not in valid_roles:
+        raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {', '.join(sorted(valid_roles))}")
+
+    if len(payload.temp_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+
+    # ── Create Supabase Auth user via Admin API ────────────────────────────
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="Server is not configured for user creation. Contact your system administrator.",
+        )
+
+    admin_url = f"{SUPABASE_URL}/auth/v1/admin/users"
+    body = json.dumps({
+        "email":         payload.email,
+        "password":      payload.temp_password,
+        "email_confirm": True,   # skip confirmation email — we send our own
+        "user_metadata": {"display_name": payload.display_name, "site_name": current_user.site_name},
+    }).encode()
+
+    req = urllib.request.Request(
+        admin_url,
+        data=body,
+        headers={
+            "Content-Type":  "application/json",
+            "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+            "apikey":        SUPABASE_SERVICE_ROLE_KEY,
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req) as resp:
+            user_data = json.loads(resp.read())
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+        try:
+            error_json = json.loads(error_body)
+            msg = error_json.get("msg") or error_json.get("message") or error_body
+        except Exception:
+            msg = error_body
+        if exc.code == 422:
+            raise HTTPException(status_code=409, detail=f"A user with this email already exists.")
+        raise HTTPException(status_code=502, detail=f"Failed to create user: {msg}")
+
+    new_user_id = user_data.get("id")
+    if not new_user_id:
+        raise HTTPException(status_code=502, detail="Supabase did not return a user ID.")
+
+    # ── Check this email isn't already a member of any site ───────────────
+    existing = db.query(SiteMember).filter(SiteMember.user_id == new_user_id).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="This user is already a member of a site.")
+
+    # ── Create site_members row ────────────────────────────────────────────
+    member = SiteMember(
+        site_id=current_user.site_id,
+        user_id=new_user_id,
+        role=payload.role,
+        display_name=payload.display_name,
+        email=payload.email,
+    )
+    db.add(member)
+    db.commit()
+
+    # ── Send welcome email ─────────────────────────────────────────────────
+    notifications.send_member_invite(
+        to_email=payload.email,
+        display_name=payload.display_name,
+        site_name=current_user.site_name,
+        invited_by=current_user.display_name or current_user.email or "your site administrator",
+        temp_password=payload.temp_password,
+    )
+
+    return {
+        "user_id":      new_user_id,
+        "email":        payload.email,
+        "display_name": payload.display_name,
+        "role":         payload.role,
     }

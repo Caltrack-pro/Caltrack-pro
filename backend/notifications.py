@@ -322,3 +322,65 @@ def send_due_soon_digest(db) -> int:
                 sent += 1
 
     return sent
+
+
+# ---------------------------------------------------------------------------
+# Member invitation email
+# ---------------------------------------------------------------------------
+
+def send_member_invite(
+    *,
+    to_email:    str,
+    display_name: str,
+    site_name:   str,
+    invited_by:  str,
+    temp_password: str,
+) -> None:
+    """
+    Sends a welcome / invite email to a newly created site member.
+    Contains their login details and a link to sign in.
+    """
+    login_url = f"{APP_URL}/auth/sign-in"
+    html = f"""
+<div style="font-family:sans-serif;max-width:520px;margin:0 auto">
+  <h2 style="color:#0B1F3A">You've been invited to Calcheq</h2>
+  <p>Hi {display_name},</p>
+  <p><strong>{invited_by}</strong> has added you to the <strong>{site_name}</strong> site on Calcheq — instrument calibration management.</p>
+
+  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;margin:20px 0">
+    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Your login details</p>
+    <table style="font-size:14px;border-collapse:collapse">
+      <tr>
+        <td style="padding:4px 16px 4px 0;color:#64748b">Company / Site:</td>
+        <td><strong>{site_name}</strong></td>
+      </tr>
+      <tr>
+        <td style="padding:4px 16px 4px 0;color:#64748b">Email:</td>
+        <td><strong>{to_email}</strong></td>
+      </tr>
+      <tr>
+        <td style="padding:4px 16px 4px 0;color:#64748b">Temporary password:</td>
+        <td><strong style="font-family:monospace">{temp_password}</strong></td>
+      </tr>
+    </table>
+  </div>
+
+  <p style="color:#dc2626;font-size:13px">&#9888; Please change your password after your first sign-in via My Profile &rarr; Change Password.</p>
+
+  <p style="margin-top:24px">
+    <a href="{login_url}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600">
+      Sign in to Calcheq
+    </a>
+  </p>
+
+  <p style="margin-top:24px;font-size:12px;color:#94a3b8">
+    This invitation was sent by {invited_by} on behalf of {site_name}.<br>
+    If you were not expecting this email, you can safely ignore it.
+  </p>
+</div>
+"""
+    _send(
+        to=to_email,
+        subject=f"You've been invited to {site_name} on Calcheq",
+        html=html,
+    )

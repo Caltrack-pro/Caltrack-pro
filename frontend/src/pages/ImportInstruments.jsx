@@ -2,6 +2,32 @@ import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { instruments as instrApi } from '../utils/api'
 
+const TEMPLATE_HEADERS = [
+  'tag_number','description','area','unit','instrument_type','status','criticality',
+  'calibration_interval_days','tolerance_type','tolerance_value','measurement_lrv',
+  'measurement_urv','engineering_units','last_calibration_date','last_calibration_result',
+  'num_test_points','manufacturer','model','serial_number','procedure_reference',
+]
+const TEMPLATE_EXAMPLE = [
+  'PT-1001','Feed Pump Discharge Pressure','Pump Station','Unit 1','pressure','active','standard',
+  '365','percent_span','0.5','0','1000','kPa','2024-06-15','pass',
+  '5','Endress+Hauser','Cerabar M','SN-12345','CAL-PROC-001',
+]
+
+function downloadTemplate() {
+  const rows = [TEMPLATE_HEADERS, TEMPLATE_EXAMPLE]
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\r\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'caltrack_import_TEMPLATE.csv'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 const STATUS_COLOUR = {
   created: 'bg-green-100 text-green-700',
   skipped: 'bg-amber-100 text-amber-700',
@@ -89,9 +115,9 @@ export default function ImportInstruments() {
         <p className="text-slate-500 text-sm">
           Upload a CSV file to bulk-import instruments into your site.
           Use{' '}
-          <a href="/caltrack_import_TEMPLATE.csv" className="text-blue-600 hover:underline">
+          <button onClick={downloadTemplate} className="text-blue-600 hover:underline font-normal">
             the import template
-          </a>{' '}
+          </button>{' '}
           for the correct column format.
         </p>
       </div>

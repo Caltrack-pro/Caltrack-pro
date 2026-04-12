@@ -177,6 +177,8 @@ system has been replaced. See DECISIONS.md for migration history.
 - `GET /api/auth/check-site?name=X` — checks if a site name exists (used in sign-in step 1)
 - `POST /api/auth/register` — called after Supabase sign-up; creates site + site_members row
 - `GET /api/auth/me` — returns current user's profile: name, email, role, site name
+- `GET /api/auth/members` — lists all site members (admin/supervisor only)
+- `POST /api/auth/invite` — creates Supabase user + site_members row + sends invite email (admin only; requires SUPABASE_SERVICE_ROLE_KEY)
 
 ### Role permissions (unchanged)
 - admin: full access
@@ -203,6 +205,7 @@ system has been replaced. See DECISIONS.md for migration history.
 - `VITE_SUPABASE_ANON_KEY` — see frontend/.env.example
 - `VITE_DEMO_EMAIL` — demo@calcheq.com
 - `VITE_DEMO_PASSWORD` — CalTrackDemo2026
+- `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key (from Supabase Dashboard → Project Settings → API). Required for `POST /api/auth/invite` to create users server-side. Keep secret — bypasses RLS.
 
 **JWT verification approach (updated April 2026):**
 Supabase uses ECC P-256 asymmetric signing (ES256). auth.py fetches the public JWKS from
@@ -377,6 +380,7 @@ is documented in ROADMAP.md. Summary of priorities below.
 - ✅ **Custom domain** — calcheq.com LIVE (April 2026). Domain purchased, Railway configured, APP_URL set to https://calcheq.com, Supabase Site URL updated, all marketing/app code updated to Calcheq branding.
 - ✅ **Supabase Auth migration** — COMPLETE (April 2026). JWT auth, email + password, password reset, AuthGuard on /app/*, self-serve sign-up, Demo account in Supabase.
 - ✅ **Railway env vars** — COMPLETE (April 2026). APP_URL, SUPABASE_URL, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_DEMO_EMAIL, VITE_DEMO_PASSWORD, RESEND_API_KEY, RESEND_FROM_EMAIL all set.
+  - **SUPABASE_SERVICE_ROLE_KEY** — required for the team member invite feature (`POST /api/auth/invite`). Add to Railway env vars. Found in Supabase Dashboard → Project Settings → API → service_role key. Keep this secret — it bypasses Row Level Security.
 - ✅ **Supabase redirect URLs** — COMPLETE (April 2026). /auth/reset-password whitelisted for calcheq.com, caltrack-pro-production.up.railway.app, and localhost.
 - ✅ **Microsoft 365 email** — COMPLETE (April 2026). info@calcheq.com active. MX, SPF, DKIM all verified green in M365 Admin. Cloudflare DNS records confirmed.
 - ✅ **Demo account updated** — COMPLETE (April 2026). Email: demo@calcheq.com, Password: CalcheqDemo2026. Updated via direct SQL in Supabase auth.users.
