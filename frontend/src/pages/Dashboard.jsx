@@ -1,8 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { dashboard as dashApi, instruments as instrApi } from '../utils/api'
+import { dashboard as dashApi, calibrations as calsApi } from '../utils/api'
 import { getUser } from '../utils/userContext'
-import { CriticalityBadge } from '../components/Badges'
 import { fmtDate } from '../utils/formatting'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -29,21 +28,8 @@ function complianceColor(rate) {
   return               { stroke: '#EF4444', text: '#DC2626', label: 'Below Target' }
 }
 
-const CRIT_ORDER = { safety_critical: 0, process_critical: 1, standard: 2, non_critical: 3 }
-
-const CAL_TYPE_MAP = {
-  switch:      'Functional Test',
-  valve:       'Stroke / Cal',
-  pressure:    'Calibration',
-  temperature: 'Calibration',
-  flow:        'Calibration',
-  level:       'Calibration',
-  analyser:    'Calibration',
-  other:       'Calibration',
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
-// Data hook — fetches 6 endpoints in parallel
+// Data hook — fetches 5 endpoints in parallel
 // ─────────────────────────────────────────────────────────────────────────────
 
 function useDashboard() {
@@ -70,12 +56,11 @@ function useDashboard() {
       dashApi.alerts(site),
       dashApi.complianceByArea(site),
       dashApi.upcoming(site),
-      dashApi.badActors(site),
-      instrApi.list({ calibration_status: 'overdue', limit: 100 }),
+      calsApi.list({ record_status: 'submitted', limit: 1 }),
     ])
-      .then(([stats, alerts, areas, upcoming, actors, overdueInstruments]) => {
+      .then(([stats, alerts, areas, upcoming, pendingCals]) => {
         if (!cancelled) {
-          setData({ stats, alerts, areas, upcoming, actors, overdueInstruments })
+          setData({ stats, alerts, areas, upcoming, pendingCount: pendingCals?.total ?? 0 })
           setLoading(false)
         }
       })
@@ -111,9 +96,14 @@ function DashboardSkeleton() {
           </div>
         ))}
       </div>
-      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: 24, height: 200 }}>
-        <Skel style={{ height: 16, width: 200, marginBottom: 16 }} />
-        {[1,2,3,4].map(i => <Skel key={i} style={{ height: 40, marginBottom: 8 }} />)}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+        {[1,2,3].map(i => (
+          <div key={i} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '24px 20px', height: 120 }}>
+            <Skel style={{ height: 16, width: 80, marginBottom: 12 }} />
+            <Skel style={{ height: 40, width: 60, marginBottom: 12 }} />
+            <Skel style={{ height: 12, width: 140 }} />
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -189,166 +179,53 @@ function StatCard({ label, value, borderColor, valueColor, sub }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Overdue instruments table (sorted by risk / due date / area)
+// Attention cards — action required summary linking to detail pages
 // ─────────────────────────────────────────────────────────────────────────────
 
-function SortBtn({ active, onClick, children }) {
+function AttentionCard({ emoji, label, count, subText, to, accentColor, bgColor, borderColor }) {
+  const [hovered, setHovered] = useState(false)
   return (
-    <button
-      onClick={onClick}
+    <Link
+      to={to}
       style={{
-        padding: '4px 12px',
-        borderRadius: 20,
-        fontSize: '0.75rem',
-        fontWeight: 600,
-        border: `1px solid ${active ? BLUE : BORDER}`,
-        background: active ? BLUE : '#fff',
-        color: active ? '#fff' : NAVY,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        background: hovered ? bgColor : '#fff',
+        borderRadius: 12,
+        border: `1px solid ${hovered ? borderColor : '#e2e8f0'}`,
+        borderLeft: `4px solid ${accentColor}`,
+        boxShadow: hovered ? `0 4px 12px ${borderColor}40` : '0 1px 3px rgba(0,0,0,0.06)',
+        padding: '18px 20px',
+        textDecoration: 'none',
+        transition: 'all 0.18s ease',
         cursor: 'pointer',
-        transition: 'all 0.15s',
       }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      {children}
-    </button>
-  )
-}
-
-function OverdueTable({ instruments, driftingIds }) {
-  const [sortBy, setSortBy] = useState('risk')
-
-  const sorted = useMemo(() => {
-    const list = [...(instruments || [])]
-    if (sortBy === 'risk') {
-      return list.sort((a, b) => {
-        const cA = CRIT_ORDER[a.criticality ?? 'non_critical'] ?? 3
-        const cB = CRIT_ORDER[b.criticality ?? 'non_critical'] ?? 3
-        if (cA !== cB) return cA - cB
-        return (b.days_overdue ?? 0) - (a.days_overdue ?? 0)
-      })
-    }
-    if (sortBy === 'due_date') {
-      return list.sort((a, b) => (b.days_overdue ?? 0) - (a.days_overdue ?? 0))
-    }
-    if (sortBy === 'area') {
-      return list.sort((a, b) => (a.area || '').localeCompare(b.area || ''))
-    }
-    return list
-  }, [instruments, sortBy])
-
-  if (!instruments || instruments.length === 0) {
-    return (
-      <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${BORDER}`, padding: '40px 24px', textAlign: 'center' }}>
-        <svg style={{ width: 40, height: 40, color: '#CBD5E1', marginBottom: 12 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/>
-        </svg>
-        <p style={{ color: MUTED, fontSize: '0.9rem' }}>No overdue instruments. Site is fully compliant.</p>
+      <div style={{
+        width: 48, height: 48, borderRadius: 12,
+        background: bgColor,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '1.5rem', flexShrink: 0,
+        border: `1px solid ${borderColor}`,
+      }}>
+        {emoji}
       </div>
-    )
-  }
-
-  const TH = ({ children, style = {} }) => (
-    <th style={{
-      background: NAVY, color: '#fff', padding: '10px 14px',
-      textAlign: 'left', fontSize: '0.72rem', fontWeight: 600,
-      letterSpacing: '0.5px', textTransform: 'uppercase',
-      whiteSpace: 'nowrap', ...style
-    }}>
-      {children}
-    </th>
-  )
-
-  return (
-    <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
-      {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: `1px solid ${BORDER}` }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: NAVY, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span>⚠️</span> Overdue Instruments — Sorted by Risk
-        </h3>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: '0.8rem', color: MUTED, marginRight: 4 }}>Sort by:</span>
-          <SortBtn active={sortBy === 'risk'}     onClick={() => setSortBy('risk')}>Risk (R→G)</SortBtn>
-          <SortBtn active={sortBy === 'due_date'} onClick={() => setSortBy('due_date')}>Due Date</SortBtn>
-          <SortBtn active={sortBy === 'area'}     onClick={() => setSortBy('area')}>Area</SortBtn>
-        </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: '0.7rem', fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
+          {label}
+        </p>
+        <p style={{ fontSize: '2rem', fontWeight: 800, color: accentColor, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+          {count}
+        </p>
+        <p style={{ fontSize: '0.75rem', color: MUTED, marginTop: 3 }}>{subText}</p>
       </div>
-
-      {/* Table */}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <TH>Criticality</TH>
-              <TH>Tag Number</TH>
-              <TH>Description</TH>
-              <TH>Location / Area</TH>
-              <TH>Cal. Type</TH>
-              <TH>Last Calibrated</TH>
-              <TH>Overdue By</TH>
-              <TH>Trend</TH>
-              <TH>Status</TH>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((inst, idx) => {
-              const isDrifting = driftingIds.has(String(inst.id))
-              const overdueBy  = inst.days_overdue > 0 ? `${inst.days_overdue} days` : '—'
-              const calType    = CAL_TYPE_MAP[inst.instrument_type] ?? 'Calibration'
-
-              return (
-                <tr key={inst.id} style={{ borderBottom: `1px solid ${BORDER}`, background: idx % 2 === 1 ? '#FAFBFC' : '#fff' }}
-                  onMouseEnter={e => e.currentTarget.style.background = LIGHT}
-                  onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 1 ? '#FAFBFC' : '#fff'}
-                >
-                  <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
-                    <CriticalityBadge criticality={inst.criticality} />
-                  </td>
-                  <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
-                    <Link to={`/app/instruments/${inst.id}`} style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.82rem', color: NAVY, textDecoration: 'none' }}
-                      onMouseEnter={e => e.target.style.textDecoration = 'underline'}
-                      onMouseLeave={e => e.target.style.textDecoration = 'none'}
-                    >
-                      {inst.tag_number}
-                    </Link>
-                  </td>
-                  <td style={{ padding: '11px 14px', fontSize: '0.85rem', color: NAVY, maxWidth: 220 }}>
-                    <span title={inst.description} style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {inst.description || '—'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '11px 14px', fontSize: '0.85rem', color: MUTED, whiteSpace: 'nowrap' }}>
-                    {inst.area || '—'}
-                  </td>
-                  <td style={{ padding: '11px 14px', fontSize: '0.82rem', color: MUTED, whiteSpace: 'nowrap' }}>
-                    {calType}
-                  </td>
-                  <td style={{ padding: '11px 14px', fontSize: '0.82rem', color: MUTED, whiteSpace: 'nowrap' }}>
-                    {inst.last_calibration_date ? fmtDate(inst.last_calibration_date) : '—'}
-                  </td>
-                  <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: RED }}>{overdueBy}</span>
-                  </td>
-                  <td style={{ padding: '11px 14px', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
-                    {isDrifting
-                      ? <span style={{ color: RED, fontWeight: 600 }}>↗ Drift detected</span>
-                      : <span style={{ color: GREEN }}>— Stable</span>
-                    }
-                  </td>
-                  <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
-                    <span style={{
-                      display: 'inline-block', padding: '3px 10px', borderRadius: 20,
-                      fontSize: '0.72rem', fontWeight: 700,
-                      background: '#FFEBEE', color: RED,
-                    }}>
-                      OVERDUE
-                    </span>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+      <div style={{ color: MUTED, fontSize: '1.1rem', flexShrink: 0, transition: 'transform 0.15s', transform: hovered ? 'translateX(3px)' : 'none' }}>
+        →
       </div>
-    </div>
+    </Link>
   )
 }
 
@@ -363,9 +240,9 @@ function ComplianceGauge({ rate = 0 }) {
     return () => clearTimeout(t)
   }, [rate])
 
-  const R            = 80
-  const CX           = 100
-  const CY           = 100
+  const R             = 80
+  const CX            = 100
+  const CY            = 100
   const circumference = 2 * Math.PI * R
   const offset        = circumference - (displayed / 100) * circumference
   const { stroke, text, label } = complianceColor(rate)
@@ -486,8 +363,8 @@ function UpcomingList({ instruments }) {
       })}
       {nextWeek.length > 8 && (
         <div style={{ textAlign: 'center', paddingTop: 12 }}>
-          <Link to="/app/instruments?calibration_status=due_soon" style={{ fontSize: '0.8rem', color: BLUE }}>
-            + {nextWeek.length - 8} more — view all
+          <Link to="/app/schedule" style={{ fontSize: '0.8rem', color: BLUE }}>
+            + {nextWeek.length - 8} more — view schedule
           </Link>
         </div>
       )}
@@ -496,45 +373,34 @@ function UpcomingList({ instruments }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bad actors list
+// Quick links card
 // ─────────────────────────────────────────────────────────────────────────────
 
-function BadActorsList({ actors }) {
-  if (!actors || actors.length === 0)
-    return (
-      <div style={{ textAlign: 'center', padding: '40px 0', color: MUTED }}>
-        <svg style={{ width: 40, height: 40, color: '#CBD5E1', display: 'block', margin: '0 auto 8px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/>
-        </svg>
-        <p style={{ fontSize: '0.875rem' }}>No failures recorded in the last 12 months.</p>
-      </div>
-    )
-
+function QuickActions() {
+  const links = [
+    { emoji: '📋', label: 'Record a Calibration', to: '/app/instruments', sub: 'Select an instrument to begin' },
+    { emoji: '📥', label: 'Import Calibrator CSV', to: '/app/calibrations/import-csv', sub: 'Beamex / Fluke CSV import' },
+    { emoji: '📄', label: 'Generate a Report', to: '/app/reports', sub: 'Compliance & history export' },
+    { emoji: '🔧', label: 'Add New Instrument', to: '/app/instruments/new', sub: 'Register a new instrument' },
+    { emoji: '📅', label: 'View Full Schedule', to: '/app/schedule', sub: 'Overdue, due-soon & failures' },
+    { emoji: '⚙️', label: 'Manage Team', to: '/app/settings', sub: 'Invite members & settings' },
+  ]
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-      {actors.slice(0, 10).map((actor, i) => (
-        <Link key={actor.instrument_id} to={`/app/instruments/${actor.instrument_id}`}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 8px', borderBottom: `1px solid ${BORDER}`, textDecoration: 'none', borderRadius: 6, transition: 'background 0.15s' }}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {links.map(({ emoji, label, to, sub }) => (
+        <Link
+          key={to}
+          to={to}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 8px', borderBottom: `1px solid ${BORDER}`, textDecoration: 'none', borderRadius: 6, transition: 'background 0.15s' }}
           onMouseEnter={e => e.currentTarget.style.background = LIGHT}
           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
-            <span style={{ width: 24, height: 24, borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, color: MUTED, flexShrink: 0 }}>
-              {i + 1}
-            </span>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.85rem', color: NAVY }}>{actor.tag_number}</p>
-              <p style={{ fontSize: '0.75rem', color: MUTED, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {actor.description ? `${actor.description}${actor.area ? ` · ${actor.area}` : ''}` : actor.area || '—'}
-              </p>
-            </div>
+          <span style={{ fontSize: '1.1rem', width: 24, textAlign: 'center', flexShrink: 0 }}>{emoji}</span>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{ fontSize: '0.85rem', fontWeight: 600, color: NAVY }}>{label}</p>
+            <p style={{ fontSize: '0.73rem', color: MUTED, marginTop: 1 }}>{sub}</p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 12 }}>
-            <span style={{ fontSize: '0.75rem', color: MUTED }}>{actor.last_failure_date ? fmtDate(actor.last_failure_date) : '—'}</span>
-            <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#FEE2E2', color: '#DC2626', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {actor.failure_count}
-            </span>
-          </div>
+          <span style={{ color: MUTED, fontSize: '0.85rem', flexShrink: 0 }}>→</span>
         </Link>
       ))}
     </div>
@@ -574,30 +440,20 @@ export default function Dashboard() {
   if (loading) return <DashboardSkeleton />
   if (error)   return <ErrorState message={error} onRetry={retry} />
 
-  const { stats, alerts, areas, upcoming, actors, overdueInstruments } = data
+  const { stats, alerts, areas, upcoming, pendingCount } = data
 
   // Derived counts
-  const dueWithin30     = upcoming.total
-  const currentCount    = Math.max(0, stats.total_instruments - stats.overdue_count - dueWithin30)
+  const dueWithin30      = upcoming.total
+  const currentCount     = Math.max(0, stats.total_instruments - stats.overdue_count - dueWithin30)
   const degradationCount = alerts.filter(a => a.alert_type === 'PREDICTED_TO_FAIL').length
-  const dueThisWeek     = (upcoming.results ?? []).filter(i => i.days_until_due != null && i.days_until_due <= 7).length
-
-  // Drift alert instrument IDs for the overdue table trend column
-  const driftingIds = new Set(
-    alerts.filter(a => a.alert_type === 'PREDICTED_TO_FAIL').map(a => String(a.instrument_id))
-  )
+  const dueThisWeek      = (upcoming.results ?? []).filter(i => i.days_until_due != null && i.days_until_due <= 7).length
+  const dueSoonCount     = alerts.filter(a => a.alert_type === 'DUE_SOON').length
 
   // Compliance rate colour
-  const compRate     = stats.compliance_rate
-  const compBorder   = compRate >= 90 ? '#22C55E' : compRate >= 70 ? '#F59E0B' : '#EF4444'
-  const compValue    = compRate >= 90 ? '#16A34A' : compRate >= 70 ? '#D97706' : '#DC2626'
-  const compSub      = compRate >= 95 ? '↑ Meets 95% target' : `↓ Below 95% target`
-
-  // Sub-text for overdue/due-soon cards
-  // Note: alerts don't carry criticality, so we derive safety counts from the instrument list
-  const overdueResults      = overdueInstruments?.results ?? []
-  const safetyOverdueCount  = overdueResults.filter(i => i.criticality === 'safety_critical').length
-  const dueSoonAlertCount   = alerts.filter(a => a.alert_type === 'DUE_SOON').length
+  const compRate   = stats.compliance_rate
+  const compBorder = compRate >= 90 ? '#22C55E' : compRate >= 70 ? '#F59E0B' : '#EF4444'
+  const compValue  = compRate >= 90 ? '#16A34A' : compRate >= 70 ? '#D97706' : '#DC2626'
+  const compSub    = compRate >= 95 ? '↑ Meets 95% target' : `↓ Below 95% target`
 
   const today   = new Date()
   const dateStr = today.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -623,7 +479,7 @@ export default function Dashboard() {
             <svg style={{ width: 15, height: 15 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Import Calibration
           </Link>
-          <Link to="/app/calibrations/new/select"
+          <Link to="/app/instruments"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: BLUE, borderRadius: 8, fontSize: '0.82rem', fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
             + Record Calibration
           </Link>
@@ -637,7 +493,7 @@ export default function Dashboard() {
           value={stats.overdue_count}
           borderColor="#EF4444"
           valueColor="#C62828"
-          sub={safetyOverdueCount > 0 ? `${safetyOverdueCount} are safety-critical (Red)` : 'Instruments past due date'}
+          sub="Instruments past calibration due date"
         />
         <StatCard
           label="Due Within 30 Days"
@@ -669,30 +525,41 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* ── Degradation alerts card (only shown when > 0) ── */}
-      {degradationCount > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 14 }}>
-          <StatCard
-            label="Degradation Alerts"
-            value={degradationCount}
-            borderColor="#EF4444"
-            valueColor="#C62828"
-            sub="Instruments showing drift trend"
-          />
-          <div style={{ display: 'flex', alignItems: 'center', background: '#FFF9F9', borderRadius: 12, border: '1px solid #FECACA', padding: '14px 20px' }}>
-            <svg style={{ width: 20, height: 20, color: '#EF4444', flexShrink: 0, marginRight: 12 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></svg>
-            <p style={{ fontSize: '0.875rem', color: '#7F1D1D' }}>
-              <strong>{degradationCount} instrument{degradationCount !== 1 ? 's' : ''}</strong> showing calibration drift trends. Review now to avoid future failures.{' '}
-              <Link to="/app/alerts" style={{ color: '#DC2626', fontWeight: 600 }}>View alerts →</Link>
-            </p>
-          </div>
-        </div>
-      )}
+      {/* ── Row 2: 3 attention cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+        <AttentionCard
+          emoji="🔴"
+          label="Overdue"
+          count={stats.overdue_count}
+          subText={stats.overdue_count === 0 ? 'All instruments calibrated on time' : 'Instruments past their due date — action needed'}
+          to="/app/schedule"
+          accentColor="#DC2626"
+          bgColor="#FFF5F5"
+          borderColor="#FECACA"
+        />
+        <AttentionCard
+          emoji="🕐"
+          label="Pending Approvals"
+          count={pendingCount}
+          subText={pendingCount === 0 ? 'No calibrations awaiting review' : 'Calibration records submitted for approval'}
+          to="/app/calibrations"
+          accentColor="#D97706"
+          bgColor="#FFFBEB"
+          borderColor="#FDE68A"
+        />
+        <AttentionCard
+          emoji="↗"
+          label="Drift Alerts"
+          count={degradationCount}
+          subText={degradationCount === 0 ? 'No instruments showing drift trends' : 'Instruments predicted to fail — review now'}
+          to="/app/schedule"
+          accentColor="#7C3AED"
+          bgColor="#F5F3FF"
+          borderColor="#DDD6FE"
+        />
+      </div>
 
-      {/* ── Overdue instruments table ── */}
-      <OverdueTable instruments={overdueInstruments?.results ?? []} driftingIds={driftingIds} />
-
-      {/* ── Row 2: Compliance gauge + Area bars ── */}
+      {/* ── Row 3: Compliance gauge + Area bars ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 20 }}>
         <Card
           title="Calibration Compliance"
@@ -710,14 +577,14 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* ── Row 3: Upcoming + Bad Actors ── */}
+      {/* ── Row 4: Upcoming + Quick Actions ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <Card
           title={`Upcoming — Next 7 Days`}
           subtitle={`${dueThisWeek} instrument${dueThisWeek !== 1 ? 's' : ''} require calibration`}
           headerRight={
             dueThisWeek > 8
-              ? <Link to="/app/instruments?calibration_status=due_soon" style={{ fontSize: '0.78rem', color: BLUE }}>View all</Link>
+              ? <Link to="/app/schedule" style={{ fontSize: '0.78rem', color: BLUE }}>View schedule</Link>
               : null
           }
         >
@@ -725,13 +592,10 @@ export default function Dashboard() {
         </Card>
 
         <Card
-          title="Bad Actors"
-          subtitle="Top 10 instruments by as-found failures (12 months)"
-          headerRight={
-            <Link to="/app/bad-actors" style={{ fontSize: '0.78rem', color: BLUE }}>View all</Link>
-          }
+          title="Quick Actions"
+          subtitle="Common tasks and shortcuts"
         >
-          <BadActorsList actors={actors} />
+          <QuickActions />
         </Card>
       </div>
 

@@ -20,17 +20,16 @@ import BlogPost    from './pages/marketing/BlogPost'
 import DemoPage    from './pages/marketing/DemoPage'
 
 // App pages (sidebar + header)
-import Dashboard        from './pages/Dashboard'
-import InstrumentList   from './pages/InstrumentList'
-import InstrumentDetail from './pages/InstrumentDetail'
-import InstrumentForm   from './pages/InstrumentForm'
-import CalibrationForm  from './pages/CalibrationForm'
-import Alerts           from './pages/Alerts'
-import Reports          from './pages/Reports'
-import PendingApprovals from './pages/PendingApprovals'
-import BadActors          from './pages/BadActors'
-import Profile            from './pages/Profile'
-import ImportInstruments  from './pages/ImportInstruments'
+import Dashboard           from './pages/Dashboard'
+import InstrumentList      from './pages/InstrumentList'
+import InstrumentDetail    from './pages/InstrumentDetail'
+import InstrumentForm      from './pages/InstrumentForm'
+import CalibrationForm     from './pages/CalibrationForm'
+import Schedule            from './pages/Schedule'
+import Calibrations        from './pages/Calibrations'
+import AppSettings         from './pages/AppSettings'
+import Reports             from './pages/Reports'
+import ImportInstruments   from './pages/ImportInstruments'
 import ImportCalibratorCSV from './pages/ImportCalibratorCSV'
 
 export default function App() {
@@ -59,26 +58,43 @@ export default function App() {
         {/* ── App pages (gated by AuthGuard, then inside Layout) ──────── */}
         <Route path="/app" element={<AuthGuard><Layout /></AuthGuard>}>
           <Route index element={<Dashboard />} />
+
+          {/* Instruments */}
           <Route path="instruments"              element={<InstrumentList />} />
           <Route path="instruments/new"          element={<InstrumentForm />} />
           <Route path="instruments/:id/edit"     element={<InstrumentForm />} />
           <Route path="instruments/:id"          element={<InstrumentDetail />} />
-          <Route path="calibrations/new/:instrumentId"  element={<CalibrationForm />} />
-          <Route path="calibrations/import-csv"        element={<ImportCalibratorCSV />} />
-          <Route path="alerts"                   element={<Alerts />} />
-          <Route path="approvals"                element={<PendingApprovals />} />
+
+          {/* Schedule — overdue, due-soon, repeat failures */}
+          <Route path="schedule"                 element={<Schedule />} />
+
+          {/* Calibrations — pending approvals + activity log */}
+          <Route path="calibrations"             element={<Calibrations />} />
+          <Route path="calibrations/new/:instrumentId" element={<CalibrationForm />} />
+          <Route path="calibrations/import-csv"  element={<ImportCalibratorCSV />} />
+
+          {/* Reports */}
           <Route path="reports"                  element={<Reports />} />
-          <Route path="bad-actors"               element={<BadActors />} />
-          <Route path="profile"                  element={<Profile />} />
+
+          {/* Settings — profile, password, team members */}
+          <Route path="settings"                 element={<AppSettings />} />
+
+          {/* Instruments CSV bulk import */}
           <Route path="import"                   element={<ImportInstruments />} />
+
+          {/* Legacy in-app redirects — old bookmarks still work */}
+          <Route path="alerts"                   element={<Navigate to="/app/schedule"      replace />} />
+          <Route path="approvals"                element={<Navigate to="/app/calibrations"  replace />} />
+          <Route path="bad-actors"               element={<Navigate to="/app/schedule"      replace />} />
+          <Route path="profile"                  element={<Navigate to="/app/settings"      replace />} />
         </Route>
 
         {/* Legacy redirects — old bookmarks still work */}
         <Route path="/dashboard"   element={<Navigate to="/app"             replace />} />
         <Route path="/instruments" element={<Navigate to="/app/instruments" replace />} />
-        <Route path="/alerts"      element={<Navigate to="/app/alerts"      replace />} />
+        <Route path="/alerts"      element={<Navigate to="/app/schedule"    replace />} />
         <Route path="/reports"     element={<Navigate to="/app/reports"     replace />} />
-        <Route path="/approvals"   element={<Navigate to="/app/approvals"   replace />} />
+        <Route path="/approvals"   element={<Navigate to="/app/calibrations" replace />} />
 
         {/* Catch-all → landing */}
         <Route path="*" element={<Navigate to="/" replace />} />

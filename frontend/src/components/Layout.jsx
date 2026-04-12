@@ -1,10 +1,21 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import { calibrations as calsApi } from '../utils/api'
 
 export default function Layout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen,  setSidebarOpen]  = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
+
+  // Load pending approval count for the sidebar badge
+  useEffect(() => {
+    let cancelled = false
+    calsApi.list({ record_status: 'submitted', limit: 1 })
+      .then(res => { if (!cancelled) setPendingCount(res?.total ?? 0) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -23,7 +34,10 @@ export default function Layout() {
         transform transition-transform duration-200
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <Sidebar onNavigate={() => setSidebarOpen(false)} />
+        <Sidebar
+          onNavigate={() => setSidebarOpen(false)}
+          pendingCount={pendingCount}
+        />
       </div>
 
       {/* ── Right-hand panel: header + scrollable content ── */}
