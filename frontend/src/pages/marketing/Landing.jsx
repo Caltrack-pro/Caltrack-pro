@@ -107,7 +107,7 @@ export default function Landing() {
           >
             Start Your 30-Day Pilot — Free
           </Link>
-          <Link to="/auth/signin" style={{
+          <Link to="/demo" style={{
             background: 'transparent', color: '#fff',
             padding: '1rem 2rem', borderRadius: 8,
             fontSize: '1rem', fontWeight: 600,

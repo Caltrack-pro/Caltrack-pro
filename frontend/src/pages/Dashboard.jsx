@@ -141,19 +141,38 @@ function ErrorState({ message, onRetry }) {
 // Stat cards (Row 1)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, textColor, bgColor, iconColor, icon, sub }) {
+function StatCard({ label, value, borderColor, valueColor, sub }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-      <div className="flex items-start justify-between mb-3">
-        <div className={`w-10 h-10 rounded-lg ${bgColor} flex items-center justify-center flex-shrink-0`}>
-          <span className={iconColor}>{icon}</span>
-        </div>
-      </div>
-      <p className={`text-3xl font-bold tabular-nums ${textColor}`}>
+    <div style={{
+      background: '#fff',
+      borderRadius: 12,
+      border: '1px solid #e2e8f0',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+      borderLeft: `4px solid ${borderColor}`,
+      padding: '18px 20px',
+    }}>
+      <p style={{
+        fontSize: '2rem',
+        fontWeight: 800,
+        color: valueColor,
+        lineHeight: 1,
+        fontVariantNumeric: 'tabular-nums',
+        marginBottom: 6,
+      }}>
         {value ?? '—'}
       </p>
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">{label}</p>
-      {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+      <p style={{
+        fontSize: '0.7rem',
+        fontWeight: 700,
+        color: '#64748b',
+        textTransform: 'uppercase',
+        letterSpacing: '0.07em',
+      }}>
+        {label}
+      </p>
+      {sub && (
+        <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>{sub}</p>
+      )}
     </div>
   )
 }
@@ -524,37 +543,29 @@ export default function Dashboard() {
         <StatCard
           label="Overdue"
           value={stats.overdue_count}
-          textColor="text-red-600"
-          bgColor="bg-red-50"
-          iconColor="text-red-500"
-          icon={<IconClock />}
+          borderColor="#EF4444"
+          valueColor="#DC2626"
           sub={stats.overdue_count === 1 ? '1 instrument past due' : `${stats.overdue_count} instruments past due`}
         />
         <StatCard
           label="Due This Week"
           value={dueThisWeek}
-          textColor="text-amber-600"
-          bgColor="bg-amber-50"
-          iconColor="text-amber-500"
-          icon={<IconCalendar />}
+          borderColor="#F59E0B"
+          valueColor="#D97706"
           sub="Due within 7 days"
         />
         <StatCard
           label="Calibrated This Week"
           value={stats.calibrated_this_week}
-          textColor="text-green-600"
-          bgColor="bg-green-50"
-          iconColor="text-green-600"
-          icon={<IconCheckCircle />}
+          borderColor="#22C55E"
+          valueColor="#16A34A"
           sub="Approved records (7 d)"
         />
         <StatCard
           label="Active Alerts"
           value={alerts.length}
-          textColor="text-red-600"
-          bgColor="bg-red-50"
-          iconColor="text-red-500"
-          icon={<IconBellAlert />}
+          borderColor="#2196F3"
+          valueColor="#1565C0"
           sub={alerts.filter(a => a.priority === 'critical').length + ' critical'}
         />
       </div>

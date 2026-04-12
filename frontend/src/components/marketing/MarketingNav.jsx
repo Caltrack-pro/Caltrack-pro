@@ -7,6 +7,7 @@ export default function MarketingNav() {
   const links = [
     { to: '/how-it-works', label: 'How It Works' },
     { to: '/pricing',      label: 'Pricing'      },
+    { to: '/demo',         label: 'Demo'         },
     { to: '/resources',    label: 'Resources'    },
     { to: '/faq',          label: 'FAQ'          },
     { to: '/contact',      label: 'Contact'      },

@@ -17,6 +17,7 @@ import Blog        from './pages/marketing/Blog'
 import FAQ         from './pages/marketing/FAQ'
 import Contact     from './pages/marketing/Contact'
 import BlogPost    from './pages/marketing/BlogPost'
+import DemoPage    from './pages/marketing/DemoPage'
 
 // App pages (sidebar + header)
 import Dashboard        from './pages/Dashboard'
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/resources"    element={<Resources />} />
         <Route path="/faq"          element={<FAQ />} />
         <Route path="/contact"      element={<Contact />} />
+        <Route path="/demo"         element={<DemoPage />} />
         <Route path="/blog"         element={<Blog />} />
         <Route path="/blog/:slug"   element={<BlogPost />} />
 
