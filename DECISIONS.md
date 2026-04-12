@@ -1,225 +1,153 @@
 # Calcheq — Architecture Decisions
 
-This file records the "why" behind key technical and product decisions.
-It exists so that context is not lost between sessions.
+Records the "why" behind key technical and product decisions so context isn't lost between sessions.
 
 ---
 
-## Auth: Supabase Auth (email + password) — migrated April 2026
+## Auth: Supabase Auth (ES256 JWT) — migrated April 2026
 
-**Decision:** User identity and site membership are managed by Supabase Auth
-plus two new DB tables (`sites`, `site_members`).
+**Decision:** User identity and site membership are managed by Supabase Auth plus two DB tables (`sites`, `site_members`). Replaced localStorage-based auth.
 
 **Sign-in flow (2-step UX):**
-1. User enters company/site name → validated against `sites` table via `GET /api/auth/check-site`
+1. User enters company/site name → validated via `GET /api/auth/check-site`
 2. User enters email + password → Supabase `signInWithPassword` → JWT issued
-3. Frontend calls `GET /api/auth/me` → backend verifies JWT, looks up `site_members`, returns site + role
+3. Frontend calls `GET /api/auth/me` → backend verifies JWT, returns site + role
 
-**Sign-up flow:**
-1. User enters company name + display name + email + password on `/auth/signup`
-2. `supabase.auth.signUp({ email, password, options: { data: { site_name, display_name } } })`
-3. Email confirmation sent (Supabase default)
-4. After confirmation + first sign-in, `onAuthStateChange` fires → frontend calls `POST /api/auth/register`
-5. Backend creates `sites` record + `site_members` record (first user = admin)
+**JWT verification (ES256 asymmetric — NOT HS256):**
+- Supabase signs JWTs with ECC P-256 (ES256), not HMAC-SHA256
+- Backend fetches public JWKS from `https://qdrgjjndwgrmmjvzzdhg.supabase.co/auth/v1/.well-known/jwks.json` and caches keys for 1 hour
+- `SUPABASE_JWT_SECRET` is NOT required — `SUPABASE_URL` is sufficient for key resolution
+- `python-jose` used for decoding/verification
 
-**User object shape (module cache in userContext.js):**
+**User object shape (userContext.js):**
 ```js
 { userId, email, userName, siteName, role, isDemoMode }
 ```
 
-**Backend JWT verification:**
-- `SUPABASE_JWT_SECRET` env var (from Supabase Project Settings → API → JWT Settings)
-- `python-jose` library decodes and verifies the HS256 JWT
-- Audience: "authenticated"
-- `get_optional_user(request, db)` → UserContext or None
-- `get_current_user(request, db)` → UserContext or 401
-- `resolve_site(site, current_user)` → site name string:
-  - `?site=Demo` → always allowed, public demo
-  - JWT present → user's own site (ignores `?site=` unless Demo)
-  - Neither → 401
+**Key auth dependencies (auth.py):**
+- `get_current_user(token)` — verifies JWT, returns UserContext. Raises 401 if invalid.
+- `get_optional_user(token)` — same but returns None (for public/demo routes)
+- `resolve_site(user)` — returns site name string for DB queries
+- `assert_writable_site(user)` — raises HTTP 403 if site is "Demo" (read-only protection)
 
-**Demo mode:**
-- The "Demo" site is public (always accessible via `?site=Demo`)
-- Logged-in users can switch to Demo via the "Try Demo" button in the Sidebar
-- `setDemoMode(true)` in userContext.js sets a module-level flag; all API calls
-  then pass `?site=Demo` (because getUser() returns siteName = "Demo")
-- A separate `demo@calcheq.com` Supabase account exists for the "Try Demo"
-  button on the sign-in page (must be created manually in Supabase Dashboard)
-
-**New DB tables:**
+**DB tables:**
 ```sql
-sites        (id UUID PK, name TEXT UNIQUE, subscription_status, plan, created_at)
-site_members (id UUID PK, site_id FK→sites, user_id UUID, role TEXT, display_name TEXT)
+sites        (id UUID PK, name TEXT UNIQUE, slug, created_at)
+site_members (id UUID PK, site_id FK→sites, user_id UUID, role TEXT, display_name TEXT, email TEXT, created_at)
 ```
 
-**Site isolation (unchanged mechanism, same security model):**
-- `instruments.created_by` still stores the site name string
-- Backend resolves site from JWT (not from `?site=` query param, except for Demo)
-- `created_by` → `site_id` FK rename is deferred to Phase 0.3+ (Stripe integration)
-
-**Event system (backward compatible):**
-- `caltrack-user-change` DOM event is still dispatched from `onAuthStateChange`
-- Dashboard.jsx and InstrumentList.jsx event listeners still work without changes
-
-**Auth routes:**
-- `GET  /api/auth/check-site?name=IXOM` — public, validates site exists
-- `POST /api/auth/register`             — creates site + admin membership from JWT user_metadata
-- `GET  /api/auth/me`                   — returns current user's site + role
-
 **Gating:**
-- `/app/*` requires a valid Supabase session (enforced by `AuthGuard` component)
-- Unauthenticated visitors are redirected to `/auth/signin`
-- Marketing pages (`/`, `/pricing`, etc.) remain fully public
+- `/app/*` requires a valid Supabase session (AuthGuard component)
+- Marketing pages remain fully public
 
 ---
 
 ## Site Isolation: `created_by` field on instruments table
 
-**Decision:** Multi-tenancy is implemented by storing a site name string
-(`created_by`) directly on the `instruments` table, rather than using a
-separate `tenants` or `organisations` table with foreign keys.
+**Decision:** Multi-tenancy via `created_by` (site name string) on `instruments` table. Site is resolved from JWT, not from a `?site=` query param.
 
-**Why:** Simpler to implement at this stage. Avoids a schema migration and
-additional join complexity. The site name is passed as a query param (`?site=`)
-to every API endpoint, and the backend filters by `Instrument.created_by == site`.
+**Why:** Simpler than a foreign key at this stage. Avoids migration complexity. The site name from JWT is trusted and verified server-side.
 
-**Consequence:** Site names are plain strings — there is no site record in the
-database. If a site needs to be renamed, a bulk UPDATE on `created_by` would
-be required. This is an acceptable trade-off for the current stage.
+**Note:** The `sites` table now exists. Renaming `created_by` → `site_id` FK is deferred to the Stripe integration phase (requires schema migration + backfill).
 
-**Update (April 2026):** The `sites` table now exists (added during Supabase Auth migration).
-`created_by` string → `site_id` FK rename is deferred to the Stripe integration phase,
-as it requires a schema migration and backfill of all existing instrument rows.
+---
+
+## Navigation Restructure — 6 tabs (April 2026)
+
+**Decision:** Replaced the original 5-tab nav (Dashboard, Instruments, Alerts, Approvals, Reports) with a 6-tab emoji-based nav with clear, non-overlapping purposes.
+
+**New tabs and their single purpose:**
+- 🏠 **Dashboard** — metrics overview and navigation hub only; no detail tables
+- 🔧 **Instruments** — instrument register (search, filter, bulk actions, add new)
+- 📅 **Schedule** — "what needs to be done": Overdue / Due Soon / Repeat Failures
+- 📋 **Calibrations** — "what was done": Pending Approvals + Activity Log; live badge count
+- 📄 **Reports** — generate and export compliance documents only
+- ⚙️ **Settings** — Profile, Change Password, Team Members (admin)
+
+**Why:** The old nav had heavy overlap — Dashboard, Instruments, Alerts, and Reports all showed similar instrument tables. Each tab now has one clear job.
+
+**Legacy routes redirect:** `/app/alerts` → `/app/schedule`, `/app/approvals` → `/app/calibrations`, `/app/bad-actors` → `/app/schedule`, `/app/profile` → `/app/settings`
 
 ---
 
 ## Marketing / App Routing Split
 
-**Decision:** Marketing pages (/, /blog, /pricing etc.) render in a completely
-separate layout tree from app pages (/app/*). Marketing pages have no Sidebar
-or Header. App pages render inside a Layout component that provides both.
+**Decision:** Marketing pages render in a separate layout tree from app pages. Marketing has no Sidebar or Header. App pages render inside Layout.
 
-**Why:** When the public homepage was added, it needed a completely different
-visual treatment (marketing nav, full-width sections, no app chrome). Using
-two separate layout trees in React Router v6 was the cleanest solution.
+**Why:** Homepage needed a completely different visual treatment. Two separate layout trees in React Router v6 is the cleanest solution.
 
-**Implementation in App.jsx:**
-```jsx
-// Marketing — no Layout wrapper
-<Route path="/"        element={<Landing />} />
-<Route path="/blog"    element={<Blog />} />
+---
 
-// App — inside Layout (Sidebar + Header)
-<Route path="/app" element={<Layout />}>
-  <Route index element={<Dashboard />} />
-  ...
-</Route>
-```
+## Team Member Management (April 2026)
+
+**Decision:** Admin users can invite new team members directly from the Settings page (`/app/settings`). Invitations are processed server-side.
+
+**How it works:**
+1. Admin fills in name, email, role, and a temporary password in the invite form
+2. Frontend calls `POST /api/auth/invite`
+3. Backend calls Supabase Admin REST API (`POST {SUPABASE_URL}/auth/v1/admin/users`) using `SUPABASE_SERVICE_ROLE_KEY` to create the Supabase user
+4. Backend creates a `site_members` row linking the new user to the site
+5. Backend calls `notifications.send_member_invite()` which emails the user their credentials via Resend
+6. New user signs in with the temporary password and changes it via Settings
+
+**Requirement:** `SUPABASE_SERVICE_ROLE_KEY` must be set in Railway env vars. It bypasses Row Level Security — keep it secret.
 
 ---
 
 ## Technician Role Can Edit Instruments
 
-**Decision:** The `technician` role is included in `canEdit()` in userContext.js,
-meaning technicians can create and edit instruments (not just calibration records).
+**Decision:** `canEdit()` in userContext.js returns true for admin, supervisor, planner, and technician.
 
-**Why:** On smaller sites, the instrument technician is also the person who
-commissions and sets up new instruments in the system. Restricting instrument
-creation to admin/supervisor only would create unnecessary friction.
-
-**If this needs to change:** Update `canEdit()` in `frontend/src/utils/userContext.js`
-and add role checks inside InstrumentForm.jsx.
+**Why:** On smaller sites, the instrument technician is also the person who commissions and sets up instruments. Restricting to admin/supervisor only causes unnecessary friction.
 
 ---
 
-## Demo Account: "Demo" Site (formerly "Admin")
+## Demo Account: "Demo" Site (read-only)
 
-**Decision:** The site named "Demo" (no password) serves as the public demo account.
-It is pre-seeded with 30 instruments via `seed_instruments.py`.
+**Decision:** The site named "Demo" serves as the public demo. Pre-seeded with 30 instruments. All write operations are blocked server-side (HTTP 403) via `assert_writable_site`.
 
-**Rename history:** Originally named "Admin". Renamed to "Demo" in April 2026 via:
-- `seed_instruments.py`: SITE constant changed from "Admin" to "Demo"
-- Supabase SQL: `UPDATE instruments SET created_by = 'Demo' WHERE created_by = 'Admin'`
+**Credentials:** demo@calcheq.com / CalcheqDemo2026
 
-**Why:** Prospective customers need to see real data immediately without signing up.
-The demo site shows the full capability of the app — overdue instruments, failed
-calibrations, bad actors, trend data, etc.
-
-**Consequence:** The "Demo" site is effectively public. Any visitor can sign in
-to "Demo" and see/edit the demo data. This is intentional for now. Before commercial
-launch, the demo site should either reset nightly (cron job) or be made read-only
-for unauthenticated visitors. Paying customers get their own isolated site with a
-private password.
-
-**Instruments in demo:** 30 instruments across 6 areas (Unit 1, Unit 2, Unit 3,
-Tank Farm, Compressor Area, Utilities). Mix of pressure, temperature, flow, level,
-analyser, switch, control valve. Various states: current, overdue, due-soon,
-failed, marginal, spare, out-of-service.
+**Why read-only:** Prevents demo data corruption. Any visitor can log in as demo.
 
 ---
 
-## Blog Article Content: Stored in BlogPost.jsx (not a CMS)
+## Approval Workflow: `approved_by` Stores Name String
 
-**Decision:** All 6 blog articles are stored as static content objects inside
-`frontend/src/pages/marketing/BlogPost.jsx`, keyed by slug.
+**Decision:** `approved_by` on calibration records stores the approving user's display name, not their UUID.
 
-**Why:** No CMS infrastructure exists yet. Static content in the component is
-simple and works well for a small number of articles.
+**Why:** Simple to display. If a user's name changes, historical approvals won't auto-update — acceptable trade-off for now.
 
-**Articles and slugs:**
-- `overdue-calibrations` — refinery case study (cut overdue from 23% to 4%)
-- `iso-17025-audit` — what calibration records need for ISO/IEC 17025
-- `paper-to-digital` — migration guide for maintenance teams
-- `consecutive-failures` — feature deep dive on the consecutive failure alert
-- `pharmaceutical-validation` — 21 CFR Part 11 and pharma calibration
-- `field-technician-workflow` — day-in-the-life article
-
-**Future:** When there are 10+ articles, move content to markdown files or a
-headless CMS (Contentlayer, Sanity, or similar). Slugs should remain stable.
-
----
-
-## Cross-Component State Sync: Custom DOM Event
-
-**Decision:** When a user signs in or out, the app dispatches a custom DOM event
-(`caltrack-user-change`) rather than using React context or a state management library.
-
-**Why:** The Header (which handles sign-in) and multiple pages (Dashboard,
-InstrumentList) all need to react to auth changes. At the time this was built,
-adding React context would have required refactoring the entire component tree.
-The custom event is a lightweight alternative.
-
-**Implementation:**
-```js
-// Dispatch (in Header.jsx after sign-in)
-window.dispatchEvent(new CustomEvent('caltrack-user-change', { detail: user }))
-
-// Listen (in Dashboard.jsx, InstrumentList.jsx)
-window.addEventListener('caltrack-user-change', onUserChange)
-```
-
-**Future:** When Supabase Auth is integrated, replace this with a Supabase
-auth state listener (`supabase.auth.onAuthStateChange`). The custom event
-approach can be retired at that point.
-
----
-
-## Approval Workflow: approved_by Stores Name (not User ID)
-
-**Decision:** The `approved_by` field on calibration records stores the approving
-user's display name (string) rather than a user ID.
-
-**Why:** There is no users table in the database. The current auth system uses
-localStorage only, so there is no server-side user record to reference.
-
-**Consequence:** If a user changes their name in the system, historical approvals
-will not automatically update. This is acceptable in the current pre-auth state.
-
-**Future:** Once Supabase Auth is in place and a users table exists, `approved_by`
-should store the user's UUID and the name should be resolved at query time via a join.
+**Future:** Once subscription/billing is in place and user profiles are more established, `approved_by` could store the user UUID with name resolved at query time via a join to `site_members`.
 
 ---
 
 ## PDF Generation: Client-Side (jsPDF), No Backend Required
 
-**Decision:** Calibration certificate
+**Decision:** Calibration certificates and history reports are generated in the browser using jsPDF + jspdf-autotable. No backend endpoint needed.
+
+**Why:** Avoids server-side PDF library dependencies (wkhtmltopdf, WeasyPrint, etc.) and keeps the backend stateless. The data is already in the frontend at generation time.
+
+**Files:** `frontend/src/utils/reportGenerator.js`
+
+---
+
+## Blog Content: Static in BlogPost.jsx (no CMS)
+
+**Decision:** All 6 blog articles are stored as static content objects inside `BlogPost.jsx`, keyed by slug.
+
+**Why:** No CMS infrastructure needed for 6 articles. Simple and fast.
+
+**Articles:** overdue-calibrations, iso-17025-audit, paper-to-digital, consecutive-failures, pharmaceutical-validation, field-technician-workflow
+
+**Future:** Move to markdown files or a headless CMS (Contentlayer, Sanity) when there are 10+ articles. Keep slugs stable.
+
+---
+
+## Calibration PDF Import: Client-Side Parser
+
+**Decision:** Beamex and Fluke calibrator CSV exports are parsed in the browser (`calibratorCsvParser.js`) before being sent to the backend.
+
+**Why:** Keeps parsing logic testable in isolation, avoids multipart file upload complexity for the review step, and allows the user to see a full preview before any data is written to the database.
+
+**Supported formats:** Beamex MC6/MC4/MC2, Fluke 754/729/726

@@ -83,16 +83,15 @@ export default function Landing() {
           maxWidth: 820, margin: '0 auto 1.5rem',
           letterSpacing: '-0.5px',
         }}>
-          Your calibration spreadsheet is{' '}
-          <span style={{ color: '#90CAF9' }}>a compliance liability</span>{' '}
-          waiting to happen
+          Always know which instruments need attention —{' '}
+          <span style={{ color: '#90CAF9' }}>before they become a problem</span>
         </h1>
 
         <p style={{
           fontSize: '1.2rem', color: 'rgba(255,255,255,0.78)',
-          maxWidth: 620, margin: '0 auto 2.5rem', lineHeight: 1.7,
+          maxWidth: 640, margin: '0 auto 2.5rem', lineHeight: 1.7,
         }}>
-          CalCheq gives instrumentation and maintenance teams at Australian processing plants real-time visibility of every instrument's calibration status, compliance history, and asset risk — in one place, without the enterprise price tag.
+          CalCheq gives instrumentation and maintenance teams at Australian processing plants real-time visibility of every instrument's calibration status, compliance history, and drift trends — in one place, without the enterprise price tag.
         </p>
 
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -105,7 +104,7 @@ export default function Landing() {
             onMouseEnter={e => e.currentTarget.style.background = C.amber}
             onMouseLeave={e => e.currentTarget.style.background = C.orange}
           >
-            Start Your 30-Day Pilot — Free
+            Start Free 30-Day Trial
           </Link>
           <Link to="/demo" style={{
             background: 'transparent', color: '#fff',
@@ -121,7 +120,101 @@ export default function Landing() {
           </Link>
         </div>
 
-        <div style={{ marginTop: '3rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', letterSpacing: '0.5px' }}>
+        {/* ── Dashboard preview ── */}
+        <div style={{ marginTop: '3.5rem', maxWidth: 900, margin: '3.5rem auto 0', position: 'relative' }}>
+          {/* Browser chrome */}
+          <div style={{ background: '#1e3a5f', borderRadius: '12px 12px 0 0', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5F57', display: 'inline-block' }} />
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FFBD2E', display: 'inline-block' }} />
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840', display: 'inline-block' }} />
+            <div style={{ flex: 1, background: 'rgba(255,255,255,0.08)', borderRadius: 6, height: 22, marginLeft: 12, display: 'flex', alignItems: 'center', paddingLeft: 12 }}>
+              <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)' }}>calcheq.com/app</span>
+            </div>
+          </div>
+          {/* Dashboard body */}
+          <div style={{ background: '#F4F7FC', borderRadius: '0 0 12px 12px', padding: '18px 18px 12px', boxShadow: '0 32px 64px rgba(0,0,0,0.35)', overflow: 'hidden' }}>
+            {/* KPI row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 14 }}>
+              {[
+                { label: 'Overdue', val: '14', color: '#C62828', bg: '#FFF5F5' },
+                { label: 'Due in 30 Days', val: '31', color: '#B45309', bg: '#FFFBEB' },
+                { label: 'Current', val: '243', color: '#2E7D32', bg: '#F0FFF4' },
+                { label: 'Total Instruments', val: '288', color: '#1565C0', bg: '#EFF6FF' },
+                { label: 'Compliance Rate', val: '91.3%', color: '#2E7D32', bg: '#F0FFF4' },
+              ].map(({ label, val, color, bg }) => (
+                <div key={label} style={{ background: '#fff', borderRadius: 8, padding: '12px 10px', borderLeft: `3px solid ${color}`, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                  <div style={{ fontSize: '0.6rem', color: '#5A6B7B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color }}>{val}</div>
+                </div>
+              ))}
+            </div>
+            {/* Attention cards row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
+              {[
+                { emoji: '🔴', label: 'Overdue', count: 14, sub: 'Past calibration due date', color: '#DC2626', bg: '#FFF5F5', border: '#FECACA' },
+                { emoji: '🕐', label: 'Pending Approvals', count: 6, sub: 'Awaiting supervisor review', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+                { emoji: '↗', label: 'Drift Alerts', count: 3, sub: 'Predicted to fail before next due', color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE' },
+              ].map(({ emoji, label, count, sub, color, bg, border }) => (
+                <div key={label} style={{ background: '#fff', borderRadius: 8, padding: '12px 14px', borderLeft: `3px solid ${color}`, display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                  <div style={{ fontSize: '1.4rem' }}>{emoji}</div>
+                  <div>
+                    <div style={{ fontSize: '0.6rem', color: '#5A6B7B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color }}>{count}</div>
+                    <div style={{ fontSize: '0.6rem', color: '#5A6B7B' }}>{sub}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Chart + list row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {/* Compliance gauge placeholder */}
+              <div style={{ background: '#fff', borderRadius: 8, padding: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8, alignSelf: 'flex-start' }}>Calibration Compliance</div>
+                <svg width="90" height="90" viewBox="0 0 90 90">
+                  <circle cx="45" cy="45" r="36" fill="none" stroke="#e2e8f0" strokeWidth="8" />
+                  <circle cx="45" cy="45" r="36" fill="none" stroke="#22C55E" strokeWidth="8"
+                    strokeLinecap="round" strokeDasharray="226" strokeDashoffset="20"
+                    transform="rotate(-90 45 45)" />
+                  <text x="45" y="42" textAnchor="middle" fontSize="13" fontWeight="800" fill="#2E7D32" fontFamily="system-ui">91.3%</text>
+                  <text x="45" y="54" textAnchor="middle" fontSize="7" fill="#9ca3af" fontFamily="system-ui">Site Compliance</text>
+                </svg>
+                {/* Area bars */}
+                {[['Filtration', 96], ['Treatment', 91], ['Intake', 87], ['Distribution', 83]].map(([area, pct]) => (
+                  <div key={area} style={{ width: '100%', marginTop: 5 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <span style={{ fontSize: '0.6rem', color: '#374151' }}>{area}</span>
+                      <span style={{ fontSize: '0.6rem', fontWeight: 700, color: pct >= 90 ? '#16A34A' : '#D97706' }}>{pct}%</span>
+                    </div>
+                    <div style={{ height: 5, background: '#F1F5F9', borderRadius: 3 }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: pct >= 90 ? '#22C55E' : '#F59E0B', borderRadius: 3 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Upcoming list */}
+              <div style={{ background: '#fff', borderRadius: 8, padding: 14, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Upcoming — Next 7 Days</div>
+                {[
+                  { tag: 'PT-204', desc: 'Feed water pressure', days: 'Today', c: '#DC2626', bg: '#FEE2E2' },
+                  { tag: 'FT-118', desc: 'Chlorine dosing flow', days: '2d', c: '#D97706', bg: '#FEF3C7' },
+                  { tag: 'AT-406', desc: 'Residual chlorine', days: '4d', c: '#D97706', bg: '#FEF3C7' },
+                  { tag: 'LT-302', desc: 'Sedimentation level', days: '6d', c: '#1D4ED8', bg: '#DBEAFE' },
+                ].map(({ tag, desc, days, c, bg }) => (
+                  <div key={tag} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #F1F5F9' }}>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#0B1F3A', fontFamily: 'monospace' }}>{tag}</div>
+                      <div style={{ fontSize: '0.6rem', color: '#5A6B7B' }}>{desc}</div>
+                    </div>
+                    <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: bg, color: c }}>{days}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: 12, background: 'linear-gradient(to bottom, transparent 60%, rgba(11,31,58,0.15) 100%)', pointerEvents: 'none' }} />
+        </div>
+
+        <div style={{ marginTop: '2.5rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', letterSpacing: '0.5px' }}>
           <div>Trusted by Australian process plants | Built for IECEx, AS/NZS ISO 17025 &amp; NATA compliance</div>
           <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '0.75rem' }}>
             {['⚡ No IT Department Needed', '📋 Audit-Ready Certificates', '🇦🇺 Australian-Built', '🔒 Secure Cloud'].map(b => (
@@ -149,9 +242,9 @@ export default function Landing() {
             { icon: '📊', title: '"We\'re still managing calibrations in Excel"', body: 'Spreadsheets can\'t alert you when instruments go overdue, can\'t generate compliant certificates, and can\'t show you what\'s at risk — across multiple sites, simultaneously.' },
             { icon: '🔍', title: '"We found out a safety-critical instrument was overdue — after the audit"', body: 'Without real-time visibility and risk-based prioritisation, safety-critical instruments fall through the cracks. That\'s not just a compliance failure — it\'s a plant risk.' },
             { icon: '📁', title: '"Calibration certificates live in 3 different places"', body: 'Email attachments, shared drives, and physical binders mean your compliance evidence is scattered. When an auditor arrives, it becomes a frantic search.' },
-            { icon: '⏰', title: '"We\'re reacting to failures instead of preventing them"', body: 'Without degradation tracking and predictive alerts, your team is always one step behind — replacing instruments after they fail instead of before they cost you production.' },
+            { icon: '⏰', title: '"We don\'t know an instrument is drifting until it fails"', body: 'If a transmitter reads 3% high every calibration, the process control system has been running on bad data for months — causing inefficiencies, off-spec product, and unnecessary wear on downstream assets.' },
             { icon: '💰', title: '"Enterprise CMMS is overkill for our instrumentation team"', body: 'SAP, Maximo, and MEX are built for entire maintenance departments. They\'re expensive, complex to implement, and require IT teams — for a calibration problem that shouldn\'t need all that.' },
-            { icon: '🏭', title: '"We can\'t see across all our sites from one screen"', body: 'Multi-site operations need a single dashboard. Without it, managers are chasing status updates by email and phone instead of acting on real data.' },
+            { icon: '🏭', title: '"A failed instrument caused a process upset — and we didn\'t see it coming"', body: 'When a measurement device goes out of calibration, your plant runs on inaccurate data. Flow rates are wrong. Temperatures are wrong. The DCS responds to readings that don\'t reflect reality — and the consequences range from inefficiency to unplanned shutdown.' },
           ].map(({ icon, title, body }) => (
             <div key={title} style={{
               background: '#fff', borderRadius: 12,
@@ -185,7 +278,7 @@ export default function Landing() {
             { icon: '📡', title: 'Real-Time Calibration Dashboard', body: "Every instrument's calibration status — current, upcoming, and overdue — on a single screen. Filter by site, area, criticality, or due date. Know exactly what needs attention, right now." },
             { icon: '🚦', title: 'Instrument Criticality Ranking', body: 'Assign instruments as Green (indication only), Yellow (controller), or Red (safety-critical SIS). Sort your overdue dashboard by risk, not just date, so your team always works on what matters most.' },
             { icon: '📜', title: 'Compliant Calibration Certificates', body: 'Generate AS/NZS ISO 17025-aligned calibration certificates in one click. Full calibration history, measurement uncertainty, technician sign-off, and NATA traceability — audit ready, every time.' },
-            { icon: '📈', title: 'Degradation & Predictive Alerts', body: 'CalCheq tracks calibration drift over time. When an instrument shows a pattern of degradation, you get an alert before it fails — giving you time to plan maintenance, not react to breakdowns.' },
+            { icon: '📈', title: 'Drift Prediction — Know Before It Fails', body: 'CalCheq tracks every instrument\'s as-found error over successive calibrations and models the drift rate. If a transmitter is reading 1% worse each calibration cycle, the system projects when it will breach tolerance — and flags it weeks in advance. No other entry-level calibration tool does this.' },
             { icon: '📥', title: 'Spreadsheet Import Wizard', body: 'Already have instruments in Excel, MEX, or another CMMS? Our guided import wizard maps your existing data into CalCheq in minutes — not months. No IT department required.' },
             { icon: '🌐', title: 'Multi-Site Visibility', body: 'Manage calibrations across multiple sites from one account. Site managers see their area; operations leaders see everything. Role-based access ensures the right people see the right data.' },
           ].map(({ icon, title, body }) => (
@@ -206,6 +299,47 @@ export default function Landing() {
               <p style={{ fontSize: '0.9rem', color: C.muted, lineHeight: 1.6, margin: 0 }}>{body}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── PROCESS UPSETS CALLOUT ─────────────────────────────────────── */}
+      <section style={{ background: '#FFF8F0', borderTop: `3px solid ${C.orange}`, borderBottom: `3px solid ${C.orange}`, padding: '60px 5%' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.5fr)', gap: '4rem', alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'inline-block', background: '#FEE2E2', color: C.red, fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', padding: '0.3rem 0.9rem', borderRadius: 20, marginBottom: '1rem' }}>
+              The hidden cost of drift
+            </div>
+            <h2 style={{ fontSize: 'clamp(1.4rem, 2.5vw, 2rem)', fontWeight: 800, color: C.navy, lineHeight: 1.25, marginBottom: '1rem' }}>
+              A miscalibrated instrument doesn't just fail a compliance check — it runs your plant on wrong numbers
+            </h2>
+            <p style={{ color: C.muted, fontSize: '0.95rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>
+              When a flow transmitter reads 4% high, your DCS responds to a number that doesn't exist. Control valves adjust. Dosing systems compensate. Other instruments in the loop follow. The result isn't just one bad reading — it's a cascade of process decisions made on inaccurate data.
+            </p>
+            <p style={{ color: C.muted, fontSize: '0.95rem', lineHeight: 1.7, marginBottom: '1.75rem' }}>
+              CalCheq's drift prediction engine tracks each instrument's as-found error over successive calibrations. If an instrument is consistently 3% out every 12 months, CalCheq projects when it will breach its tolerance band — and alerts you while you still have time to plan.
+            </p>
+            <Link to="/how-it-works" style={{ color: C.orange, fontWeight: 700, fontSize: '0.95rem', textDecoration: 'none' }}
+              onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+              onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+            >
+              See how drift prediction works →
+            </Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {[
+              { icon: '📉', heading: 'Process inefficiency', body: 'Controllers chase setpoints that are moving for the wrong reasons. Energy consumption rises. Yield drops. The instrument is the root cause — but it\'s invisible without drift tracking.' },
+              { icon: '⚠️', heading: 'Unplanned shutdowns', body: 'A safety-critical instrument that\'s slowly drifting toward its trip point is a shutdown waiting to happen. Predictive alerts give you a maintenance window instead of an emergency.' },
+              { icon: '🔗', heading: 'Cascade asset damage', body: 'Pumps, compressors, and heat exchangers respond to the readings they receive. If those readings are wrong, they run outside their design envelope — shortening asset life.' },
+            ].map(({ icon, heading, body }) => (
+              <div key={heading} style={{ background: '#fff', borderRadius: 10, padding: '1.25rem 1.5rem', border: `1px solid ${C.border}`, display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>{icon}</span>
+                <div>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: C.navy, marginBottom: '0.25rem' }}>{heading}</h4>
+                  <p style={{ fontSize: '0.83rem', color: C.muted, lineHeight: 1.6, margin: 0 }}>{body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -376,40 +510,53 @@ export default function Landing() {
         </p>
       </section>
 
-      {/* ── 30-DAY PILOT ────────────────────────────────────────────────── */}
+      {/* ── FREE TRIAL ──────────────────────────────────────────────────── */}
       <section style={{
         background: `linear-gradient(135deg, ${C.blue}, ${C.navy})`,
         padding: '80px 5%', textAlign: 'center', color: '#fff',
       }}>
+        <span style={{
+          display: 'inline-block', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)',
+          color: 'rgba(255,255,255,0.85)', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase',
+          padding: '0.3rem 1rem', borderRadius: 20, marginBottom: '1.25rem',
+        }}>No credit card required</span>
         <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 800, marginBottom: '1rem' }}>
-          The 30-Day Pilot Offer
+          Start your free 30-day trial today
         </h2>
-        <p style={{ color: 'rgba(255,255,255,0.75)', maxWidth: 560, margin: '0 auto 2rem' }}>
-          We'll set up CalCheq with your real instrument data — up to 500 instruments — and have you live within 48 hours. No risk, no commitment, no IT project.
+        <p style={{ color: 'rgba(255,255,255,0.75)', maxWidth: 580, margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
+          Full Professional plan — all features, unlimited users — for 30 days at no cost. Import your instrument list using our guided CSV wizard and be live within hours. No IT project. No consultant. No setup fee.
         </p>
-        <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2.5rem' }}>
-          {[['30', 'Day Free Trial'], ['500', 'Instruments Included'], ['48h', 'Time to Go Live'], ['$0', 'No Credit Card']].map(([val, lbl]) => (
-            <div key={lbl} style={{
-              background: 'rgba(255,255,255,0.1)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: 10, padding: '1rem 1.5rem', textAlign: 'center', minWidth: 160,
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', maxWidth: 860, margin: '0 auto 2.5rem' }}>
+          {[
+            { icon: '✅', heading: 'Full Professional plan', body: 'Criticality ranking, drift prediction, approval workflow, Beamex/Fluke CSV import — everything unlocked.' },
+            { icon: '📥', heading: 'Guided import wizard', body: 'Upload your instrument list as a CSV or Excel file. Our wizard maps your columns and has you live within hours.' },
+            { icon: '📧', heading: 'Email support included', body: 'Questions during your trial? Our team responds within one business day.' },
+            { icon: '🚫', heading: 'No lock-in', body: 'After 30 days, choose a paid plan or walk away. No automatic billing. No cancellation fees.' },
+          ].map(({ icon, heading, body }) => (
+            <div key={heading} style={{
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: 10, padding: '1.25rem 1.5rem', textAlign: 'left',
             }}>
-              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: C.amber }}>{val}</div>
-              <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.65)', marginTop: '0.25rem' }}>{lbl}</div>
+              <div style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>{icon}</div>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.35rem', color: '#fff' }}>{heading}</h4>
+              <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, margin: 0 }}>{body}</p>
             </div>
           ))}
         </div>
         <Link to="/contact" style={{
           background: C.orange, color: '#fff',
-          padding: '1rem 2rem', borderRadius: 8,
+          padding: '1rem 2.25rem', borderRadius: 8,
           fontSize: '1rem', fontWeight: 700,
           display: 'inline-block', textDecoration: 'none',
         }}
           onMouseEnter={e => e.currentTarget.style.background = C.amber}
           onMouseLeave={e => e.currentTarget.style.background = C.orange}
         >
-          Claim Your Pilot Spot →
+          Start Your Free Trial →
         </Link>
+        <p style={{ marginTop: '1rem', fontSize: '0.82rem', color: 'rgba(255,255,255,0.45)' }}>
+          Need help importing a large dataset? Contact us — we can assist.
+        </p>
       </section>
 
       {/* ── STATS ────────────────────────────────────────────────────────── */}
@@ -417,7 +564,7 @@ export default function Landing() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2rem', maxWidth: 900, margin: '0 auto' }}>
           {[
             ['100%',       'Australian-built & hosted'],
-            ['48h',        'Average time to go live'],
+            ['5 min',      'CSV import — instruments loaded'],
             ['AS/NZS\n17025', 'Compliance-aligned certificates'],
             ['Zero',       'IT department required'],
           ].map(([val, lbl]) => (
@@ -456,7 +603,7 @@ export default function Landing() {
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
           <FaqItem
             q="How long does it take to get set up?"
-            a="Most teams are live within 48 hours of starting their pilot. You upload your instrument list (we accept Excel, CSV, and direct import from MEX), we map the data, and you're running. Our guided import wizard handles the heavy lifting."
+            a="Most teams import their instrument list and are recording calibrations the same day. You upload your existing spreadsheet or CSV (we accept Excel, CSV, and MEX exports), our guided wizard maps the fields, and you review before importing. No IT team, no configuration project."
           />
           <FaqItem
             q="We use MEX / SAP — can we import our existing instruments?"
@@ -471,8 +618,8 @@ export default function Landing() {
             a="Yes. CalCheq generates certificates aligned with AS/NZS ISO/IEC 17025:2017, NATA traceability requirements, and ILAC-G24 guidelines — including as-found/as-left readings, measurement uncertainty, calibration standards used, technician sign-off, and next due date."
           />
           <FaqItem
-            q="What's included in the 30-day pilot?"
-            a="The full Professional plan — up to 500 instruments, all features, unlimited users — for 30 days at no cost. We'll onboard you with your real plant data so you see genuine value, not a demo. No credit card required, no automatic billing at the end."
+            q="What's included in the 30-day free trial?"
+            a="The full Professional plan — drift prediction, criticality ranking, approval workflows, Beamex/Fluke CSV import, unlimited users — for 30 days at no cost. You import your own instrument data using the guided wizard. Email support is included throughout the trial. No credit card required, no automatic billing at the end."
           />
         </div>
       </section>
@@ -483,7 +630,7 @@ export default function Landing() {
           Ready to get your calibrations under control?
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.85)', marginBottom: '2rem' }}>
-          Join Australian processing plants that have replaced spreadsheet chaos with real-time calibration intelligence.
+          Import your instrument list, invite your team, and start recording calibrations — today.
         </p>
         <Link to="/contact" style={{
           background: '#fff', color: C.orange,
@@ -495,7 +642,7 @@ export default function Landing() {
           onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'none'}
         >
-          Start Your Free 30-Day Pilot
+          Start Your Free 30-Day Trial
         </Link>
       </section>
 

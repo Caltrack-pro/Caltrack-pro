@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<!-- saved from url=(0146)file:///C:/Users/nfish/OneDrive/Documents/Claude/Projects/CalCheq%20Calibration%20Management%20Software/Documents/CalCheq%20Sales%20One-Pager.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CalCheq — Sales One-Pager</title>
+  <style>
+    @media print {
+      body { margin: 0; }
+      .no-print { display: none; }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #F0F4FA;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px;
+      color: #1A2B3C;
+    }
+    .no-print {
+      background: #0B1F3A; color: white; padding: 10px 20px; border-radius: 8px;
+      margin-bottom: 16px; font-size: 0.85rem; cursor: pointer; border: none;
+    }
+    .page {
+      width: 210mm; min-height: 297mm;
+      background: white;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+
+    /* ─── HEADER ─── */
+    .header {
+      background: linear-gradient(135deg, #0B1F3A 0%, #1565C0 100%);
+      padding: 22px 28px 18px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .header-left h1 {
+      color: white; font-size: 28px; font-weight: 900; letter-spacing: -0.5px;
+    }
+    .header-left h1 span { color: #64B5F6; }
+    .header-left p { color: rgba(255,255,255,0.65); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+    .header-tag {
+      background: #F57C00; color: white;
+      padding: 6px 14px; border-radius: 20px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+      text-align: center; line-height: 1.4;
+    }
+
+    /* ─── POSITIONING ─── */
+    .positioning {
+      background: #E3EAF4; padding: 12px 28px;
+      border-left: 4px solid #1565C0;
+    }
+    .positioning p {
+      font-size: 10.5px; font-style: italic; color: #0B1F3A; line-height: 1.5;
+    }
+
+    /* ─── BODY GRID ─── */
+    .body-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0; flex: 1;
+    }
+    .col { padding: 18px 22px; }
+    .col-right { border-left: 1px solid #D0DAE8; }
+
+    /* ─── SECTION HEADER ─── */
+    .sec-head {
+      font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: #1565C0;
+      margin-bottom: 10px; padding-bottom: 4px;
+      border-bottom: 2px solid #1565C0;
+    }
+
+    /* ─── PAIN POINTS ─── */
+    .pain-item {
+      display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px;
+    }
+    .pain-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+    .pain-item p { font-size: 10px; color: #1A2B3C; line-height: 1.4; }
+    .pain-item strong { color: #C62828; }
+
+    /* ─── FEATURES ─── */
+    .feature-item {
+      display: flex; align-items: flex-start; gap: 8px; margin-bottom: 7px;
+    }
+    .feat-icon {
+      width: 22px; height: 22px; border-radius: 5px;
+      background: #1565C0; color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; flex-shrink: 0;
+    }
+    .feat-text { flex: 1; }
+    .feat-text strong { font-size: 10px; color: #0B1F3A; display: block; }
+    .feat-text span { font-size: 9.5px; color: #5A6B7B; line-height: 1.3; }
+
+    /* ─── CRITICALITY ─── */
+    .crit-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    .crit-table td { padding: 5px 6px; font-size: 9.5px; border-bottom: 1px solid #E3EAF4; }
+    .crit-table thead th {
+      background: #0B1F3A; color: white; padding: 5px 6px;
+      font-size: 9px; font-weight: 600; text-align: left;
+    }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+    .dot-red { background: #C62828; }
+    .dot-yellow { background: #F9A825; }
+    .dot-green { background: #2E7D32; }
+
+    /* ─── PROOF / STATS ─── */
+    .stats-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .stat-box {
+      flex: 1; background: #F4F7FC; border-radius: 6px;
+      padding: 8px 6px; text-align: center;
+      border-top: 3px solid #1565C0;
+    }
+    .stat-box .val { font-size: 18px; font-weight: 800; color: #1565C0; }
+    .stat-box .lbl { font-size: 8.5px; color: #5A6B7B; margin-top: 1px; line-height: 1.2; }
+
+    /* ─── COMPLIANCE ─── */
+    .comp-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+    .comp-badge {
+      background: #E8F5E9; border: 1px solid #A5D6A7;
+      color: #2E7D32; font-size: 8.5px; font-weight: 700;
+      padding: 2px 7px; border-radius: 10px;
+    }
+
+    /* ─── OFFER / PILOT ─── */
+    .offer-box {
+      background: linear-gradient(135deg, #1565C0, #0B1F3A);
+      border-radius: 8px; padding: 14px 16px;
+      color: white; margin-bottom: 10px;
+    }
+    .offer-box h3 { font-size: 12px; font-weight: 800; margin-bottom: 8px; color: #FFA000; }
+    .offer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .offer-item { text-align: center; }
+    .offer-val { font-size: 16px; font-weight: 800; color: #FFA000; }
+    .offer-lbl { font-size: 8px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+    .offer-items { margin-top: 8px; }
+    .offer-point { font-size: 9px; color: rgba(255,255,255,0.85); margin-bottom: 3px; }
+    .offer-point::before { content: '✔ '; color: #FFA000; font-weight: 700; }
+
+    /* ─── PRICING STRIP ─── */
+    .pricing-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+    .price-box {
+      background: #F4F7FC; border-radius: 6px; padding: 8px;
+      text-align: center; border: 1px solid #D0DAE8;
+    }
+    .price-box.featured { background: #1565C0; border-color: #1565C0; }
+    .price-box .pname { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #5A6B7B; }
+    .price-box.featured .pname { color: rgba(255,255,255,0.7); }
+    .price-box .pprice { font-size: 15px; font-weight: 800; color: #0B1F3A; }
+    .price-box.featured .pprice { color: white; }
+    .price-box .pinst { font-size: 8px; color: #5A6B7B; }
+    .price-box.featured .pinst { color: rgba(255,255,255,0.65); }
+
+    /* ─── NEXT STEPS ─── */
+    .steps-row { display: flex; gap: 6px; }
+    .step-box { flex: 1; background: #F4F7FC; border-radius: 6px; padding: 8px; text-align: center; }
+    .step-num {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #1565C0; color: white;
+      font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 5px;
+    }
+    .step-box p { font-size: 8.5px; color: #1A2B3C; line-height: 1.3; }
+
+    /* ─── FOOTER ─── */
+    .footer {
+      background: #0B1F3A; padding: 10px 28px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .footer p { color: rgba(255,255,255,0.6); font-size: 8.5px; }
+    .footer a { color: #64B5F6; }
+    .footer-cta {
+      background: #F57C00; color: white;
+      padding: 6px 14px; border-radius: 20px;
+      font-size: 9px; font-weight: 700;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<button class="no-print" onclick="window.print()">🖨️ Print as PDF (A4)</button>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Cal<span>Cheq</span></h1>
+      <p>Calibration Management Software for Australian Processing Plants</p>
+    </div>
+    <div class="header-tag">
+      30-Day Free Pilot<br>No Credit Card · No Commitment
+    </div>
+  </div>
+
+  <!-- POSITIONING -->
+  <div class="positioning">
+    <p>For instrumentation and maintenance teams at Australian processing plants managing calibration compliance and plant safety — CalCheq is the purpose-built calibration management platform that gives you real-time visibility of every instrument's status, compliance history, and asset risk, without the cost and complexity of enterprise CMMS software.</p>
+  </div>
+
+  <!-- BODY -->
+  <div class="body-grid">
+
+    <!-- LEFT COLUMN -->
+    <div class="col">
+
+      <!-- PAIN POINTS -->
+      <div class="sec-head">The Problem — Sound Familiar?</div>
+
+      <div class="pain-item">
+        <span class="pain-icon">📊</span>
+        <p><strong>Calibrations managed in Excel</strong> — no alerts when instruments go overdue, no compliant certificates, no audit trail.</p>
+      </div>
+      <div class="pain-item">
+        <span class="pain-icon">🔴</span>
+        <p><strong>Safety-critical instruments found overdue during audits</strong> — after the fact, when the risk has already materialised.</p>
+      </div>
+      <div class="pain-item">
+        <span class="pain-icon">📁</span>
+        <p><strong>Calibration records scattered</strong> across email, shared drives, and paper binders — unusable under audit pressure.</p>
+      </div>
+      <div class="pain-item">
+        <span class="pain-icon">💰</span>
+        <p><strong>Enterprise CMMS is overkill</strong> — SAP, Maximo, and MEX cost too much, take months to implement, and aren't built for calibration teams.</p>
+      </div>
+      <div class="pain-item">
+        <span class="pain-icon">⚠️</span>
+        <p><strong>No visibility of asset degradation</strong> — instruments failing unexpectedly instead of being identified and replaced proactively.</p>
+      </div>
+
+      <br>
+
+      <!-- KEY FEATURES -->
+      <div class="sec-head">What CalCheq Does</div>
+
+      <div class="feature-item">
+        <div class="feat-icon">📡</div>
+        <div class="feat-text">
+          <strong>Real-Time Calibration Dashboard</strong>
+          <span>Every instrument's status — current, due, overdue — on one screen. Filter by area, criticality, or date.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feat-icon">🚦</div>
+        <div class="feat-text">
+          <strong>Instrument Criticality Ranking (Red / Yellow / Green)</strong>
+          <span>Sort your overdue list by safety risk — SIS instruments flagged red, controllers yellow, indication green.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feat-icon">📜</div>
+        <div class="feat-text">
+          <strong>One-Click Compliance Certificates</strong>
+          <span>AS/NZS ISO 17025-aligned certificates with full history, uncertainty, and NATA traceability. Audit-ready, always.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feat-icon">📈</div>
+        <div class="feat-text">
+          <strong>Predictive Degradation Alerts</strong>
+          <span>CalCheq tracks calibration drift. Three consecutive high as-found readings triggers an alert before the instrument fails.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feat-icon">📥</div>
+        <div class="feat-text">
+          <strong>Spreadsheet Import Wizard</strong>
+          <span>Import from Excel, MEX, or Beamex/Fluke CSV. From your spreadsheet to a live account in under 48 hours.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feat-icon">🌐</div>
+        <div class="feat-text">
+          <strong>Multi-Site Management</strong>
+          <span>Manage all your sites from one login. Role-based access for technicians, supervisors, and management.</span>
+        </div>
+      </div>
+
+      <br>
+
+      <!-- INSTRUMENT CRITICALITY -->
+      <div class="sec-head">Criticality Ranking — How It Works</div>
+      <table class="crit-table">
+        <thead>
+          <tr><th>Level</th><th>Instrument Type</th><th>Dashboard Priority</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="dot dot-red"></span><strong>Red — SIS</strong></td>
+            <td>Safety instrumented systems, trip instruments. Plant shutdown on failure.</td>
+            <td>Always top of overdue list. Critical alert sent immediately on overdue.</td>
+          </tr>
+          <tr>
+            <td><span class="dot dot-yellow"></span><strong>Yellow — Controller</strong></td>
+            <td>Control instruments affecting product quality, throughput, or equipment.</td>
+            <td>Second priority. Alert sent at 80% of calibration interval.</td>
+          </tr>
+          <tr>
+            <td><span class="dot dot-green"></span><strong>Green — Indication</strong></td>
+            <td>Indication-only. No control or trip function.</td>
+            <td>Lowest priority. Alert sent at due date.</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="col col-right">
+
+      <!-- STATS / PROOF -->
+      <div class="sec-head">The Numbers</div>
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="val">48h</div>
+          <div class="lbl">Average time to go live with your data</div>
+        </div>
+        <div class="stat-box">
+          <div class="val">$0</div>
+          <div class="lbl">Cost to start your 30-day pilot</div>
+        </div>
+        <div class="stat-box">
+          <div class="val">100%</div>
+          <div class="lbl">Australian-built and hosted</div>
+        </div>
+        <div class="stat-box">
+          <div class="val">Zero</div>
+          <div class="lbl">IT department required</div>
+        </div>
+      </div>
+
+      <!-- COMPLIANCE -->
+      <div class="sec-head">Built for Australian Compliance</div>
+      <div class="comp-badges">
+        <span class="comp-badge">AS/NZS ISO/IEC 17025:2017</span>
+        <span class="comp-badge">NATA Traceability</span>
+        <span class="comp-badge">IEC 61511 SIS</span>
+        <span class="comp-badge">ISO 9001:2015</span>
+        <span class="comp-badge">ILAC-G24</span>
+        <span class="comp-badge">WHS Act</span>
+      </div>
+      <p style="font-size:9.5px;color:#5A6B7B;line-height:1.4;margin-bottom:14px;">
+        Calibration certificates include: as-found / as-left readings, measurement uncertainty,
+        calibration standards used, technician sign-off, instrument details, and next calibration due date.
+        Designed to meet or exceed NATA and ISO 17025 documentation requirements.
+      </p>
+
+      <!-- PILOT OFFER -->
+      <div class="offer-box">
+        <h3>🚀 The 30-Day Pilot Offer</h3>
+        <div class="offer-grid">
+          <div class="offer-item">
+            <div class="offer-val">30</div>
+            <div class="offer-lbl">Day Free Trial</div>
+          </div>
+          <div class="offer-item">
+            <div class="offer-val">500</div>
+            <div class="offer-lbl">Instruments</div>
+          </div>
+          <div class="offer-item">
+            <div class="offer-val">48h</div>
+            <div class="offer-lbl">To Go Live</div>
+          </div>
+          <div class="offer-item">
+            <div class="offer-val">$0</div>
+            <div class="offer-lbl">No Card</div>
+          </div>
+        </div>
+        <div class="offer-items">
+          <div class="offer-point">Full Professional plan — all features included</div>
+          <div class="offer-point">Your real instrument data, imported for you</div>
+          <div class="offer-point">1–2 hour onboarding session with your team</div>
+          <div class="offer-point">Unlimited users during the pilot</div>
+          <div class="offer-point">No auto-billing — decision is yours at Day 30</div>
+        </div>
+      </div>
+
+      <!-- PRICING -->
+      <div class="sec-head">Pricing (AUD, Annual Billing)</div>
+      <div class="pricing-strip">
+        <div class="price-box">
+          <div class="pname">Starter</div>
+          <div class="pprice">$199<span style="font-size:9px;font-weight:400;">/mo</span></div>
+          <div class="pinst">Up to 150 instruments</div>
+        </div>
+        <div class="price-box featured">
+          <div class="pname">Professional ⭐</div>
+          <div class="pprice">$449<span style="font-size:9px;font-weight:400;">/mo</span></div>
+          <div class="pinst">Up to 500 instruments</div>
+        </div>
+        <div class="price-box">
+          <div class="pname">Enterprise</div>
+          <div class="pprice" style="font-size:11px;padding-top:3px;">Custom</div>
+          <div class="pinst">Unlimited + integrations</div>
+        </div>
+      </div>
+      <p style="font-size:8.5px;color:#5A6B7B;margin-bottom:14px;">Annual billing = 2 months free vs monthly. All plans include 30-day free pilot, certificate export, and import wizard.</p>
+
+      <!-- VS ALTERNATIVES -->
+      <div class="sec-head">CalCheq vs. The Alternatives</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:9px;">
+        <thead>
+          <tr style="background:#0B1F3A;color:white;">
+            <th style="padding:5px 6px;text-align:left;">Feature</th>
+            <th style="padding:5px 6px;text-align:center;">Excel</th>
+            <th style="padding:5px 6px;text-align:center;">Enterprise CMMS</th>
+            <th style="padding:5px 6px;text-align:center;color:#FFA000;">CalCheq</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #E3EAF4;">
+            <td style="padding:4px 6px;">Calibration-specific workflow</td>
+            <td style="padding:4px 6px;text-align:center;color:#C62828;">✗</td>
+            <td style="padding:4px 6px;text-align:center;color:#F9A825;">Partial</td>
+            <td style="padding:4px 6px;text-align:center;color:#2E7D32;font-weight:700;">✔</td>
+          </tr>
+          <tr style="border-bottom:1px solid #E3EAF4;background:#F4F7FC;">
+            <td style="padding:4px 6px;">Instrument criticality ranking</td>
+            <td style="padding:4px 6px;text-align:center;color:#C62828;">✗</td>
+            <td style="padding:4px 6px;text-align:center;color:#C62828;">✗</td>
+            <td style="padding:4px 6px;text-align:center;color:#2E7D32;font-weight:700;">✔</td>
+          </tr>
+          <tr style="border-bottom:1px solid #E3EAF4;">
+            <td style="padding:4px 6px;">ISO 17025 certificates</td>
+            <td style="padding:4px 6px;text-align:center;color:#C62828;">✗</td>
+            <td style="padding:4px 6px;text-align:center;color:#F9A825;">Add-on</td>
+            <td style="padding:4px 6px;text-align:center;color:#2E7D32;font-weight:700;">✔</td>
+          </tr>
+          <tr style="border-bottom:1px solid #E3EAF4;background:#F4F7FC;">
+            <td style="padding:4px 6px;">Degradation / drift alerts</td>
+            <td style="padding:4px 6px;text-align:center;color:#C62828;">✗</td>
+            <td style="padding:4px 6px;text-align:center;color:#C62828;">✗</td>
+            <td style="padding:4px 6px;text-align:center;color:#2E7D32;font-weight:700;">✔</td>
+          </tr>
+          <tr style="border-bottom:1px solid #E3EAF4;">
+            <td style="padding:4px 6px;">Setup time</td>
+            <td style="padding:4px 6px;text-align:center;">Days</td>
+            <td style="padding:4px 6px;text-align:center;color:#C62828;">6–18 months</td>
+            <td style="padding:4px 6px;text-align:center;color:#2E7D32;font-weight:700;">48 hours</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 6px;">Cost</td>
+            <td style="padding:4px 6px;text-align:center;">Low (hidden)</td>
+            <td style="padding:4px 6px;text-align:center;color:#C62828;">$$$$$</td>
+            <td style="padding:4px 6px;text-align:center;color:#2E7D32;font-weight:700;">$199–$449/mo</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- NEXT STEPS -->
+      <div class="sec-head">How to Get Started</div>
+      <div class="steps-row">
+        <div class="step-box">
+          <div class="step-num">1</div>
+          <p><strong>Send your instrument list</strong> or request our import template</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">2</div>
+          <p><strong>We configure your account</strong> — live within 48 hours</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">3</div>
+          <p><strong>1–2 hour onboarding</strong> with your team, using your real data</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">4</div>
+          <p><strong>Use CalCheq for 30 days</strong> — then decide. No pressure.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <p>© 2026 CalCheq Pty Ltd &nbsp;|&nbsp; <a href="mailto:info@calcheq.com">info@calcheq.com</a> &nbsp;|&nbsp; <a href="https://calcheq.com/">calcheq.com</a> &nbsp;|&nbsp; 🇦🇺 Australian-built &amp; hosted</p>
+    <a href="https://calcheq.com/contact" class="footer-cta">Start Free Pilot →</a>
+  </div>
+
+</div>
+
+
+</body></html>

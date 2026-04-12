@@ -202,7 +202,7 @@ export default function Pricing() {
               { text: 'Predictive degradation alerts', included: true },
               { text: 'Beamex/Fluke CSV integration', included: true },
               { text: 'Multi-site management', included: true },
-              { text: 'Mobile field app', included: true },
+              { text: 'Mobile browser access (no app download needed)', included: true },
               { text: 'Advanced reporting', included: true },
               { text: 'Priority support', included: true },
             ]}
@@ -218,9 +218,9 @@ export default function Pricing() {
               { text: 'Unlimited users', included: true },
               { text: 'All Professional features', included: true },
               { text: 'SAP/MEX/Maximo integration', included: true },
-              { text: 'Custom workflows & reporting', included: true },
-              { text: 'On-site training included', included: true },
-              { text: 'SLA guarantee (99.5%)', included: true },
+              { text: 'Configurable compliance reporting', included: true },
+              { text: 'On-site training (optional)', included: true },
+              { text: '99.5% uptime commitment', included: true },
               { text: 'Dedicated account manager', included: true },
             ]}
             cta="Request Quote"
@@ -260,11 +260,11 @@ export default function Pricing() {
                   { feature: 'Criticality Ranking', starter: false, prof: true, ent: true },
                   { feature: 'Predictive Degradation', starter: false, prof: true, ent: true },
                   { feature: 'Calibrator Integration (Beamex/Fluke)', starter: false, prof: true, ent: true },
-                  { feature: 'Mobile Field App', starter: false, prof: true, ent: true },
+                  { feature: 'Mobile Browser Access', starter: true, prof: true, ent: true },
                   { feature: 'Multi-Site Management', starter: false, prof: true, ent: true },
                   { feature: 'SAP/MEX/Maximo Integration', starter: false, prof: false, ent: true },
                   { feature: 'On-Site Training', starter: false, prof: false, ent: true },
-                  { feature: 'SLA Guarantee', starter: false, prof: false, ent: true },
+                  { feature: '99.5% Uptime Commitment', starter: false, prof: false, ent: true },
                 ].map(({ feature, starter, prof, ent, valueOnly }) => (
                   <tr key={feature} className="border-b border-slate-200 hover:bg-white transition-colors">
                     <td className="py-4 px-4 font-medium text-slate-900">{feature}</td>
@@ -299,8 +299,8 @@ export default function Pricing() {
               a="Yes. Upgrade to Professional or Enterprise anytime. Downgrade to Starter at the end of your billing cycle. No early-termination fees, no lock-in contracts."
             />
             <AccordionFaqItem
-              q="What's included in the pilot?"
-              a="Full Professional plan: 500 instruments, unlimited users, criticality ranking, degradation alerts, mobile app, multi-site, and priority onboarding. Your 48-hour setup is included."
+              q="What's included in the free trial?"
+              a="The full Professional plan — criticality ranking, drift prediction, approval workflow, Beamex/Fluke CSV import, unlimited users — for 30 days. You import your own instrument data using our guided CSV wizard. Email support is included. No credit card required, no automatic billing."
             />
             <AccordionFaqItem
               q="How does annual billing work?"

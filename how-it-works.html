@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How It Works — CalCheq Calibration Management</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
+    a { text-decoration: none; color: inherit; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 5%; }
+    section { padding: 80px 5%; }
+    h2 { font-size: 2.2rem; color: #0B1F3A; margin-bottom: 0.5rem; }
+    h3 { font-size: 1.3rem; color: #0B1F3A; margin-bottom: 1rem; }
+    p { color: #555; margin-bottom: 1rem; }
+
+    /* Hero */
+    .hero { background: linear-gradient(135deg, #0B1F3A 0%, #1565C0 100%); color: white; text-align: center; padding: 100px 5%; }
+    .hero h1 { font-size: 2.8rem; margin-bottom: 1.5rem; max-width: 900px; margin-left: auto; margin-right: auto; }
+    .hero p { color: rgba(255,255,255,0.9); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+
+    /* 4-Step Setup */
+    .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-top: 3rem; }
+    .step-card { background: #F4F7FC; padding: 2rem; border-radius: 8px; border-left: 4px solid #F57C00; }
+    .step-number { display: inline-block; width: 50px; height: 50px; background: #1565C0; color: white; border-radius: 50%; text-align: center; line-height: 50px; font-weight: 700; font-size: 1.3rem; margin-bottom: 1rem; }
+    .step-card h4 { color: #0B1F3A; font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .step-card p { color: #666; font-size: 0.95rem; }
+
+    /* Feature Deep-Dive */
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 3rem; }
+    .feature-box { background: white; padding: 2rem; border-radius: 8px; border: 1px solid #D0DAE8; transition: all 0.3s; }
+    .feature-box:hover { box-shadow: 0 4px 16px rgba(21,101,192,0.15); transform: translateY(-2px); }
+    .feature-icon { width: 60px; height: 60px; background: #2196F3; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.8rem; margin-bottom: 1rem; }
+    .feature-box h4 { color: #0B1F3A; margin-bottom: 0.5rem; font-size: 1.1rem; }
+    .feature-box p { color: #666; font-size: 0.95rem; line-height: 1.7; }
+
+    /* Who Uses */
+    .roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 3rem; }
+    .role-card { background: white; padding: 1.8rem; border-radius: 8px; border: 1px solid #D0DAE8; }
+    .role-card h4 { color: #1565C0; margin-bottom: 0.5rem; font-weight: 700; }
+    .role-card p { color: #666; font-size: 0.9rem; }
+
+    /* CTA Section */
+    .cta-section { background: #0B1F3A; color: white; text-align: center; padding: 60px 5%; }
+    .cta-section h2 { color: white; }
+    .cta-button { display: inline-block; background: #F57C00; color: white; padding: 0.8rem 2rem; border-radius: 6px; font-weight: 700; margin-top: 1.5rem; transition: all 0.3s; }
+    .cta-button:hover { background: #E67E00; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(245,124,0,0.3); }
+
+    /* Alt Background */
+    .light-bg { background: #F4F7FC; }
+
+    .tag { display: inline-block; background: #E3F2FD; color: #1565C0; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+
+<nav style="background:#0B1F3A;padding:0 5%;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+  <div style="color:#fff;font-size:1.5rem;font-weight:800;letter-spacing:-0.5px;">Cal<span style="color:#2196F3;">Cheq</span></div>
+  <div style="display:flex;gap:2rem;align-items:center;">
+    <a href="index.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">Home</a>
+    <a href="how-it-works.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">How It Works</a>
+    <a href="pricing.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">Pricing</a>
+    <a href="../Demo/demo.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">Demo</a>
+    <a href="resources.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">Resources</a>
+    <a href="faq.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">FAQ</a>
+    <a href="contact.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">Contact</a>
+    <a href="contact.html" style="background:#F57C00;color:#fff;padding:0.5rem 1.25rem;border-radius:6px;font-weight:700;text-decoration:none;">Start Free Trial</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>From spreadsheet chaos to calibration clarity — in 48 hours</h1>
+  <p>See how CalCheq transforms your instrument management, compliance, and team workflows from day one.</p>
+</section>
+
+<section>
+  <div class="container">
+    <h2>The 4-Step Setup Process</h2>
+    <p style="color: #666; margin-bottom: 2rem; font-size: 1.05rem;">Get your entire calibration program live faster than you thought possible.</p>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h4>Import</h4>
+        <p>Upload your instrument data via CSV, Excel, or our guided import wizard. Map your columns, validate data, and have your instrument register loaded in minutes. Supports data from MEX, SAP, Maximo, and manual spreadsheets.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h4>Configure</h4>
+        <p>Set calibration intervals, define criticality levels, assign team members to instruments, and configure alert thresholds. Use our templates for common equipment types or customise per-instrument. No technical knowledge required.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h4>Record</h4>
+        <p>Log calibrations in real-time from the dashboard or via mobile field app. Attach certificates, record as/found and as/left readings, upload calibrator data (Beamex, Fluke CSV), and generate automated compliance evidence instantly.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">4</div>
+        <h4>Report</h4>
+        <p>Run compliance reports, export certificates aligned with AS/NZS ISO 17025, track overdue instruments, and monitor criticality status across your site. Scheduled reporting and dashboard alerts keep everyone informed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="light-bg">
+  <div class="container">
+    <h2>Feature Deep-Dive</h2>
+    <p style="color: #666; margin-bottom: 2rem; font-size: 1.05rem;">Six core capabilities that set CalCheq apart.</p>
+
+    <div class="features-grid">
+      <div class="feature-box">
+        <div class="feature-icon">🔴</div>
+        <h4>Instrument Criticality Ranking</h4>
+        <p>Automatically assign Red (safety-critical SIS), Yellow (process-critical), or Green (reference) ratings based on your site's risk matrix. Prioritise maintenance and compliance audits on the instruments that matter most. Critical for IEC 61511 and SIS programs.</p>
+      </div>
+
+      <div class="feature-box">
+        <div class="feature-icon">📊</div>
+        <h4>Real-Time Calibration Dashboard</h4>
+        <p>See at a glance: overdue instruments, upcoming calibrations, compliance status by criticality, technician workload, and historical trends. Customizable widgets let each role see what they need. Mobile-responsive for shop floor access.</p>
+      </div>
+
+      <div class="feature-box">
+        <div class="feature-icon">✓</div>
+        <h4>Compliance Certificate Generation</h4>
+        <p>Auto-generate AS/NZS ISO 17025–aligned calibration certificates in seconds. Include as-found/as-left readings, measurement uncertainty, technician sign-off, and full traceability. Export as PDF or archive digitally. NATA-ready format.</p>
+      </div>
+
+      <div class="feature-box">
+        <div class="feature-icon">⚠️</div>
+        <h4>Predictive Degradation Alerts</h4>
+        <p>CalCheq learns from your historical calibration data and flags instruments showing degradation trends before they exceed tolerance. Reduce emergency repairs and keep your process stable. Red instruments get highest alert priority.</p>
+      </div>
+
+      <div class="feature-box">
+        <div class="feature-icon">🏢</div>
+        <h4>Multi-Site Management</h4>
+        <p>Manage calibration programs across multiple processing plants from a single dashboard. Site-specific permissions, separate calibration schedules, and consolidated compliance reporting. Perfect for corporate groups and mining networks.</p>
+      </div>
+
+      <div class="feature-box">
+        <div class="feature-icon">📱</div>
+        <h4>Field Data Entry & Calibrator Integration</h4>
+        <p>Technicians record calibrations on mobile, even offline. Push data when connected. Direct integration with Beamex and Fluke CSV output lets you upload calibrator readings directly. No manual transcription, zero data-entry errors.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2>Who Uses CalCheq</h2>
+    <p style="color: #666; margin-bottom: 2rem; font-size: 1.05rem;">Designed for every role in your calibration team.</p>
+
+    <div class="roles-grid">
+      <div class="role-card">
+        <h4>Instrumentation Supervisor</h4>
+        <p>Own the compliance program. CalCheq gives you audit-ready reports, predictive alerts on failing instruments, and centralised criticality tracking. Spend less time chasing spreadsheets, more time on strategy and risk.</p>
+      </div>
+
+      <div class="role-card">
+        <h4>Maintenance Planner</h4>
+        <p>Schedule with confidence. See upcoming calibrations, technician capacity, and multi-site workload in one view. Prioritise by criticality and cost. No more guessing when something's due.</p>
+      </div>
+
+      <div class="role-card">
+        <h4>Site Manager</h4>
+        <p>Monitor compliance without the detail. Dashboard gives you overdue count, audit readiness, and SIS status at a glance. Customizable role-based permissions mean ops teams only see relevant instruments.</p>
+      </div>
+
+      <div class="role-card">
+        <h4>Instrument Technician</h4>
+        <p>Record on the go. Mobile app, field-friendly forms, and direct calibrator integration mean no manual data entry. Calibration certificate generated automatically. Focus on the work, not the paperwork.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <h2>Ready to see how CalCheq works?</h2>
+  <p style="font-size: 1.05rem; color: rgba(255,255,255,0.9); margin-bottom: 0;">Start your free 30-day pilot. Full Professional plan. No credit card required.</p>
+  <a href="contact.html" class="cta-button">Start Your Free Pilot</a>
+</section>
+
+<footer style="background:#0B1F3A;color:rgba(255,255,255,0.55);padding:40px 5%;text-align:center;font-size:0.85rem;">
+  <div style="display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem;">
+    <a href="index.html" style="color:rgba(255,255,255,0.55);">Home</a>
+    <a href="how-it-works.html" style="color:rgba(255,255,255,0.55);">How It Works</a>
+    <a href="pricing.html" style="color:rgba(255,255,255,0.55);">Pricing</a>
+    <a href="../Demo/demo.html" style="color:rgba(255,255,255,0.55);">Demo</a>
+    <a href="resources.html" style="color:rgba(255,255,255,0.55);">Resources</a>
+    <a href="faq.html" style="color:rgba(255,255,255,0.55);">FAQ</a>
+    <a href="contact.html" style="color:rgba(255,255,255,0.55);">Contact</a>
+  </div>
+  <p>© 2026 CalCheq Pty Ltd · Purpose-built calibration management for Australian processing plants · <a href="mailto:info@calcheq.com" style="color:rgba(255,255,255,0.55);">info@calcheq.com</a></p>
+</footer>
+
+</body>
+</html>

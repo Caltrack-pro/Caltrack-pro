@@ -1,0 +1,8 @@
+Good news — digital text-based PDFs with a consistent template is the best possible scenario for this. Extraction will be accurate and reliable.
+Here's the plan:
+
+Step 1 — Sample first. You drop 3–5 PDFs into your Caltrack-pro folder (or a subfolder like calibration-pdfs/). I read them, map out all the fields, and build a Python extraction script tailored to your exact template.
+Step 2 — Script processes all 200–500 PDFs. Rather than me reading each PDF manually (which would take forever), I write a script that runs on your machine, reads every PDF in the folder, and outputs a clean CSV.
+Step 3 — You upload the CSV. The CSV goes straight into the Import Instruments section of Calcheq.
+One important thing to flag: the Import Instruments feature currently handles instrument master data (tag number, description, range, units, tolerance, calibration interval, etc.). If your PDFs also contain historical calibration results (as-found/as-left readings, pass/fail), those are a separate table in the database and can't go through that same import. We can note that data in a second file, but getting it into the system as historical records would need either manual entry or a backend script.
+To get started: Create a folder called calibration-pdfs inside your Caltrack-pro folder on your computer, drop in 3–5 representative PDFs (ideally ones that cover different instrument types if they exist), and let me know when they're there. I'll read them immediately and map out the fields.

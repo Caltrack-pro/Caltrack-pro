@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resources — CalCheq Calibration Management</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
+    a { text-decoration: none; color: inherit; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 5%; }
+    section { padding: 80px 5%; }
+    h2 { font-size: 2.2rem; color: #0B1F3A; margin-bottom: 0.5rem; }
+    h3 { font-size: 1.3rem; color: #0B1F3A; margin-bottom: 1rem; }
+    p { color: #555; }
+
+    /* Hero */
+    .hero { background: linear-gradient(135deg, #0B1F3A 0%, #1565C0 100%); color: white; text-align: center; padding: 100px 5%; }
+    .hero h1 { font-size: 2.8rem; margin-bottom: 1.5rem; }
+    .hero p { font-size: 1.1rem; max-width: 700px; margin: 0 auto; color: rgba(255,255,255,0.9); }
+
+    /* Filter Tabs */
+    .filter-tabs { display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 0; padding-bottom: 2rem; border-bottom: 2px solid #D0DAE8; }
+    .filter-btn { padding: 0.6rem 1.2rem; border: 1px solid #D0DAE8; background: white; color: #0B1F3A; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; }
+    .filter-btn.active { background: #1565C0; color: white; border-color: #1565C0; }
+    .filter-btn:hover { border-color: #1565C0; color: #1565C0; }
+    .filter-btn.active:hover { color: white; }
+
+    /* Resource Grid */
+    .resources-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2rem; margin-top: 2rem; }
+    .resource-card { background: white; border: 1px solid #D0DAE8; border-radius: 8px; overflow: hidden; transition: all 0.3s; }
+    .resource-card:hover { box-shadow: 0 4px 16px rgba(21,101,192,0.15); transform: translateY(-2px); }
+    .resource-card header { padding: 1.5rem; background: #F4F7FC; border-bottom: 1px solid #D0DAE8; }
+    .resource-card main { padding: 1.5rem; }
+    .resource-card footer { padding: 0 1.5rem 1.5rem; }
+
+    /* Category Badge */
+    .category-badge { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.8rem; }
+    .badge-guide { background: #C8E6C9; color: #2E7D32; }
+    .badge-case-study { background: #BBDEFB; color: #1565C0; }
+    .badge-compliance { background: #FFE0B2; color: #E65100; }
+    .badge-insights { background: #F8BBD0; color: #C2185B; }
+
+    .resource-card h4 { color: #0B1F3A; margin-bottom: 0.8rem; line-height: 1.4; font-size: 1.1rem; }
+    .resource-card p { color: #666; font-size: 0.9rem; line-height: 1.6; }
+    .resource-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #999; margin-top: 1rem; }
+    .read-more { color: #1565C0; font-weight: 600; transition: all 0.3s; display: inline-block; margin-top: 1rem; }
+    .read-more:hover { color: #0B1F3A; }
+
+    /* Newsletter Section */
+    .newsletter-section { background: #E3F2FD; border-left: 4px solid #1565C0; padding: 2rem; border-radius: 4px; margin-top: 3rem; }
+    .newsletter-section h3 { color: #0B1F3A; }
+    .newsletter-section p { color: #0B1F3A; font-size: 0.9rem; margin: 0.5rem 0 1rem; }
+    .newsletter-form { display: flex; gap: 1rem; }
+    .newsletter-form input { flex: 1; padding: 0.7rem; border: none; border-radius: 4px; }
+    .newsletter-form button { padding: 0.7rem 1.5rem; background: #F57C00; color: white; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+    .newsletter-form button:hover { background: #E67E00; }
+
+    /* Light background */
+    .light-bg { background: #F4F7FC; }
+
+    .cta-section { background: #0B1F3A; color: white; text-align: center; padding: 60px 5%; margin-top: 3rem; }
+    .cta-button { display: inline-block; background: #F57C00; color: white; padding: 0.8rem 2rem; border-radius: 6px; font-weight: 700; margin-top: 1.5rem; transition: all 0.3s; }
+    .cta-button:hover { background: #E67E00; transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+
+<nav style="background:#0B1F3A;padding:0 5%;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+  <div style="color:#fff;font-size:1.5rem;font-weight:800;letter-spacing:-0.5px;">Cal<span style="color:#2196F3;">Cheq</span></div>
+  <div style="display:flex;gap:2rem;align-items:center;">
+    <a href="index.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">Home</a>
+    <a href="how-it-works.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">How It Works</a>
+    <a href="pricing.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">Pricing</a>
+    <a href="../Demo/demo.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">Demo</a>
+    <a href="resources.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">Resources</a>
+    <a href="faq.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">FAQ</a>
+    <a href="contact.html" style="color:rgba(255,255,255,0.85);font-size:0.9rem;font-weight:500;text-decoration:none;">Contact</a>
+    <a href="contact.html" style="background:#F57C00;color:#fff;padding:0.5rem 1.25rem;border-radius:6px;font-weight:700;text-decoration:none;">Start Free Trial</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>Resources for Instrumentation & Calibration Teams</h1>
+  <p>Guides, case studies, compliance resources, and industry insights to help you build a world-class calibration program.</p>
+</section>
+
+<section>
+  <div class="container">
+    <div class="filter-tabs">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="case-study">Case Studies</button>
+      <button class="filter-btn" data-filter="guide">Guides</button>
+      <button class="filter-btn" data-filter="compliance">Compliance</button>
+      <button class="filter-btn" data-filter="insights">Industry Insights</button>
+    </div>
+
+    <div class="resources-grid">
+      <!-- Resource 1: Guide -->
+      <div class="resource-card" data-category="guide">
+        <header>
+          <span class="category-badge badge-guide">Guide</span>
+          <h4>How to Migrate from MEX to CalCheq in 4 Steps</h4>
+        </header>
+        <main>
+          <p>A step-by-step walkthrough for moving your entire instrument register from MEX without data loss. Learn how to map fields, validate data, and maintain calibration history.</p>
+        </main>
+        <footer>
+          <div class="resource-meta">
+            <span>By CalCheq Team</span>
+            <span>8 min read</span>
+          </div>
+          <a href="#" class="read-more">Read More →</a>
+        </footer>
+      </div>
+
+      <!-- Resource 2: Compliance -->
+      <div class="resource-card" data-category="compliance">
+        <header>
+          <span class="category-badge badge-compliance">Compliance</span>
+          <h4>AS/NZS ISO 17025:2017 — What Calibration Managers Need to Know</h4>
+        </header>
+        <main>
+          <p>A deep dive into the requirements of the Australian/NZ standard for calibration labs. Covers scope, accreditation, traceability, measurement uncertainty, and documentation.</p>
+        </main>
+        <footer>
+          <div class="resource-meta">
+            <span>By CalCheq Team</span>
+            <span>12 min read</span>
+          </div>
+          <a href="#" class="read-more">Read More →</a>
+        </footer>
+      </div>
+
+      <!-- Resource 3: Guide -->
+      <div class="resource-card" data-category="guide">
+        <header>
+          <span class="category-badge badge-guide">Guide</span>
+          <h4>Why Instrument Criticality Ranking Is Your Most Valuable Compliance Tool</h4>
+        </header>
+        <main>
+          <p>Understand the Red/Yellow/Green criticality model, why it matters for SIS programs, and how to implement it in your plant. Includes a downloadable risk matrix template.</p>
+        </main>
+        <footer>
+          <div class="resource-meta">
+            <span>By CalCheq Team</span>
+            <span>10 min read</span>
+          </div>
+          <a href="#" class="read-more">Read More →</a>
+        </footer>
+      </div>
+
+      <!-- Resource 4: Industry Insights -->
+      <div class="resource-card" data-category="insights">
+        <header>
+          <span class="category-badge badge-insights">Industry Insights</span>
+          <h4>The Hidden Cost of Spreadsheet-Based Calibration Management</h4>
+        </header>
+        <main>
+          <p>Data shows that manual spreadsheet calibration tracking costs processing plants 15–20 hours per week in admin time and increases non-compliance incidents by 40%. See the numbers.</p>
+        </main>
+        <footer>
+          <div class="resource-meta">
+            <span>By CalCheq Team</span>
+            <span>6 min read</span>
+          </div>
+          <a href="#" class="read-more">Read More →</a>
+        </footer>
+      </div>
+
+      <!-- Resource 5: Compliance -->
+      <div class="resource-card" data-category="compliance">
+        <header>
+          <span class="category-badge badge-compliance">Compliance</span>
+          <h4>IEC 61511 and Safety Instrumented Systems — A Calibration Checklist</h4>
+        </header>
+        <main>
+          <p>SIS instruments (transmitters, solenoids, shut-off valves) need proof of calibration at defined intervals. Download our IEC 61511 calibration checklist and audit worksheet.</p>
+        </main>
+        <footer>
+          <div class="resource-meta">
+            <span>By CalCheq Team</span>
+            <span>9 min read</span>
+          </div>
+          <a href="#" class="read-more">Read More →</a>
+        </footer>
+      </div>
+
+      <!-- Resource 6: Case Study -->
+      <div class="resource-card" data-category="case-study">
+        <header>
+          <span class="category-badge badge-case-study">Case Study</span>
+          <h4>From 3 Overdue Audits to Zero: How One Processing Plant Fixed Their Calibration Program</h4>
+        </header>
+        <main>
+          <p>See how Pilbara Minerals Processing Plant eliminated audit failures, reduced technician admin time by 80%, and deployed a real-time compliance dashboard in 6 weeks using CalCheq.</p>
+        </main>
+        <footer>
+          <div class="resource-meta">
+            <span>Case Study</span>
+            <span>15 min read</span>
+          </div>
+          <a href="#" class="read-more">Read More →</a>
+        </footer>
+      </div>
+
+      <!-- Resource 7: Guide -->
+      <div class="resource-card" data-category="guide">
+        <header>
+          <span class="category-badge badge-guide">Guide</span>
+          <h4>Connecting Beamex and Fluke Calibrators to Your CMMS</h4>
+        </header>
+        <main>
+          <p>Direct integration with Beamex and Fluke digital calibrators eliminates manual data entry. Learn how to export CSV from your calibrator and auto-upload readings into CalCheq.</p>
+        </main>
+        <footer>
+          <div class="resource-meta">
+            <span>By CalCheq Team</span>
+            <span>7 min read</span>
+          </div>
+          <a href="#" class="read-more">Read More →</a>
+        </footer>
+      </div>
+
+      <!-- Resource 8: Compliance -->
+      <div class="resource-card" data-category="compliance">
+        <header>
+          <span class="category-badge badge-compliance">Compliance</span>
+          <h4>Understanding Measurement Uncertainty in Calibration Certificates</h4>
+        </header>
+        <main>
+          <p>Measurement uncertainty is mandatory in ISO 17025 certificates but often misunderstood. Learn what it is, how to calculate it, and why it matters for critical instruments.</p>
+        </main>
+        <footer>
+          <div class="resource-meta">
+            <span>By CalCheq Team</span>
+            <span>11 min read</span>
+          </div>
+          <a href="#" class="read-more">Read More →</a>
+        </footer>
+      </div>
+
+      <!-- Resource 9: Industry Insights -->
+      <div class="resource-card" data-category="insights">
+        <header>
+          <span class="category-badge badge-insights">Industry Insights</span>
+          <h4>Predictive Maintenance Trends in Australian Processing Plants: 2025–2026</h4>
+        </header>
+        <main>
+          <p>A survey of 150+ Australian processing plants reveals rising adoption of predictive degradation tools in calibration. See where the industry is heading and what you should adopt next.</p>
+        </main>
+        <footer>
+          <div class="resource-meta">
+            <span>By CalCheq Team</span>
+            <span>8 min read</span>
+          </div>
+          <a href="#" class="read-more">Read More →</a>
+        </footer>
+      </div>
+
+      <!-- Resource 10: Case Study -->
+      <div class="resource-card" data-category="case-study">
+        <header>
+          <span class="category-badge badge-case-study">Case Study</span>
+          <h4>Cutting Calibration Costs by 35%: How a Mining Network Optimized Their Program</h4>
+        </header>
+        <main>
+          <p>A 4-site mining operation reduced calibration costs, eliminated emergency repairs through predictive alerts, and improved audit compliance across all locations with CalCheq.</p>
+        </main>
+        <footer>
+          <div class="resource-meta">
+            <span>Case Study</span>
+            <span>16 min read</span>
+          </div>
+          <a href="#" class="read-more">Read More →</a>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Newsletter Signup -->
+    <div class="newsletter-section">
+      <h3>Stay Updated on Calibration Best Practices</h3>
+      <p>Get new guides, compliance resources, and industry insights delivered to your inbox every month.</p>
+      <form class="newsletter-form">
+        <input type="email" placeholder="Your email address" required>
+        <button type="submit">Subscribe</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <h2>Need personalised help with your calibration program?</h2>
+  <p style="font-size: 1.05rem; color: rgba(255,255,255,0.9); margin-bottom: 0;">Chat with our team about your specific compliance and operational challenges.</p>
+  <a href="contact.html" class="cta-button">Start Your Free Pilot</a>
+</section>
+
+<footer style="background:#0B1F3A;color:rgba(255,255,255,0.55);padding:40px 5%;text-align:center;font-size:0.85rem;">
+  <div style="display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem;">
+    <a href="index.html" style="color:rgba(255,255,255,0.55);">Home</a>
+    <a href="how-it-works.html" style="color:rgba(255,255,255,0.55);">How It Works</a>
+    <a href="pricing.html" style="color:rgba(255,255,255,0.55);">Pricing</a>
+    <a href="../Demo/demo.html" style="color:rgba(255,255,255,0.55);">Demo</a>
+    <a href="resources.html" style="color:rgba(255,255,255,0.55);">Resources</a>
+    <a href="faq.html" style="color:rgba(255,255,255,0.55);">FAQ</a>
+    <a href="contact.html" style="color:rgba(255,255,255,0.55);">Contact</a>
+  </div>
+  <p>© 2026 CalCheq Pty Ltd · Purpose-built calibration management for Australian processing plants · <a href="mailto:info@calcheq.com" style="color:rgba(255,255,255,0.55);">info@calcheq.com</a></p>
+</footer>
+
+<script>
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  const resourceCards = document.querySelectorAll('.resource-card');
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const filter = btn.getAttribute('data-filter');
+      resourceCards.forEach(card => {
+        if (filter === 'all' || card.getAttribute('data-category') === filter) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
