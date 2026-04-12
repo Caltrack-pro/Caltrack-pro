@@ -552,7 +552,7 @@ export default function Dashboard() {
           label="Drift Alerts"
           count={degradationCount}
           subText={degradationCount === 0 ? 'No instruments showing drift trends' : 'Instruments predicted to fail — review now'}
-          to="/app/schedule"
+          to="/app/schedule?tab=drift"
           accentColor="#7C3AED"
           bgColor="#F5F3FF"
           borderColor="#DDD6FE"

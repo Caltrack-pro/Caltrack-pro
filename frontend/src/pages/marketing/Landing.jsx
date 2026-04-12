@@ -280,7 +280,7 @@ export default function Landing() {
             { icon: '📜', title: 'Compliant Calibration Certificates', body: 'Generate AS/NZS ISO 17025-aligned calibration certificates in one click. Full calibration history, measurement uncertainty, technician sign-off, and NATA traceability — audit ready, every time.' },
             { icon: '📈', title: 'Drift Prediction — Know Before It Fails', body: 'CalCheq tracks every instrument\'s as-found error over successive calibrations and models the drift rate. If a transmitter is reading 1% worse each calibration cycle, the system projects when it will breach tolerance — and flags it weeks in advance. No other entry-level calibration tool does this.' },
             { icon: '📥', title: 'Spreadsheet Import Wizard', body: 'Already have instruments in Excel, MEX, or another CMMS? Our guided import wizard maps your existing data into CalCheq in minutes — not months. No IT department required.' },
-            { icon: '🌐', title: 'Multi-Site Visibility', body: 'Manage calibrations across multiple sites from one account. Site managers see their area; operations leaders see everything. Role-based access ensures the right people see the right data.' },
+            { icon: '👥', title: 'Role-Based Team Access', body: 'Admins, supervisors, technicians, and planners each get the access level they need — and nothing they shouldn\'t. Invite your team in seconds, manage permissions from the Settings page, and maintain a complete audit trail of who did what and when.' },
           ].map(({ icon, title, body }) => (
             <div key={title} style={{
               border: `1px solid ${C.border}`, borderRadius: 12,
@@ -354,8 +354,8 @@ export default function Landing() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', maxWidth: 1000, margin: '0 auto' }}>
           {[
             { num: 1, title: 'Import Your Instruments', body: 'Upload your existing spreadsheet or use our guided template. We map your data, you review it.' },
-            { num: 2, title: 'Set Calibration Schedules', body: 'Define intervals, assign technicians, and set alert thresholds for each instrument or instrument class.' },
-            { num: 3, title: 'Record Calibrations', body: 'Log calibrations via desktop or mobile. Attach certificates, record as-found and as-left readings automatically.' },
+            { num: 2, title: 'Set Calibration Schedules', body: 'Define calibration intervals, tolerance limits, and criticality levels for each instrument. CalCheq automatically calculates due dates and alerts.' },
+            { num: 3, title: 'Record Calibrations', body: 'Log as-found and as-left readings at each test point via desktop or mobile browser. Pass/fail is calculated automatically against your tolerance.' },
             { num: 4, title: 'Stay Compliant, Stay Ahead', body: 'Dashboard alerts keep you ahead of due dates. Export compliance certificates on demand.' },
           ].map(({ num, title, body }) => (
             <div key={num} style={{ textAlign: 'center' }}>

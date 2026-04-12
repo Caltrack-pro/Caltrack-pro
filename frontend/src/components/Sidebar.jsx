@@ -201,6 +201,7 @@ export default function Sidebar({ onNavigate, pendingCount }) {
         <NavItem to="/app/calibrations"   emoji="📋" label="Calibrations"  badge={pendingCount} onClick={onNavigate} />
         <NavItem to="/app/reports"        emoji="📄" label="Reports"       onClick={onNavigate} />
         <NavItem to="/app/settings"       emoji="⚙️"  label="Settings"     onClick={onNavigate} />
+        <NavItem to="/app/support"        emoji="🆘" label="Support"       onClick={onNavigate} />
 
         {/* ── Divider + utility links ── */}
         <div style={{ paddingTop: 12, marginTop: 10, borderTop: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column', gap: 2 }}>

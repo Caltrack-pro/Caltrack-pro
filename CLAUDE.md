@@ -50,10 +50,11 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - CalibrationForm.jsx    — enter calibration results (as-found / as-left test points, 1–20 points)
 - ImportCalibratorCSV.jsx — 3-step Beamex/Fluke CSV import: Upload → Review → Confirm; route: /app/calibrations/import-csv
 - ImportInstruments.jsx  — bulk instrument CSV import UI; route: /app/import
-- Schedule.jsx           — 3 tabs: Overdue / Due Soon / Repeat Failures; replaces old Alerts + BadActors pages; route: /app/schedule
+- Schedule.jsx           — 4 tabs: Overdue / Due Soon / Repeat Failures / Drift Alerts; supports ?tab=drift URL param; route: /app/schedule
 - Calibrations.jsx       — 2 tabs: Pending Approvals (with live count badge) / Activity Log; replaces old PendingApprovals page; route: /app/calibrations
 - AppSettings.jsx        — 4 sections: Site info / Profile / Change Password / Team Members (admin only); route: /app/settings
 - Reports.jsx            — compliance reporting and calibration history export (PDF via jsPDF)
+- Support.jsx            — FAQ accordion (5 sections, 20 Q&As), tutorial placeholders, contact email; route: /app/support
 
 ### Legacy pages (files still exist but routes now redirect to above)
 - Alerts.jsx → /app/schedule | PendingApprovals.jsx → /app/calibrations | BadActors.jsx → /app/schedule | Profile.jsx → /app/settings
@@ -141,13 +142,14 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 | /app/instruments/new                | InstrumentForm      | create mode                     |
 | /app/instruments/:id/edit           | InstrumentForm      | edit mode                       |
 | /app/instruments/:id                | InstrumentDetail    |                                 |
-| /app/schedule                       | Schedule            | Overdue / Due Soon / Repeat Failures |
+| /app/schedule                       | Schedule            | Overdue / Due Soon / Repeat Failures / Drift Alerts |
 | /app/calibrations                   | Calibrations        | Pending Approvals / Activity Log |
 | /app/calibrations/new/:instrumentId | CalibrationForm     |                                 |
 | /app/calibrations/import-csv        | ImportCalibratorCSV |                                 |
 | /app/reports                        | Reports             |                                 |
 | /app/settings                       | AppSettings         | Profile / Password / Team       |
 | /app/import                         | ImportInstruments   | bulk CSV import                 |
+| /app/support                        | Support             | FAQ accordion, tutorials, contact |
 
 ### Legacy redirects (old bookmarks still work)
 | Old path        | → New path          |

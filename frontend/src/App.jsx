@@ -31,6 +31,7 @@ import AppSettings         from './pages/AppSettings'
 import Reports             from './pages/Reports'
 import ImportInstruments   from './pages/ImportInstruments'
 import ImportCalibratorCSV from './pages/ImportCalibratorCSV'
+import Support             from './pages/Support'
 
 export default function App() {
   return (
@@ -81,6 +82,9 @@ export default function App() {
 
           {/* Instruments CSV bulk import */}
           <Route path="import"                   element={<ImportInstruments />} />
+
+          {/* Support */}
+          <Route path="support"                  element={<Support />} />
 
           {/* Legacy in-app redirects — old bookmarks still work */}
           <Route path="alerts"                   element={<Navigate to="/app/schedule"      replace />} />
