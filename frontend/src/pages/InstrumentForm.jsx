@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { instruments as instrApi } from '../utils/api'
 import { humanise } from '../utils/formatting'
@@ -10,7 +10,40 @@ import { getUser } from '../utils/userContext'
 const INSTRUMENT_TYPES = ['pressure','temperature','flow','level','analyser','switch','valve','other']
 const OUTPUT_TYPES     = ['4_20ma','hart','digital','pulse','other']
 const STATUS_OPTIONS   = ['active','spare','out_of_service']
-const CRITICALITY_OPTS = ['safety_critical','process_critical','standard','non_critical']
+const CRITICALITY_OPTS = [
+  {
+    value: 'safety_critical',
+    label: 'SIS / Trip',
+    sublabel: 'Safety Instrument System — plant shutdown on failure',
+    dot: '#C62828',
+    bg: '#FFEBEE',
+    text: '#C62828',
+  },
+  {
+    value: 'process_critical',
+    label: 'Process Critical',
+    sublabel: 'Affects controllers or other plant assets when faulty',
+    dot: '#F9A825',
+    bg: '#FFFDE7',
+    text: '#7B5800',
+  },
+  {
+    value: 'standard',
+    label: 'Standard',
+    sublabel: 'Indication only — no direct control or safety function',
+    dot: '#2E7D32',
+    bg: '#E8F5E9',
+    text: '#2E7D32',
+  },
+  {
+    value: 'non_critical',
+    label: 'Non-Critical',
+    sublabel: 'Utility / general purpose',
+    dot: '#94A3B8',
+    bg: '#F1F5F9',
+    text: '#64748B',
+  },
+]
 const TOLERANCE_TYPES  = [
   { value: 'percent_span',    label: '% Span' },
   { value: 'percent_reading', label: '% Reading' },
@@ -81,6 +114,126 @@ function fromDays(days) {
   if (nearestMonths > 0 && Math.abs(days - nearestMonths * 30.44) < 2)
     return { value: String(nearestMonths), unit: 'months' }
   return { value: String(days), unit: 'days' }
+}
+
+// ── Custom criticality select ─────────────────────────────────────────────────
+
+function CriticalitySelect({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const selected = CRITICALITY_OPTS.find(o => o.value === value) ?? CRITICALITY_OPTS[2]
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      {/* Trigger */}
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '8px 12px',
+          fontSize: '0.875rem',
+          border: '1px solid #e2e8f0',
+          borderRadius: 8,
+          background: '#fff',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        {/* Dot */}
+        <span style={{
+          width: 10, height: 10, borderRadius: '50%',
+          background: selected.dot, flexShrink: 0, display: 'inline-block',
+        }} />
+        {/* Label pill */}
+        <span style={{
+          display: 'inline-flex', alignItems: 'center',
+          padding: '1px 10px', borderRadius: 20,
+          background: selected.bg, color: selected.text,
+          fontSize: '0.72rem', fontWeight: 700,
+        }}>
+          {selected.label}
+        </span>
+        <span style={{ flex: 1, color: '#94a3b8', fontSize: '0.78rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {selected.sublabel}
+        </span>
+        {/* Chevron */}
+        <svg style={{ width: 14, height: 14, color: '#94a3b8', flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+          background: '#fff', borderRadius: 10,
+          border: '1px solid #e2e8f0', boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          zIndex: 200, overflow: 'hidden',
+        }}>
+          {CRITICALITY_OPTS.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => { onChange(opt.value); setOpen(false) }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                width: '100%',
+                padding: '10px 14px',
+                border: 'none',
+                borderBottom: '1px solid #f1f5f9',
+                background: opt.value === value ? '#f8fafc' : '#fff',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc' }}
+              onMouseLeave={e => { e.currentTarget.style.background = opt.value === value ? '#f8fafc' : '#fff' }}
+            >
+              {/* Colored dot */}
+              <span style={{
+                width: 12, height: 12, borderRadius: '50%',
+                background: opt.dot, flexShrink: 0,
+              }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Pill */}
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center',
+                  padding: '1px 10px', borderRadius: 20,
+                  background: opt.bg, color: opt.text,
+                  fontSize: '0.7rem', fontWeight: 700,
+                  marginBottom: 2,
+                }}>
+                  {opt.label}
+                </span>
+                <p style={{ fontSize: '0.72rem', color: '#64748b', margin: 0, lineHeight: 1.3 }}>
+                  {opt.sublabel}
+                </p>
+              </div>
+              {/* Tick */}
+              {opt.value === value && (
+                <svg style={{ width: 14, height: 14, color: '#2196F3', flexShrink: 0 }}
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 13l4 4L19 7"/></svg>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -362,10 +515,9 @@ export default function InstrumentForm() {
           </select>
         </Field>
 
-        <Field label="Criticality">
-          <select value={criticality} onChange={e => setCriticality(e.target.value)} className={inputCls(false)}>
-            {CRITICALITY_OPTS.map(c => <option key={c} value={c}>{humanise(c)}</option>)}
-          </select>
+        <Field label="Criticality"
+          hint="Determines calibration priority, certificate requirements and risk sorting">
+          <CriticalitySelect value={criticality} onChange={setCriticality} />
         </Field>
       </SectionCard>
 

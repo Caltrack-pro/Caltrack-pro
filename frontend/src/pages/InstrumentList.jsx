@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { instruments as instrApi } from '../utils/api'
-import { CalStatusBadge, ResultBadge } from '../components/Badges'
+import { CalStatusBadge, ResultBadge, CriticalityBadge } from '../components/Badges'
 import { fmtDate, humanise } from '../utils/formatting'
 import { getUser, canEdit, canCalibrate } from '../utils/userContext'
 
@@ -21,7 +21,7 @@ function Spinner() {
 function EmptyState({ filtered }) {
   return (
     <tr>
-      <td colSpan={9} className="px-6 py-16 text-center text-slate-400">
+      <td colSpan={10} className="px-6 py-16 text-center text-slate-400">
         <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
         </svg>
@@ -169,9 +169,11 @@ export default function InstrumentList() {
   // ── CSV export for selected ───────────────────────────────────────────────
   function exportSelected() {
     const sel = displayed.filter(i => selected.has(i.id))
-    const headers = ['Tag Number','Description','Area','Type','Due Date','Status','Last Result']
+    const CRIT_LABELS = { safety_critical: 'SIS / Trip', process_critical: 'Process Critical', standard: 'Standard', non_critical: 'Non-Critical' }
+    const headers = ['Tag Number','Criticality','Description','Area','Type','Due Date','Status','Last Result']
     const rows = sel.map(i => [
       i.tag_number,
+      CRIT_LABELS[i.criticality] ?? (i.criticality ?? ''),
       i.description ?? '',
       i.area ?? '',
       humanise(i.instrument_type),
@@ -331,6 +333,7 @@ export default function InstrumentList() {
                   </th>
                   {[
                     { label: 'Tag Number',   key: 'tag_number'              },
+                    { label: 'Criticality',  key: 'criticality'             },
                     { label: 'Description',  key: 'description'             },
                     { label: 'Area',         key: 'area'                    },
                     { label: 'Type',         key: 'instrument_type'         },
@@ -373,6 +376,11 @@ export default function InstrumentList() {
                       {/* Tag number */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="font-mono font-bold text-slate-800 text-sm">{inst.tag_number}</span>
+                      </td>
+
+                      {/* Criticality */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <CriticalityBadge criticality={inst.criticality} />
                       </td>
 
                       {/* Description */}

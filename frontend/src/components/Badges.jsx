@@ -55,6 +55,53 @@ export function RecordStatusBadge({ status }) {
   return <Badge className="bg-slate-100 text-slate-500">{status}</Badge>
 }
 
+/**
+ * Instrument criticality traffic-light badge.
+ * Colours match the CalCheq colour conventions and the Demo HTML design.
+ *   safety_critical  → Red   — SIS / Trip (plant shutdown on failure)
+ *   process_critical → Amber — Process Critical (affects controllers / other assets)
+ *   standard         → Green — Standard (indication only)
+ *   non_critical     → Grey  — Non-Critical (utility)
+ */
+export function CriticalityBadge({ criticality, size = 'sm' }) {
+  const pad  = size === 'sm' ? '2px 9px' : '4px 12px'
+  const font = size === 'sm' ? '0.7rem'  : '0.8rem'
+  const dot  = { width: 8, height: 8, borderRadius: '50%', flexShrink: 0, display: 'inline-block' }
+  const base = {
+    display: 'inline-flex', alignItems: 'center', gap: 5,
+    padding: pad, borderRadius: 20, fontSize: font, fontWeight: 700,
+  }
+
+  if (criticality === 'safety_critical')
+    return (
+      <span style={{ ...base, background: '#FFEBEE', color: '#C62828' }}>
+        <span style={{ ...dot, background: '#C62828' }} />
+        SIS / Trip
+      </span>
+    )
+  if (criticality === 'process_critical')
+    return (
+      <span style={{ ...base, background: '#FFFDE7', color: '#7B5800' }}>
+        <span style={{ ...dot, background: '#F9A825' }} />
+        Process Critical
+      </span>
+    )
+  if (criticality === 'standard')
+    return (
+      <span style={{ ...base, background: '#E8F5E9', color: '#2E7D32' }}>
+        <span style={{ ...dot, background: '#2E7D32' }} />
+        Standard
+      </span>
+    )
+  // non_critical or null/undefined
+  return (
+    <span style={{ ...base, background: '#F1F5F9', color: '#64748B' }}>
+      <span style={{ ...dot, background: '#94A3B8' }} />
+      Non-Critical
+    </span>
+  )
+}
+
 /** Large inline result indicator for form summaries */
 export function ResultPill({ result, size = 'md' }) {
   const sizeClass = size === 'lg' ? 'text-lg px-5 py-2' : 'text-sm px-3 py-1'

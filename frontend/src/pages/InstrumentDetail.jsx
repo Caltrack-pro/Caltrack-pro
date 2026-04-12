@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { instruments as instrApi, calibrations as calApi } from '../utils/api'
-import { CalStatusBadge, ResultBadge, RecordStatusBadge } from '../components/Badges'
+import { CalStatusBadge, ResultBadge, RecordStatusBadge, CriticalityBadge } from '../components/Badges'
 import { fmtDate, fmtPct, fmtNum, humanise } from '../utils/formatting'
 import TrendCharts from '../components/TrendCharts'
 import { getUser, canApprove, canEdit, canCalibrate } from '../utils/userContext'
@@ -807,8 +807,9 @@ export default function InstrumentDetail() {
       {/* ── Header card ── */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-5 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-3 mb-1 flex-wrap">
             <h1 className="text-2xl font-bold font-mono text-slate-900">{i.tag_number}</h1>
+            <CriticalityBadge criticality={i.criticality} size="md" />
             <CalStatusBadge alertStatus={i.alert_status} instrumentStatus={i.status} />
           </div>
           <p className="text-slate-600 text-base">{i.description || '—'}</p>
