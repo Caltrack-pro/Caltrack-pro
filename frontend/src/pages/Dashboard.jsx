@@ -364,7 +364,8 @@ function ComplianceGauge({ rate = 0 }) {
   }, [rate])
 
   const R            = 80
-  const CX = CY     = 100
+  const CX           = 100
+  const CY           = 100
   const circumference = 2 * Math.PI * R
   const offset        = circumference - (displayed / 100) * circumference
   const { stroke, text, label } = complianceColor(rate)
@@ -593,8 +594,10 @@ export default function Dashboard() {
   const compSub      = compRate >= 95 ? '↑ Meets 95% target' : `↓ Below 95% target`
 
   // Sub-text for overdue/due-soon cards
-  const safetyOverdueCount = (overdueInstruments?.results ?? []).filter(i => i.criticality === 'safety_critical').length
-  const safetyDueSoonCount = alerts.filter(a => a.alert_type === 'DUE_SOON' && (a.criticality === 'safety_critical')).length
+  // Note: alerts don't carry criticality, so we derive safety counts from the instrument list
+  const overdueResults      = overdueInstruments?.results ?? []
+  const safetyOverdueCount  = overdueResults.filter(i => i.criticality === 'safety_critical').length
+  const dueSoonAlertCount   = alerts.filter(a => a.alert_type === 'DUE_SOON').length
 
   const today   = new Date()
   const dateStr = today.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
