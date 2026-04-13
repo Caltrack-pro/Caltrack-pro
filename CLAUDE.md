@@ -98,6 +98,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - calibration_engine.py — server-side pass/fail calculation (source of truth)
 - notifications.py      — Resend email: submit/approve/reject alerts + daily overdue digest + weekly due-soon digest + member invite email
 - routes/auth.py        — GET /api/auth/check-site, POST /api/auth/register, GET /api/auth/me, GET /api/auth/members, POST /api/auth/invite
+- routes/contact.py     — POST /api/contact; accepts lead form, emails notification to CONTACT_NOTIFY_EMAIL via Resend; always returns 200
 - routes/instruments.py — CRUD; site derived from JWT via resolve_site
 - routes/calibrations.py — CRUD + submit/approve/reject; ownership checks
 - routes/dashboard.py   — stats, alerts, compliance-by-area, upcoming, bad-actors
@@ -200,6 +201,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 ### Demo account
 - Email: demo@calcheq.com  |  Password: CalcheqDemo2026
 - Site: Demo, role: admin; all writes return HTTP 403
+- display_name in site_members set to "Demo User" (was null, showed "—" in Settings Team table)
 
 ### Required Railway env vars
 - `SUPABASE_URL`              — https://qdrgjjndwgrmmjvzzdhg.supabase.co
