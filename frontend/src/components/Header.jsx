@@ -9,20 +9,27 @@ import { getUser, signOut, ROLES } from '../utils/userContext'
 
 function getPageTitle(pathname) {
   const STATIC = {
-    '/app':             'Dashboard',
-    '/app/instruments': 'Instruments',
-    '/app/alerts':      'Alerts & Notifications',
-    '/app/approvals':   'Pending Approvals',
-    '/app/reports':     'Reports',
-    '/app/bad-actors':  'Bad Actors',
-    '/app/profile':     'Profile & Team',
+    '/app':                        'Dashboard',
+    '/app/instruments':            'Instruments',
+    '/app/instruments/new':        'New Instrument',
+    '/app/schedule':               'Schedule',
+    '/app/calibrations':           'Calibrations',
+    '/app/calibrations/import-csv':'Import Calibrator CSV',
+    '/app/reports':                'Reports',
+    '/app/settings':               'Settings',
+    '/app/import':                 'Import Instruments',
+    '/app/support':                'Support',
+    // Legacy route aliases
+    '/app/alerts':                 'Schedule',
+    '/app/approvals':              'Calibrations',
+    '/app/bad-actors':             'Schedule',
+    '/app/profile':                'Settings',
   }
   if (STATIC[pathname]) return STATIC[pathname]
   if (pathname.startsWith('/app/calibrations/new/')) return 'New Calibration Record'
   if (pathname.match(/^\/app\/instruments\/[^/]+\/edit$/)) return 'Edit Instrument'
   if (pathname.match(/^\/app\/instruments\/[^/]+$/))       return 'Instrument Detail'
-  if (pathname === '/app/instruments/new')                  return 'New Instrument'
-  return 'Calcheq'
+  return 'CalCheq'
 }
 
 // ---------------------------------------------------------------------------
@@ -153,7 +160,7 @@ export default function Header({ onMenuClick }) {
 
       {/* Alert bell */}
       <Link
-        to="/app/alerts"
+        to="/app/schedule"
         className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
         aria-label={`${alertCount} active alerts`}
       >
@@ -213,7 +220,7 @@ export default function Header({ onMenuClick }) {
 
             {/* Profile */}
             <Link
-              to="/app/profile"
+              to="/app/settings"
               onClick={() => setShowDropdown(false)}
               className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
             >
@@ -221,7 +228,7 @@ export default function Header({ onMenuClick }) {
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
               </svg>
-              Profile & Team
+              Profile & Settings
             </Link>
 
             <div className="border-t border-slate-100 mt-1 pt-1">

@@ -128,7 +128,7 @@ export default function Pricing() {
             Transparent pricing for Australian processing plants
           </h1>
           <p className="text-slate-500 text-lg leading-relaxed">
-            Scale from 50 instruments to unlimited. No surprises. Cancel anytime.
+            From 150 instruments to unlimited. No surprises. Cancel anytime.
           </p>
         </div>
       </section>

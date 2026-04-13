@@ -318,10 +318,10 @@ export default function InstrumentList() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? <Spinner /> : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[800px]">
+            <table className="w-full text-sm min-w-[900px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-4 py-3 w-10">
+                  <th className="px-3 py-3 w-10">
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -345,7 +345,7 @@ export default function InstrumentList() {
                     <th
                       key={label}
                       onClick={key ? () => handleSort(key) : undefined}
-                      className={`text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap
+                      className={`text-left px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap
                         ${key ? 'cursor-pointer select-none hover:text-slate-700 hover:bg-slate-100 transition-colors' : ''}`}
                     >
                       {label}
@@ -364,7 +364,7 @@ export default function InstrumentList() {
                       className="hover:bg-slate-50 cursor-pointer transition-colors"
                     >
                       {/* Checkbox */}
-                      <td className="px-4 py-3 w-10" onClick={e => e.stopPropagation()}>
+                      <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={selected.has(inst.id)}
@@ -374,32 +374,32 @@ export default function InstrumentList() {
                       </td>
 
                       {/* Tag number */}
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <span className="font-mono font-bold text-slate-800 text-sm">{inst.tag_number}</span>
                       </td>
 
                       {/* Criticality */}
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <CriticalityBadge criticality={inst.criticality} />
                       </td>
 
                       {/* Description */}
-                      <td className="px-4 py-3 max-w-[200px]">
+                      <td className="px-3 py-3 max-w-[160px]">
                         <span className="text-slate-600 truncate block">{inst.description || '—'}</span>
                       </td>
 
                       {/* Area */}
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-600">
+                      <td className="px-3 py-3 whitespace-nowrap text-slate-600">
                         {inst.area || '—'}
                       </td>
 
                       {/* Type */}
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-600">
+                      <td className="px-3 py-3 whitespace-nowrap text-slate-600">
                         {humanise(inst.instrument_type)}
                       </td>
 
                       {/* Due Date */}
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         {inst.calibration_due_date ? (
                           <span className={inst.alert_status === 'overdue' ? 'text-red-600 font-semibold' : 'text-slate-600'}>
                             {fmtDate(inst.calibration_due_date)}
@@ -408,12 +408,12 @@ export default function InstrumentList() {
                       </td>
 
                       {/* Status badge */}
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <CalStatusBadge alertStatus={inst.alert_status} instrumentStatus={inst.status} />
                       </td>
 
                       {/* Last result */}
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <ResultBadge result={inst.last_calibration_result} />
                       </td>
 

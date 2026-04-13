@@ -19,7 +19,7 @@ function Logo() {
         <circle cx="16" cy="16" r="2" fill="#22C55E" stroke="none" />
       </svg>
       <div>
-        <div className="text-xl font-bold text-slate-900 leading-tight">Calcheq</div>
+        <div className="text-xl font-bold text-slate-900 leading-tight">Cal<span className="text-blue-500">Cheq</span></div>
         <div className="text-xs text-slate-500">Calibration Management</div>
       </div>
     </div>
@@ -230,7 +230,7 @@ export default function SignIn() {
         </div>
 
         <p className="text-center text-sm text-slate-500 mt-6">
-          New to Calcheq?{' '}
+          New to CalCheq?{' '}
           <Link to="/auth/signup" className="text-blue-600 font-medium hover:underline">
             Create an account
           </Link>

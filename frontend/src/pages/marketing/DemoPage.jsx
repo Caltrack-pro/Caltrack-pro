@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import MarketingNav from '../../components/marketing/MarketingNav'
 import MarketingFooter from '../../components/marketing/MarketingFooter'
@@ -58,6 +58,10 @@ function DemoFAQ({ question, answer }) {
 export default function DemoPage() {
   const navigate = useNavigate()
   const [launching, setLaunching] = useState(false)
+
+  useEffect(() => {
+    document.title = 'Live Demo — CalCheq Calibration Management'
+  }, [])
 
   async function handleLaunchDemo() {
     setLaunching(true)

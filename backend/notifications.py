@@ -78,7 +78,7 @@ def notify_submission(
     for email in supervisor_emails:
         _send(
             to=email,
-            subject=f"[CalTrack] Calibration submitted for approval — {instrument_tag}",
+            subject=f"[CalCheq] Calibration submitted for approval — {instrument_tag}",
             html=html,
         )
 
@@ -112,7 +112,7 @@ def notify_approved(
 """
     _send(
         to=technician_email,
-        subject=f"[CalTrack] Calibration approved — {instrument_tag}",
+        subject=f"[CalCheq] Calibration approved — {instrument_tag}",
         html=html,
     )
 
@@ -149,7 +149,7 @@ def notify_rejected(
 """
     _send(
         to=technician_email,
-        subject=f"[CalTrack] Calibration rejected — {instrument_tag}",
+        subject=f"[CalCheq] Calibration rejected — {instrument_tag}",
         html=html,
     )
 
@@ -233,7 +233,7 @@ def send_overdue_digest(db) -> int:
   </a>
 </p>
 """
-        subject = f"[CalTrack] {len(instruments)} overdue instrument(s) — {site_name}"
+        subject = f"[CalCheq] {len(instruments)} overdue instrument(s) — {site_name}"
         for member in recipients:
             if _send(to=member.email, subject=subject, html=html):
                 sent += 1
@@ -316,7 +316,7 @@ def send_due_soon_digest(db) -> int:
   </a>
 </p>
 """
-        subject = f"[CalTrack] {len(instruments)} instrument(s) due within 7 days — {site_name}"
+        subject = f"[CalCheq] {len(instruments)} instrument(s) due within 7 days — {site_name}"
         for member in recipients:
             if _send(to=member.email, subject=subject, html=html):
                 sent += 1

@@ -8,6 +8,7 @@ export default function MarketingNav() {
     { to: '/how-it-works', label: 'How It Works' },
     { to: '/pricing',      label: 'Pricing'      },
     { to: '/demo',         label: 'Demo'         },
+    { to: '/blog',         label: 'Blog'         },
     { to: '/resources',    label: 'Resources'    },
     { to: '/faq',          label: 'FAQ'          },
     { to: '/contact',      label: 'Contact'      },

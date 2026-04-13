@@ -15,7 +15,7 @@ function Logo() {
         <circle cx="16" cy="16" r="2" fill="#22C55E" stroke="none" />
       </svg>
       <div>
-        <div className="text-xl font-bold text-slate-900 leading-tight">Calcheq</div>
+        <div className="text-xl font-bold text-slate-900 leading-tight">Cal<span className="text-blue-500">Cheq</span></div>
         <div className="text-xs text-slate-500">Calibration Management</div>
       </div>
     </div>

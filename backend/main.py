@@ -39,6 +39,7 @@ from routes.calibrations import instruments_router as cal_instr_router    # noqa
 from routes.dashboard    import router as dashboard_router                # noqa: E402
 from routes.audit        import router as audit_router                    # noqa: E402
 from routes.queue        import router as queue_router                    # noqa: E402
+from routes.contact      import router as contact_router                  # noqa: E402
 
 app.include_router(auth_router)
 app.include_router(instruments_router)
@@ -47,6 +48,7 @@ app.include_router(cal_instr_router)
 app.include_router(dashboard_router)
 app.include_router(audit_router)
 app.include_router(queue_router)
+app.include_router(contact_router)
 
 
 # ---------------------------------------------------------------------------

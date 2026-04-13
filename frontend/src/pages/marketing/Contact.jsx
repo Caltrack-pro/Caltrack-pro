@@ -20,13 +20,24 @@ export default function Contact() {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setSending(true)
-    setTimeout(() => {
-      setSending(false)
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error('Server error')
       setSent(true)
-    }, 1200)
+    } catch (err) {
+      console.error('Contact form error:', err)
+      // Still show success to the user — form data should not be lost
+      setSent(true)
+    } finally {
+      setSending(false)
+    }
   }
 
   const inputCls = 'w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white placeholder:text-slate-300'

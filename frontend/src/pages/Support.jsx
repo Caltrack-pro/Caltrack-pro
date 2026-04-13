@@ -277,7 +277,7 @@ export default function Support() {
           </p>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <a
-              href="mailto:support@calcheq.com"
+              href="mailto:info@calcheq.com"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white transition-colors"
               style={{ background: BLUE }}
               onMouseEnter={e => e.currentTarget.style.background = '#1251A8'}
@@ -286,7 +286,7 @@ export default function Support() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              support@calcheq.com
+              info@calcheq.com
             </a>
             <div className="flex items-center gap-2 text-sm text-slate-500">
               <span className="inline-flex items-center gap-1.5">
