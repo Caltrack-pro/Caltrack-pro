@@ -43,17 +43,19 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - ResetPassword.jsx      — handles reset link, sets new password
 
 ### Frontend — src/pages/ (app pages, all under /app/*)
-- Dashboard.jsx          — metrics hub: 5 KPI stat cards, 3 attention cards (overdue/pending/drift linking to Schedule & Calibrations), compliance gauge, area bars, upcoming 7-day list, quick actions panel
+- Dashboard.jsx          — metrics hub: horizontal quick actions bar, 4 KPI stat cards, Instrument Health donut (current/due-soon/overdue/est-out-of-tolerance), 3 attention cards, area compliance bars, upcoming 7-day list
 - InstrumentList.jsx     — paginated/filterable instrument register with bulk CSV export
 - InstrumentForm.jsx     — create and edit instrument (shared form)
 - InstrumentDetail.jsx   — single instrument view: calibration history, trend charts, drift analysis, audit trail tabs
 - CalibrationForm.jsx    — enter calibration results (as-found / as-left test points, 1–20 points)
 - ImportCalibratorCSV.jsx — 3-step Beamex/Fluke CSV import: Upload → Review → Confirm; route: /app/calibrations/import-csv
 - ImportInstruments.jsx  — bulk instrument CSV import UI; route: /app/import
-- Schedule.jsx           — 4 tabs: Overdue / Due Soon / Repeat Failures / Drift Alerts; supports ?tab=drift URL param; route: /app/schedule
-- Calibrations.jsx       — 2 tabs: Pending Approvals (with live count badge) / Activity Log; replaces old PendingApprovals page; route: /app/calibrations
+- Schedule.jsx           — 2 tabs: Technician Queue (default, shows queued instruments as table) / Planner (queue any active instrument, 12-week workload chart); route: /app/schedule
+- Calibrations.jsx       — 2 tabs: Activity Log (default, with PDF cert download per row) / Pending Approvals (with live count badge); route: /app/calibrations
+- SmartDiagnostics.jsx   — 3 tabs: Recommendations (critical/advisory/optimisation, rule-based engine) / Drift Alerts (sparklines, projected failure dates) / Repeat Failures (bad actors); route: /app/diagnostics
+- Documents.jsx          — document library: upload/manage procedures, manuals, certificates; link to instruments; CRUD via /api/documents; route: /app/documents
 - AppSettings.jsx        — 4 sections: Site info / Profile / Change Password / Team Members (admin only); route: /app/settings
-- Reports.jsx            — compliance reporting and calibration history export (PDF via jsPDF)
+- Reports.jsx            — export centre: quick export bar (overdue/failed/compliance CSV), 4 report tabs (overdue/upcoming/failed/history); route: /app/reports
 - Support.jsx            — FAQ accordion (5 sections, 20 Q&As), tutorial placeholders, contact email; route: /app/support
 
 ### Legacy pages (files still exist but routes now redirect to above)
@@ -72,7 +74,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 ### Frontend — src/components/
 - Layout.jsx             — app shell: fetches pendingCount for sidebar badge on mount, passes to Sidebar; renders Header + <Outlet>
 - AuthGuard.jsx          — protects /app/* routes; redirects to /auth/sign-in if no Supabase session
-- Sidebar.jsx            — emoji nav: 🏠 Dashboard, 🔧 Instruments, 📅 Schedule, 📋 Calibrations (red badge for pending count), 📄 Reports, ⚙️ Settings; user avatar with initial; Try Demo toggle; Back to Website
+- Sidebar.jsx            — emoji nav: 🏠 Dashboard, 🔧 Instruments, 📅 Schedule, 📋 Calibrations (red badge), 🔬 Smart Diagnostics, 📁 Documents, 📄 Reports, ⚙️ Settings, 🆘 Support; user avatar; Try Demo toggle; Back to Website
 - Header.jsx             — top bar: logged-in user name + role; sign-out via Supabase
 - Badges.jsx             — shared status/result badge components (CriticalityBadge, ResultBadge, etc.)
 - Toast.jsx              — notification toast system
@@ -83,7 +85,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 ### Frontend — src/utils/
 - supabase.js            — Supabase client (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)
 - userContext.js         — getUser(), onAuthStateChange, demo mode toggle; shape: { userId, email, userName, siteName, role, isDemoMode }
-- api.js                 — all API calls; auto-injects Authorization: Bearer <JWT>; exports: instruments, calibrations, dashboard, auth
+- api.js                 — all API calls; auto-injects Authorization: Bearer <JWT>; exports: instruments, calibrations, dashboard, queue, documents, auth
 - calEngine.js           — pass/fail/marginal calculation logic (mirrors backend)
 - formatting.js          — shared date and number formatting helpers
 - reportGenerator.js     — jsPDF: generateSingleCalibrationCert() + generateMultiCalibrationReport()
@@ -91,7 +93,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 
 ### Backend — backend/
 - main.py               — FastAPI app entry point, CORS, router registration
-- models.py             — SQLAlchemy ORM models (Instrument, CalibrationRecord, CalTestPoint, AuditLog)
+- models.py             — SQLAlchemy ORM models (Instrument, CalibrationRecord, CalTestPoint, AuditLog, CalibrationQueue, Document, DocumentInstrument)
 - schemas.py            — Pydantic v2 request/response schemas
 - database.py           — Supabase/PostgreSQL connection via SQLAlchemy
 - auth.py               — ES256 JWT verification via JWKS; get_current_user / get_optional_user / resolve_site / assert_writable_site
@@ -102,6 +104,8 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - routes/instruments.py — CRUD; site derived from JWT via resolve_site
 - routes/calibrations.py — CRUD + submit/approve/reject; ownership checks
 - routes/dashboard.py   — stats, alerts, compliance-by-area, upcoming, bad-actors
+- routes/queue.py       — GET/POST/DELETE/PATCH /api/queue; calibration work queue with auto-cleanup
+- routes/documents.py   — GET/POST/PUT/DELETE /api/documents; document library with instrument linking
 - routes/audit.py       — GET /api/instruments/{id}/audit-log, GET /api/audit (admin only)
 
 ### Root-level scripts
@@ -143,11 +147,13 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 | /app/instruments/new                | InstrumentForm      | create mode                     |
 | /app/instruments/:id/edit           | InstrumentForm      | edit mode                       |
 | /app/instruments/:id                | InstrumentDetail    |                                 |
-| /app/schedule                       | Schedule            | Overdue / Due Soon / Repeat Failures / Drift Alerts |
-| /app/calibrations                   | Calibrations        | Pending Approvals / Activity Log |
+| /app/schedule                       | Schedule            | Technician Queue / Planner      |
+| /app/calibrations                   | Calibrations        | Activity Log / Pending Approvals |
 | /app/calibrations/new/:instrumentId | CalibrationForm     |                                 |
 | /app/calibrations/import-csv        | ImportCalibratorCSV |                                 |
-| /app/reports                        | Reports             |                                 |
+| /app/diagnostics                    | SmartDiagnostics    | Recommendations / Drift Alerts / Repeat Failures |
+| /app/documents                      | Documents           | Document library with instrument linking |
+| /app/reports                        | Reports             | Export centre: quick exports + 4 report tabs |
 | /app/settings                       | AppSettings         | Profile / Password / Team       |
 | /app/import                         | ImportInstruments   | bulk CSV import                 |
 | /app/support                        | Support             | FAQ accordion, tutorials, contact |
@@ -172,6 +178,9 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 ### Database tables
 - `sites`        — id (UUID), name, slug, created_at
 - `site_members` — site_id (FK), user_id (FK→auth.users), role, display_name, email, created_at
+- `calibration_queue` — id, site_name, instrument_id (FK), added_by_name, added_at, priority, notes
+- `documents`    — id, site_name, title, doc_type, file_name, file_size, file_url, notes, uploaded_by, created_at, updated_at
+- `document_instruments` — id, document_id (FK→documents), instrument_id (FK→instruments), UNIQUE(doc, instr)
 
 ### Sign-in flow (2-step)
 1. Company name → GET /api/auth/check-site validates it exists

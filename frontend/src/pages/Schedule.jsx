@@ -1,17 +1,20 @@
 /**
- * Schedule — "What needs doing and when"
- * Five tabs: Overdue | Due Soon | Repeat Failures | Drift Alerts | Planner
- * Replaces the old Alerts and Bad Actors pages.
- * Supports ?tab=drift (and other tab ids) as a URL param to deep-link.
+ * Schedule — "Your calibration work queue and planning tools"
+ * Two tabs: Technician Queue (default) | Planner
+ *
+ * Technician Queue: unified work list from queue API (Overdue + Due Soon combined)
+ * Planner: build and manage your calibration schedule
+ *
+ * Supports ?tab=queue / ?tab=planner for deep-linking.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { dashboard as dashApi, instruments as instrApi, queue as queueApi } from '../utils/api'
+import { instruments as instrApi, queue as queueApi } from '../utils/api'
 import { CriticalityBadge } from '../components/Badges'
 import { fmtDate } from '../utils/formatting'
 import { getUser } from '../utils/userContext'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 // ── Colour palette ────────────────────────────────────────────────────────────
 const NAVY  = '#0B1F3A'
@@ -66,73 +69,45 @@ const TH = 'text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase t
 const TD = 'px-4 py-3'
 
 
-// ── TAB 1: Overdue ────────────────────────────────────────────────────────────
+// ── TAB 1: Technician Queue ───────────────────────────────────────────────────
 
-function OverdueTab() {
-  const [data,    setData]    = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState(null)
-  const [sortBy,  setSortBy]  = useState('risk')
-  const [area,    setArea]    = useState('')
+function TechnicianQueueTab() {
+  const [queueItems, setQueueItems] = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState(null)
 
   const load = useCallback(() => {
     setLoading(true); setError(null)
-    instrApi.list({ calibration_status: 'overdue', limit: 500 })
-      .then(res => { setData(res.results ?? []); setLoading(false) })
+    queueApi.list()
+      .then(res => {
+        const items = res.items ?? []
+        // Sort by priority and then by alert status (overdue before due-soon)
+        const sorted = [...items].sort((a, b) => {
+          const aInst = a.instrument
+          const bInst = b.instrument
+          const aOverdue = aInst.days_overdue > 0
+          const bOverdue = bInst.days_overdue > 0
+          if (aOverdue !== bOverdue) return aOverdue ? -1 : 1
+          const ca = CRIT_ORDER[aInst.criticality ?? 'non_critical'] ?? 3
+          const cb = CRIT_ORDER[bInst.criticality ?? 'non_critical'] ?? 3
+          return ca !== cb ? ca - cb : (a.priority ?? 999) - (b.priority ?? 999)
+        })
+        setQueueItems(sorted)
+        setLoading(false)
+      })
       .catch(err => { setError(err.message); setLoading(false) })
   }, [])
 
   useEffect(() => { load() }, [load])
 
-  const areas = useMemo(() => [...new Set(data.map(i => i.area).filter(Boolean))].sort(), [data])
-
-  const sorted = useMemo(() => {
-    let list = area ? data.filter(i => i.area === area) : data
-    if (sortBy === 'risk') {
-      list = [...list].sort((a, b) => {
-        const ca = CRIT_ORDER[a.criticality ?? 'non_critical'] ?? 3
-        const cb = CRIT_ORDER[b.criticality ?? 'non_critical'] ?? 3
-        return ca !== cb ? ca - cb : (b.days_overdue ?? 0) - (a.days_overdue ?? 0)
-      })
-    } else if (sortBy === 'days') {
-      list = [...list].sort((a, b) => (b.days_overdue ?? 0) - (a.days_overdue ?? 0))
-    } else if (sortBy === 'area') {
-      list = [...list].sort((a, b) => (a.area ?? '').localeCompare(b.area ?? ''))
-    }
-    return list
-  }, [data, sortBy, area])
-
-  function SortPill({ id, label }) {
-    return (
-      <button
-        onClick={() => setSortBy(id)}
-        className={`px-3 py-1 text-xs rounded-full font-semibold transition-colors border ${
-          sortBy === id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-        }`}
-      >{label}</button>
-    )
-  }
-
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-slate-500">Sort:</span>
-          <SortPill id="risk"  label="⚠️ Risk" />
-          <SortPill id="days"  label="🕐 Overdue Days" />
-          <SortPill id="area"  label="📍 Area" />
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-slate-600">
+            Your current calibration work queue. Start a calibration or visit the Planner tab to add more instruments.
+          </p>
         </div>
-        <select value={area} onChange={e => setArea(e.target.value)}
-          className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="">All Areas</option>
-          {areas.map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <div className="flex-1" />
-        {!loading && (
-          <span className="text-sm text-slate-500">
-            <span className="font-bold text-red-600">{sorted.length}</span> overdue instrument{sorted.length !== 1 ? 's' : ''}
-          </span>
-        )}
         <button onClick={load} disabled={loading}
           className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition-colors">
           ↺ Refresh
@@ -140,584 +115,59 @@ function OverdueTab() {
       </div>
 
       {loading ? <Spinner /> : error ? <ErrorMsg message={error} onRetry={load} /> :
-       sorted.length === 0 ? <EmptyOk icon="✅" message="No overdue instruments — all calibrations are up to date." /> : (
+       queueItems.length === 0 ? (
+        <EmptyOk icon="📋" message="No instruments in the calibration queue. Use the Planner tab to build your work schedule." />
+      ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
-          <table className="w-full text-sm min-w-[800px]">
+          <table className="w-full text-sm min-w-[900px]">
             <thead>
               <tr style={{ background: NAVY }}>
-                {['Criticality','Tag','Description','Area','Due Date','Overdue By','Last Result','Action'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-white/80 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                {['Priority','Tag','Description','Area','Due Date','Status','Added By','Action'].map(h => (
+                  <th key={h} className={TH}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {sorted.map((inst, idx) => (
-                <tr key={inst.id} className={`hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? '' : 'bg-slate-50/40'}`}>
-                  <td className={TD}><CriticalityBadge criticality={inst.criticality} /></td>
-                  <td className={TD}>
-                    <Link to={`/app/instruments/${inst.id}`} className="font-mono font-bold text-blue-600 hover:underline">
-                      {inst.tag_number}
-                    </Link>
-                  </td>
-                  <td className={`${TD} text-slate-600 max-w-[200px] truncate`}>{inst.description || '—'}</td>
-                  <td className={`${TD} text-slate-500`}>{inst.area || '—'}</td>
-                  <td className={`${TD} text-red-600 font-semibold whitespace-nowrap`}>{fmtDate(inst.calibration_due_date)}</td>
-                  <td className={TD}><DaysPill days={inst.days_overdue} overdue /></td>
-                  <td className={TD}>
-                    {inst.last_calibration_result ? (
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        inst.last_calibration_result === 'pass'     ? 'bg-green-100 text-green-700' :
-                        inst.last_calibration_result === 'fail'     ? 'bg-red-100 text-red-700' :
-                        inst.last_calibration_result === 'marginal' ? 'bg-amber-100 text-amber-700' :
-                        'bg-slate-100 text-slate-600'
-                      }`}>{inst.last_calibration_result.charAt(0).toUpperCase() + inst.last_calibration_result.slice(1)}</span>
-                    ) : <span className="text-slate-400">—</span>}
-                  </td>
-                  <td className={`${TD} whitespace-nowrap`}>
-                    <Link to={`/app/calibrations/new/${inst.id}`}
-                      className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                      📋 Calibrate
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  )
-}
+              {queueItems.map((item, idx) => {
+                const inst = item.instrument
+                const isOverdue = inst.days_overdue > 0
+                const daysUntil = inst.days_until_due
+                const status = isOverdue ? 'overdue' : (daysUntil != null && daysUntil <= 7) ? 'due-soon' : 'current'
+                const statusColor = isOverdue ? 'text-red-600' : (daysUntil != null && daysUntil <= 7) ? 'text-amber-600' : 'text-green-600'
 
-
-// ── TAB 2: Due Soon ───────────────────────────────────────────────────────────
-
-function DueSoonTab() {
-  const [data,    setData]    = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState(null)
-  const [window_,  setWindow] = useState('30')
-  const [area,    setArea]    = useState('')
-
-  const load = useCallback(() => {
-    setLoading(true); setError(null)
-    dashApi.upcoming()
-      .then(res => { setData(res?.results ?? res ?? []); setLoading(false) })
-      .catch(err => { setError(err.message); setLoading(false) })
-  }, [])
-
-  useEffect(() => { load() }, [load])
-
-  const areas = useMemo(() => [...new Set(data.map(i => i.area).filter(Boolean))].sort(), [data])
-
-  const filtered = useMemo(() => {
-    const days = parseInt(window_, 10) || 30
-    return data.filter(i => {
-      if (area && i.area !== area) return false
-      if ((i.days_until_due ?? 999) > days) return false
-      return true
-    }).sort((a, b) => (a.days_until_due ?? 999) - (b.days_until_due ?? 999))
-  }, [data, window_, area])
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-slate-500">Show due within:</span>
-          {['7','14','30'].map(d => (
-            <button key={d} onClick={() => setWindow(d)}
-              className={`px-3 py-1 text-xs rounded-full font-semibold transition-colors border ${
-                window_ === d ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-              }`}
-            >{d} days</button>
-          ))}
-        </div>
-        <select value={area} onChange={e => setArea(e.target.value)}
-          className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="">All Areas</option>
-          {areas.map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <div className="flex-1" />
-        {!loading && (
-          <span className="text-sm text-slate-500">
-            <span className="font-bold text-amber-600">{filtered.length}</span> due within {window_} days
-          </span>
-        )}
-      </div>
-
-      {loading ? <Spinner /> : error ? <ErrorMsg message={error} onRetry={load} /> :
-       filtered.length === 0 ? <EmptyOk icon="📅" message={`No calibrations due within ${window_} days.`} /> : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
-          <table className="w-full text-sm min-w-[700px]">
-            <thead>
-              <tr style={{ background: NAVY }}>
-                {['Tag','Description','Area','Due Date','Time Left','Interval','Action'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-white/80 uppercase tracking-wide whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filtered.map((inst, idx) => (
-                <tr key={inst.id} className={`hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? '' : 'bg-slate-50/40'}`}>
-                  <td className={TD}>
-                    <Link to={`/app/instruments/${inst.id}`} className="font-mono font-bold text-blue-600 hover:underline">
-                      {inst.tag_number}
-                    </Link>
-                  </td>
-                  <td className={`${TD} text-slate-600 max-w-[200px] truncate`}>{inst.description || '—'}</td>
-                  <td className={`${TD} text-slate-500`}>{inst.area || '—'}</td>
-                  <td className={`${TD} whitespace-nowrap font-semibold ${(inst.days_until_due ?? 99) <= 7 ? 'text-amber-600' : 'text-slate-700'}`}>
-                    {fmtDate(inst.calibration_due_date)}
-                  </td>
-                  <td className={TD}><DaysPill days={inst.days_until_due} /></td>
-                  <td className={`${TD} text-slate-500`}>{inst.calibration_interval_days ? `${inst.calibration_interval_days}d` : '—'}</td>
-                  <td className={`${TD} whitespace-nowrap`}>
-                    <Link to={`/app/calibrations/new/${inst.id}`}
-                      className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                      📋 Calibrate
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  )
-}
-
-
-// ── TAB 3: Repeat Failures ────────────────────────────────────────────────────
-
-function RepeatFailuresTab() {
-  const [actors,  setActors]  = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState(null)
-
-  const load = useCallback(() => {
-    setLoading(true); setError(null)
-    const site = getUser()?.siteName ?? null
-    dashApi.badActors(site)
-      .then(data => {
-        const list = Array.isArray(data) ? data : (data?.results ?? [])
-        setActors(list); setLoading(false)
-      })
-      .catch(err => { setError(err.message); setLoading(false) })
-  }, [])
-
-  useEffect(() => { load() }, [load])
-
-  return (
-    <div className="space-y-4">
-      <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-start gap-3">
-        <span className="text-xl flex-shrink-0">🔁</span>
-        <div>
-          <p className="text-sm font-semibold text-red-800">What is a repeat failure?</p>
-          <p className="text-sm text-red-700 mt-0.5">
-            Instruments with 2 or more as-found failures in the last 12 months. These are drifting beyond tolerance
-            before their scheduled calibration — they may need a shorter interval, maintenance, or replacement.
-          </p>
-        </div>
-      </div>
-
-      {loading ? <Spinner /> : error ? <ErrorMsg message={error} onRetry={load} /> :
-       actors.length === 0 ? <EmptyOk icon="🏆" message="No instruments have recorded 2+ as-found failures in the last 12 months." /> : (
-        <>
-          <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
-            <table className="w-full text-sm min-w-[600px]">
-              <thead>
-                <tr style={{ background: NAVY }}>
-                  {['Rank','Tag','Description','Area','Last Failure','Failures','Last Result'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-white/80 uppercase tracking-wide whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {actors.map((actor, i) => (
-                  <tr key={actor.instrument_id}
-                    className="hover:bg-slate-50 transition-colors cursor-pointer"
-                    onClick={() => window.location.href = `/app/instruments/${actor.instrument_id}`}
-                  >
+                return (
+                  <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? '' : 'bg-slate-50/40'}`}>
                     <td className={TD}>
-                      <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
-                        i === 0 ? 'bg-red-500 text-white' :
-                        i === 1 ? 'bg-red-300 text-red-900' :
-                        i === 2 ? 'bg-amber-300 text-amber-900' :
-                        'bg-slate-100 text-slate-500'}`}>
-                        {i + 1}
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+                        {idx + 1}
                       </span>
                     </td>
-                    <td className={TD}><span className="font-mono font-bold text-slate-800">{actor.tag_number}</span></td>
-                    <td className={`${TD} text-slate-600 max-w-[200px] truncate`}>{actor.description || '—'}</td>
-                    <td className={`${TD} text-slate-500`}>{actor.area || '—'}</td>
-                    <td className={`${TD} text-slate-500 whitespace-nowrap`}>{fmtDate(actor.last_failure_date)}</td>
                     <td className={TD}>
-                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-700 font-bold">
-                        {actor.failure_count}
-                      </span>
+                      <Link to={`/app/instruments/${inst.id}`} className="font-mono font-bold text-blue-600 hover:underline">
+                        {inst.tag_number}
+                      </Link>
                     </td>
-                    <td className={TD}><span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">Fail</span></td>
+                    <td className={`${TD} text-slate-600 max-w-[200px] truncate`}>{inst.description || '—'}</td>
+                    <td className={`${TD} text-slate-500`}>{inst.area || '—'}</td>
+                    <td className={`${TD} font-semibold whitespace-nowrap ${isOverdue ? 'text-red-600' : 'text-slate-700'}`}>
+                      {fmtDate(inst.calibration_due_date)}
+                    </td>
+                    <td className={`${TD} font-semibold ${statusColor}`}>
+                      {isOverdue ? `${inst.days_overdue}d overdue` : daysUntil != null ? `${daysUntil}d left` : '—'}
+                    </td>
+                    <td className={`${TD} text-slate-500 text-xs`}>{item.added_by_name || '—'}</td>
+                    <td className={`${TD} whitespace-nowrap`}>
+                      <Link to={`/app/calibrations/new/${inst.id}`}
+                        className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                        Start Cal
+                      </Link>
+                    </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4">
-            <p className="text-sm font-semibold text-amber-800 mb-2">💡 Recommended actions</p>
-            <ol className="space-y-1.5 text-sm text-amber-700 list-decimal list-inside">
-              <li>Review calibration history for each instrument to identify drift patterns.</li>
-              <li>Consider shortening the calibration interval — if 12-month yields failures, try 6.</li>
-              <li>Inspect installation: impulse lines, ambient temperature, vibration, process conditions.</li>
-              <li>If failures persist, raise a corrective maintenance work order for inspection or replacement.</li>
-            </ol>
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-
-
-// ── TAB 4: Drift Alerts ───────────────────────────────────────────────────────
-
-// Mini sparkline showing error trend across calibrations
-function DriftSparkline({ points }) {
-  if (!points || points.length < 2) return <span className="text-slate-400 text-xs">—</span>
-  const max = Math.max(...points, 0.01)
-  const w = 80, h = 28, pad = 3
-  const xs = points.map((_, i) => pad + (i / (points.length - 1)) * (w - 2 * pad))
-  const ys = points.map(v => h - pad - ((v / max) * (h - 2 * pad)))
-  const path = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(' ')
-  const last = points[points.length - 1]
-  const prev = points[points.length - 2]
-  const rising = last > prev
-  return (
-    <div className="flex items-center gap-2">
-      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow: 'visible' }}>
-        <path d={path} fill="none" stroke={rising ? '#F59E0B' : '#22C55E'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx={xs[xs.length-1]} cy={ys[ys.length-1]} r="3" fill={rising ? '#F59E0B' : '#22C55E'} />
-      </svg>
-      <span className={`text-xs font-bold ${rising ? 'text-amber-600' : 'text-green-600'}`}>
-        {rising ? '↗' : '↘'} {last.toFixed(2)}%
-      </span>
-    </div>
-  )
-}
-
-// Instruments with seeded 5-record drift history — error % at each calibration
-const DRIFT_TREND_DATA = {
-  'PT-102': [0.08, 0.22, 0.40, 0.60, 0.83],
-  'FT-103': [0.05, 0.12, 0.22, 0.33, 0.44],
-  'LT-103': [0.06, 0.14, 0.26, 0.36, 0.46],
-  'TT-101': [0.10, 0.26, 0.44, 0.64, 0.87],
-  'AT-103': [0.18, 0.55, 1.02, 1.42, 1.76],
-}
-
-/**
- * Project the instrument's current error % based on:
- *  - drift rate per calibration interval (linear from trend data)
- *  - days elapsed since last calibration
- * Returns null if insufficient data.
- */
-function projectedCurrentError(inst, trendPts) {
-  if (!trendPts || trendPts.length < 2) return null
-  const n = trendPts.length
-  const driftPerInterval = (trendPts[n - 1] - trendPts[0]) / (n - 1)
-  const intervalDays = inst.calibration_interval_days || 180
-  const driftPerDay = driftPerInterval / intervalDays
-  if (!inst.last_calibration_date) return trendPts[n - 1]
-  const lastCal = new Date(inst.last_calibration_date)
-  const daysSince = Math.max(0, Math.floor((Date.now() - lastCal.getTime()) / 86400000))
-  return Math.max(0, trendPts[n - 1] + driftPerDay * daysSince)
-}
-
-/**
- * Project the date when the instrument will exceed tolerance.
- * Returns a Date object, 'exceeded', or null.
- */
-function projectedFailDate(inst, trendPts) {
-  const currentErr = projectedCurrentError(inst, trendPts)
-  if (currentErr === null) return null
-  const tol = inst.tolerance_value
-  if (!tol) return null
-  const n = trendPts.length
-  const driftPerInterval = (trendPts[n - 1] - trendPts[0]) / (n - 1)
-  const intervalDays = inst.calibration_interval_days || 180
-  const driftPerDay = driftPerInterval / intervalDays
-  if (driftPerDay <= 0) return null
-  if (currentErr >= tol) return 'exceeded'
-  const daysToFail = (tol - currentErr) / driftPerDay
-  if (daysToFail > 3650) return null  // > 10 years — not useful
-  const d = new Date()
-  d.setDate(d.getDate() + Math.round(daysToFail))
-  return d
-}
-
-function currentErrColor(err, tol) {
-  if (!tol) return 'text-slate-500'
-  const pct = err / tol
-  if (pct >= 1.0) return 'text-red-700 font-bold'
-  if (pct >= 0.9) return 'text-red-600 font-semibold'
-  if (pct >= 0.7) return 'text-amber-600 font-semibold'
-  return 'text-green-700'
-}
-
-function FailAtCell({ date }) {
-  if (!date) return <span className="text-slate-400 text-xs">Insufficient data</span>
-  if (date === 'exceeded') return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
-      Exceeded now
-    </span>
-  )
-  const days = Math.round((date.getTime() - Date.now()) / 86400000)
-  const label = date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
-  const color = days < 90 ? 'bg-red-100 text-red-700' : days < 365 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
-  return (
-    <div>
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${color}`}>
-        {label}
-      </span>
-      <p className="text-xs text-slate-400 mt-0.5">{days < 0 ? 'Overdue' : `in ${days}d`}</p>
-    </div>
-  )
-}
-
-function SortTH({ label, col, sortCol, sortDir, onSort }) {
-  const active = sortCol === col
-  return (
-    <th
-      onClick={() => onSort(col)}
-      className="text-left px-4 py-3 text-xs font-semibold text-white/80 uppercase tracking-wide whitespace-nowrap cursor-pointer select-none hover:text-white group"
-    >
-      <span className="flex items-center gap-1">
-        {label}
-        <span className={`text-[10px] transition-opacity ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
-          {active ? (sortDir === 'asc' ? '▲' : '▼') : '▼'}
-        </span>
-      </span>
-    </th>
-  )
-}
-
-function DriftAlertsTab() {
-  const [data,    setData]    = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState(null)
-  const [area,    setArea]    = useState('')
-  const [sortCol, setSortCol] = useState('criticality')
-  const [sortDir, setSortDir] = useState('asc')
-
-  const load = useCallback(() => {
-    setLoading(true); setError(null)
-    instrApi.list({ last_calibration_result: 'marginal', status: 'active', limit: 500 })
-      .then(res => { setData(res.results ?? []); setLoading(false) })
-      .catch(err => { setError(err.message); setLoading(false) })
-  }, [])
-
-  useEffect(() => { load() }, [load])
-
-  function handleSort(col) {
-    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    else { setSortCol(col); setSortDir('asc') }
-  }
-
-  const areas = useMemo(() => [...new Set(data.map(i => i.area).filter(Boolean))].sort(), [data])
-
-  const sorted = useMemo(() => {
-    let list = area ? data.filter(i => i.area === area) : [...data]
-    const dir = sortDir === 'asc' ? 1 : -1
-
-    list.sort((a, b) => {
-      if (sortCol === 'criticality') {
-        const ca = CRIT_ORDER[a.criticality ?? 'non_critical'] ?? 3
-        const cb = CRIT_ORDER[b.criticality ?? 'non_critical'] ?? 3
-        return (ca - cb) * dir
-      }
-      if (sortCol === 'tag') {
-        return a.tag_number.localeCompare(b.tag_number) * dir
-      }
-      if (sortCol === 'area') {
-        return (a.area ?? '').localeCompare(b.area ?? '') * dir
-      }
-      if (sortCol === 'current_error') {
-        const ea = projectedCurrentError(a, DRIFT_TREND_DATA[a.tag_number]) ?? a.max_as_found_error_pct ?? 0
-        const eb = projectedCurrentError(b, DRIFT_TREND_DATA[b.tag_number]) ?? b.max_as_found_error_pct ?? 0
-        return (ea - eb) * dir
-      }
-      if (sortCol === 'tolerance') {
-        return ((a.tolerance_value ?? 0) - (b.tolerance_value ?? 0)) * dir
-      }
-      if (sortCol === 'due') {
-        const da = a.days_until_due ?? (a.days_overdue != null ? -a.days_overdue : 9999)
-        const db_ = b.days_until_due ?? (b.days_overdue != null ? -b.days_overdue : 9999)
-        return (da - db_) * dir
-      }
-      if (sortCol === 'fail_at') {
-        const fa = projectedFailDate(a, DRIFT_TREND_DATA[a.tag_number])
-        const fb = projectedFailDate(b, DRIFT_TREND_DATA[b.tag_number])
-        const ta = fa instanceof Date ? fa.getTime() : fa === 'exceeded' ? 0 : 999999999999
-        const tb_ = fb instanceof Date ? fb.getTime() : fb === 'exceeded' ? 0 : 999999999999
-        return (ta - tb_) * dir
-      }
-      return 0
-    })
-    return list
-  }, [data, area, sortCol, sortDir])
-
-  function daysUntilDue(inst) {
-    if (inst.days_until_due != null) return inst.days_until_due
-    if (inst.days_overdue != null && inst.days_overdue > 0) return -inst.days_overdue
-    return null
-  }
-
-  const sharedThProps = { sortCol, sortDir, onSort: handleSort }
-
-  return (
-    <div className="space-y-4">
-
-      {/* Explainer banner */}
-      <div className="bg-purple-50 border border-purple-200 rounded-xl px-5 py-4 flex items-start gap-3">
-        <span className="text-xl flex-shrink-0">↗️</span>
-        <div>
-          <p className="text-sm font-semibold text-purple-900">What is drift analysis?</p>
-          <p className="text-sm text-purple-700 mt-0.5">
-            CalCheq tracks your error % across every calibration, building a trend line. When an instrument's
-            as-found error is steadily increasing — even while still passing — it's a warning sign.
-            These instruments are currently <strong>marginal</strong>: within tolerance but approaching the failure
-            threshold. The <strong>Current Error</strong> column shows the estimated error today based on
-            the drift rate × days elapsed since last calibration. <strong>Fail At</strong> shows the projected
-            date the instrument will exceed tolerance.
-          </p>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
-      </div>
-
-      {/* How drift detection works */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { icon: '📊', title: 'Error trending up', desc: 'As-found error % increases with each routine calibration — the instrument is losing accuracy over time.' },
-          { icon: '⚠️', title: 'Marginal result', desc: 'Currently 80–100% of tolerance. Still passing, but just. One more calibration period of drift could push it to fail.' },
-          { icon: '🔮', title: 'Predicted to fail', desc: 'Based on the current drift rate, CalCheq projects the date the instrument will exceed tolerance. Intervene early.' },
-        ].map(c => (
-          <div key={c.title} className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="text-2xl mb-2">{c.icon}</div>
-            <p className="text-sm font-semibold text-slate-800 mb-1">{c.title}</p>
-            <p className="text-xs text-slate-500 leading-relaxed">{c.desc}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Filter + sort bar */}
-      <div className="flex flex-wrap items-center gap-3">
-        <select value={area} onChange={e => setArea(e.target.value)}
-          className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500">
-          <option value="">All Areas</option>
-          {areas.map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <div className="flex-1" />
-        {!loading && (
-          <span className="text-sm text-slate-500">
-            <span className="font-bold text-purple-600">{sorted.length}</span> instrument{sorted.length !== 1 ? 's' : ''} with drift trend
-          </span>
-        )}
-        <button onClick={load} disabled={loading}
-          className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition-colors">
-          ↺ Refresh
-        </button>
-      </div>
-
-      {loading ? <Spinner /> : error ? <ErrorMsg message={error} onRetry={load} /> :
-       sorted.length === 0 ? <EmptyOk icon="✅" message="No instruments showing a marginal drift trend right now." /> : (
-        <>
-          <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
-            <table className="w-full text-sm min-w-[1000px]">
-              <thead>
-                <tr style={{ background: NAVY }}>
-                  <SortTH label="Criticality"    col="criticality"    {...sharedThProps} />
-                  <SortTH label="Tag"             col="tag"            {...sharedThProps} />
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/80 uppercase tracking-wide">Description</th>
-                  <SortTH label="Area"            col="area"           {...sharedThProps} />
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/80 uppercase tracking-wide">Error Trend</th>
-                  <SortTH label="Current Error %" col="current_error"  {...sharedThProps} />
-                  <SortTH label="Tolerance %"     col="tolerance"      {...sharedThProps} />
-                  <SortTH label="Next Due"        col="due"            {...sharedThProps} />
-                  <SortTH label="Fail At"         col="fail_at"        {...sharedThProps} />
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/80 uppercase tracking-wide">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {sorted.map((inst, idx) => {
-                  const trendPts   = DRIFT_TREND_DATA[inst.tag_number] ?? null
-                  const currErr    = trendPts
-                    ? projectedCurrentError(inst, trendPts)
-                    : (inst.max_as_found_error_pct ?? null)
-                  const failDate   = trendPts ? projectedFailDate(inst, trendPts) : null
-                  const tol        = inst.tolerance_value ?? null
-                  const due        = daysUntilDue(inst)
-                  const errColor   = currErr != null && tol ? currentErrColor(currErr, tol) : 'text-amber-600'
-                  const hasTrend   = !!trendPts
-
-                  return (
-                    <tr key={inst.id} className={`hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? '' : 'bg-slate-50/40'}`}>
-                      <td className={TD}><CriticalityBadge criticality={inst.criticality} /></td>
-                      <td className={TD}>
-                        <Link to={`/app/instruments/${inst.id}?tab=drift-analysis`} className="font-mono font-bold text-blue-600 hover:underline">
-                          {inst.tag_number}
-                        </Link>
-                      </td>
-                      <td className={`${TD} text-slate-600 max-w-[140px] truncate`}>{inst.description || '—'}</td>
-                      <td className={`${TD} text-slate-500`}>{inst.area || '—'}</td>
-                      <td className={TD}><DriftSparkline points={trendPts} /></td>
-                      <td className={TD}>
-                        {currErr != null ? (
-                          <div>
-                            <span className={`font-semibold ${errColor}`}>{currErr.toFixed(2)}%</span>
-                            {hasTrend && (
-                              <p className="text-xs text-slate-400 mt-0.5">projected today</p>
-                            )}
-                          </div>
-                        ) : <span className="text-slate-400">—</span>}
-                      </td>
-                      <td className={TD}>
-                        {tol != null ? (
-                          <span className="text-slate-600">±{tol}%</span>
-                        ) : <span className="text-slate-400">—</span>}
-                      </td>
-                      <td className={TD}>
-                        {due != null ? <DaysPill days={due} overdue={due < 0} /> : <span className="text-slate-400">—</span>}
-                      </td>
-                      <td className={TD}>
-                        <FailAtCell date={failDate} />
-                      </td>
-                      <td className={`${TD} whitespace-nowrap`}>
-                        <Link to={`/app/instruments/${inst.id}?tab=drift-analysis`}
-                          className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium">
-                          📈 View drift
-                        </Link>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <p className="text-xs text-slate-400 px-1">
-            ↑ Click any column header to sort. "Current Error %" is a projection based on drift rate × days since last calibration.
-            Instruments without multi-record drift history show their last recorded error only.
-          </p>
-
-          {/* What to do callout */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4">
-            <p className="text-sm font-semibold text-amber-800 mb-2">💡 What to do about drifting instruments</p>
-            <ol className="space-y-1.5 text-sm text-amber-700 list-decimal list-inside">
-              <li>Click <strong>View drift</strong> on any instrument to see the full regression analysis and projected failure date.</li>
-              <li>If error % is rising consistently, consider <strong>shortening the calibration interval</strong> before the next failure.</li>
-              <li>Check for installation issues: impulse line blockage, process temperature changes, vibration, or fouling.</li>
-              <li>If drift is accelerating, raise a <strong>corrective maintenance work order</strong> — don't wait until it fails in service.</li>
-            </ol>
-          </div>
-        </>
       )}
     </div>
   )
@@ -914,16 +364,20 @@ function PlannerTab() {
 
   const queuedIds = useMemo(() => new Set(queueItems.map(i => String(i.instrument_id))), [queueItems])
 
-  // Candidates: instruments that need attention (overdue, due-soon, marginal)
+  // Candidates: when filter='all', show ALL active instruments. Otherwise filter by status.
   const candidates = useMemo(() => {
-    let list = allInstruments.filter(i =>
-      i.alert_status === 'overdue' ||
-      i.alert_status === 'due_soon' ||
-      i.last_calibration_result === 'marginal'
-    )
+    let list = filter === 'all'
+      ? [...allInstruments]  // All active instruments — no pre-filter
+      : allInstruments.filter(i =>
+          i.alert_status === 'overdue' ||
+          i.alert_status === 'due_soon' ||
+          i.last_calibration_result === 'marginal'
+        )
+
     if (filter === 'overdue')  list = list.filter(i => i.alert_status === 'overdue')
     if (filter === 'due-soon') list = list.filter(i => i.alert_status === 'due_soon')
     if (filter === 'drift')    list = list.filter(i => i.last_calibration_result === 'marginal')
+
     if (searchQ.trim()) {
       const q = searchQ.toLowerCase()
       list = list.filter(i =>
@@ -932,6 +386,7 @@ function PlannerTab() {
         (i.area ?? '').toLowerCase().includes(q)
       )
     }
+
     // Sort: overdue safety-critical first, then by days overdue desc, then due date asc
     return list.sort((a, b) => {
       if (a.alert_status !== b.alert_status) {
@@ -1005,7 +460,7 @@ function PlannerTab() {
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
           <div className="px-5 py-4 border-b border-slate-100">
             <h3 className="text-sm font-semibold text-slate-700">Add to Schedule</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Overdue, due soon, and drift-flagged instruments requiring attention</p>
+            <p className="text-xs text-slate-400 mt-0.5">All active instruments — filter by status or search</p>
           </div>
 
           {/* Filter + search */}
@@ -1135,18 +590,15 @@ function PlannerTab() {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'overdue',   emoji: '🔴', label: 'Overdue',         desc: 'Instruments past their due date' },
-  { id: 'due-soon',  emoji: '🟡', label: 'Due Soon',        desc: 'Calibrations coming up' },
-  { id: 'failures',  emoji: '🔁', label: 'Repeat Failures', desc: 'Instruments with repeated failures' },
-  { id: 'drift',     emoji: '↗',  label: 'Drift Alerts',    desc: 'Instruments trending toward failure' },
-  { id: 'planner',   emoji: '📋', label: 'Planner',         desc: 'Build and manage your calibration queue' },
+  { id: 'queue',   emoji: '📋', label: 'Technician Queue' },
+  { id: 'planner', emoji: '📅', label: 'Planner' },
 ]
 
 export default function Schedule() {
   const [searchParams] = useSearchParams()
   const paramTab = searchParams.get('tab')
   const validTab = TABS.find(t => t.id === paramTab)?.id
-  const [tab, setTab] = useState(validTab ?? 'overdue')
+  const [tab, setTab] = useState(validTab ?? 'queue')
 
   // If the URL tab param changes (e.g. navigated from Dashboard), sync
   useEffect(() => {
@@ -1159,7 +611,7 @@ export default function Schedule() {
       {/* Page header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-800">📅 Schedule</h1>
-        <p className="text-sm text-slate-500 mt-1">Plan your calibration workload — overdue, upcoming, repeat failures, drift trends, and your scheduled queue.</p>
+        <p className="text-sm text-slate-500 mt-1">Your calibration work queue and planning tools.</p>
       </div>
 
       {/* Tab bar */}
@@ -1170,11 +622,7 @@ export default function Schedule() {
             onClick={() => setTab(t.id)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap -mb-px ${
               tab === t.id
-                ? t.id === 'drift'
-                  ? 'border-purple-600 text-purple-700'
-                  : t.id === 'planner'
-                  ? 'border-emerald-600 text-emerald-700'
-                  : 'border-blue-600 text-blue-700'
+                ? 'border-blue-600 text-blue-700'
                 : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
             }`}
           >
@@ -1186,11 +634,8 @@ export default function Schedule() {
 
       {/* Tab content */}
       <div>
-        {tab === 'overdue'  && <OverdueTab />}
-        {tab === 'due-soon' && <DueSoonTab />}
-        {tab === 'failures' && <RepeatFailuresTab />}
-        {tab === 'drift'    && <DriftAlertsTab />}
-        {tab === 'planner'  && <PlannerTab />}
+        {tab === 'queue'   && <TechnicianQueueTab />}
+        {tab === 'planner' && <PlannerTab />}
       </div>
 
     </div>

@@ -89,14 +89,28 @@ function Skel({ style }) {
 function DashboardSkeleton() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14 }}>
-        {[1,2,3,4,5].map(i => (
+      {/* Quick Actions Bar */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '12px 20px', height: 80 }}>
+        <Skel style={{ height: '100%' }} />
+      </div>
+
+      {/* 4 KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        {[1,2,3,4].map(i => (
           <div key={i} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', borderLeft: '4px solid #e2e8f0', padding: '18px 20px' }}>
             <Skel style={{ height: 32, width: 60, marginBottom: 8 }} />
             <Skel style={{ height: 12, width: 120 }} />
           </div>
         ))}
       </div>
+
+      {/* Health Donut */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '24px 20px', height: 240 }}>
+        <Skel style={{ height: 16, width: 180, marginBottom: 20 }} />
+        <Skel style={{ height: 200 }} />
+      </div>
+
+      {/* 3 Attention Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
         {[1,2,3].map(i => (
           <div key={i} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '24px 20px', height: 120 }}>
@@ -105,6 +119,16 @@ function DashboardSkeleton() {
             <Skel style={{ height: 12, width: 140 }} />
           </div>
         ))}
+      </div>
+
+      {/* Area Bars + Upcoming */}
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 20 }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '24px 20px', height: 300 }}>
+          <Skel style={{ height: '100%' }} />
+        </div>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '24px 20px', height: 300 }}>
+          <Skel style={{ height: '100%' }} />
+        </div>
       </div>
     </div>
   )
@@ -231,53 +255,103 @@ function AttentionCard({ emoji, label, count, subText, to, accentColor, bgColor,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Compliance gauge (ring chart)
+// Instrument Health Donut (hero element)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ComplianceGauge({ rate = 0 }) {
-  const [displayed, setDisplayed] = useState(0)
-  useEffect(() => {
-    const t = setTimeout(() => setDisplayed(rate), 80)
-    return () => clearTimeout(t)
-  }, [rate])
+function InstrumentHealthDonut({ overdue, dueSoon, estOutOfTol, current }) {
+  const [displayed, setDisplayed] = useState({ overdue: 0, dueSoon: 0, estOutOfTol: 0, current: 0 })
 
-  const R             = 80
-  const CX            = 100
-  const CY            = 100
-  const circumference = 2 * Math.PI * R
-  const offset        = circumference - (displayed / 100) * circumference
-  const { stroke, text, label } = complianceColor(rate)
+  useEffect(() => {
+    const t = setTimeout(() => setDisplayed({ overdue, dueSoon, estOutOfTol, current }), 80)
+    return () => clearTimeout(t)
+  }, [overdue, dueSoon, estOutOfTol, current])
+
+  const total = displayed.overdue + displayed.dueSoon + displayed.estOutOfTol + displayed.current
+  if (total === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '40px 0', color: MUTED }}>
+        <p>No instrument data available.</p>
+      </div>
+    )
+  }
+
+  const segments = [
+    { value: displayed.current, color: '#22C55E', label: 'Current', desc: 'Calibrated on time, not due soon' },
+    { value: displayed.dueSoon, color: '#F59E0B', label: 'Due Soon', desc: 'Due within 14 days' },
+    { value: displayed.overdue, color: '#EF4444', label: 'Overdue', desc: 'Past due date' },
+    { value: displayed.estOutOfTol, color: '#7C3AED', label: 'Est. Out of Tolerance', desc: 'Marginal / drift trend' },
+  ]
+
+  const R = 60
+  const CX = 100
+  const CY = 100
+  const innerR = 35
+  let offset = 0
+  const arcs = []
+
+  for (const seg of segments) {
+    const sliceAngle = (seg.value / total) * 360
+    const startAngle = offset
+    const endAngle = offset + sliceAngle
+    offset = endAngle
+
+    const startRad = (startAngle - 90) * (Math.PI / 180)
+    const endRad = (endAngle - 90) * (Math.PI / 180)
+
+    const x1 = CX + R * Math.cos(startRad)
+    const y1 = CY + R * Math.sin(startRad)
+    const x2 = CX + R * Math.cos(endRad)
+    const y2 = CY + R * Math.sin(endRad)
+
+    const x1Inner = CX + innerR * Math.cos(startRad)
+    const y1Inner = CY + innerR * Math.sin(startRad)
+    const x2Inner = CX + innerR * Math.cos(endRad)
+    const y2Inner = CY + innerR * Math.sin(endRad)
+
+    const largeArc = sliceAngle > 180 ? 1 : 0
+    const path = `M ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} L ${x2Inner} ${y2Inner} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1Inner} ${y1Inner} Z`
+
+    arcs.push(
+      <path
+        key={seg.label}
+        d={path}
+        fill={seg.color}
+        opacity="0.8"
+        style={{ transition: 'opacity 0.3s ease' }}
+      />
+    )
+  }
 
   return (
-    <div className="flex flex-col items-center">
-      <svg width="200" height="200" viewBox="0 0 200 200">
-        <circle cx={CX} cy={CY} r={R} fill="none" stroke="#e2e8f0" strokeWidth="18" />
-        <circle cx={CX} cy={CY} r={R} fill="none" stroke={stroke} strokeWidth="18"
-          strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-          transform={`rotate(-90 ${CX} ${CY})`}
-          style={{ transition: 'stroke-dashoffset 0.7s cubic-bezier(0.4,0,0.2,1)' }} />
-        <circle cx={CX} cy={CY} r={R - 18} fill="white" />
-        <text x={CX} y={CY - 8} textAnchor="middle" dominantBaseline="middle"
-          fontSize="32" fontWeight="700" fill={stroke} fontFamily="ui-sans-serif, system-ui, sans-serif">
-          {rate.toFixed(1)}%
-        </text>
-        <text x={CX} y={CY + 20} textAnchor="middle" fontSize="11" fill="#9ca3af"
-          fontFamily="ui-sans-serif, system-ui, sans-serif">
-          Site Compliance
-        </text>
+    <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
+      <svg width="200" height="200" viewBox="0 0 200 200" style={{ flexShrink: 0 }}>
+        {arcs}
       </svg>
-      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: text, marginTop: -12 }}>{label}</p>
-      <div style={{ display: 'flex', gap: 20, marginTop: 16 }}>
-        {[
-          { color: '#22C55E', label: '≥ 90%  On Target'   },
-          { color: '#F59E0B', label: '70–90%  Attention'  },
-          { color: '#EF4444', label: '< 70%  Below Target' },
-        ].map(({ color, label }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }} />
-            <span style={{ fontSize: '0.75rem', color: MUTED, whiteSpace: 'nowrap' }}>{label}</span>
-          </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {segments.map(seg => (
+          seg.value > 0 && (
+            <div key={seg.label} style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <span style={{ width: 12, height: 12, borderRadius: '50%', background: seg.color, flexShrink: 0 }} />
+                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1F2937' }}>
+                  {seg.label}
+                </span>
+                <span style={{ fontSize: '0.875rem', fontWeight: 700, color: seg.color, marginLeft: 'auto' }}>
+                  {seg.value}
+                </span>
+              </div>
+              <p style={{ fontSize: '0.75rem', color: MUTED, marginLeft: 22 }}>
+                {seg.desc}
+              </p>
+            </div>
+          )
         ))}
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${BORDER}` }}>
+          <p style={{ fontSize: '0.75rem', color: MUTED, lineHeight: 1.5 }}>
+            <strong style={{ color: '#374151' }}>* Est. Out of Tolerance</strong> is based on drift trend analysis and may not reflect actual instrument condition.
+          </p>
+        </div>
       </div>
     </div>
   )
@@ -374,34 +448,53 @@ function UpcomingList({ instruments }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Quick links card
+// Quick Actions Bar (horizontal)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function QuickActions() {
-  const links = [
-    { emoji: '📋', label: 'Record a Calibration', to: '/app/instruments', sub: 'Select an instrument to begin' },
-    { emoji: '📥', label: 'Import Calibrator CSV', to: '/app/calibrations/import-csv', sub: 'Beamex / Fluke CSV import' },
-    { emoji: '📄', label: 'Generate a Report', to: '/app/reports', sub: 'Compliance & history export' },
-    { emoji: '🔧', label: 'Add New Instrument', to: '/app/instruments/new', sub: 'Register a new instrument' },
-    { emoji: '📅', label: 'View Full Schedule', to: '/app/schedule', sub: 'Overdue, due-soon & failures' },
-    { emoji: '⚙️', label: 'Manage Team', to: '/app/settings', sub: 'Invite members & settings' },
+function QuickActionsBar() {
+  const actions = [
+    { emoji: '📋', label: 'Record Calibration', to: '/app/instruments' },
+    { emoji: '📥', label: 'Import CSV', to: '/app/calibrations/import-csv' },
+    { emoji: '🔧', label: 'Add Instrument', to: '/app/instruments/new' },
+    { emoji: '📄', label: 'Export Report', to: '/app/reports' },
+    { emoji: '📅', label: 'View Schedule', to: '/app/schedule' },
+    { emoji: '⚙️', label: 'Settings', to: '/app/settings' },
   ]
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      {links.map(({ emoji, label, to, sub }) => (
+    <div style={{
+      background: '#fff',
+      border: `1px solid ${BORDER}`,
+      borderRadius: 12,
+      padding: '12px 20px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-around',
+      gap: 16,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+    }}>
+      {actions.map(({ emoji, label, to }) => (
         <Link
           key={to}
           to={to}
-          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 8px', borderBottom: `1px solid ${BORDER}`, textDecoration: 'none', borderRadius: 6, transition: 'background 0.15s' }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 4,
+            textDecoration: 'none',
+            padding: '4px 12px',
+            borderRadius: 8,
+            transition: 'background 0.15s',
+            cursor: 'pointer',
+          }}
           onMouseEnter={e => e.currentTarget.style.background = LIGHT}
           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
         >
-          <span style={{ fontSize: '1.1rem', width: 24, textAlign: 'center', flexShrink: 0 }}>{emoji}</span>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <p style={{ fontSize: '0.85rem', fontWeight: 600, color: NAVY }}>{label}</p>
-            <p style={{ fontSize: '0.73rem', color: MUTED, marginTop: 1 }}>{sub}</p>
-          </div>
-          <span style={{ color: MUTED, fontSize: '0.85rem', flexShrink: 0 }}>→</span>
+          <span style={{ fontSize: '1.3rem' }}>{emoji}</span>
+          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: NAVY, whiteSpace: 'nowrap', textAlign: 'center' }}>
+            {label}
+          </span>
         </Link>
       ))}
     </div>
@@ -443,12 +536,15 @@ export default function Dashboard() {
 
   const { stats, alerts, areas, upcoming, pendingCount, driftCount } = data
 
-  // Derived counts
+  // Derived counts for health donut
+  const overdue = stats.overdue_count
+  const dueSoon = alerts.filter(a => a.alert_type === 'DUE_SOON').length
+  const estOutOfTol = driftCount
+  const current = Math.max(0, stats.total_instruments - overdue - dueSoon - estOutOfTol)
+
+  // Additional derived counts
   const dueWithin30      = upcoming.total
-  const currentCount     = Math.max(0, stats.total_instruments - stats.overdue_count - dueWithin30)
-  const degradationCount = driftCount  // marginal active instruments = drift trend candidates
   const dueThisWeek      = (upcoming.results ?? []).filter(i => i.days_until_due != null && i.days_until_due <= 7).length
-  const dueSoonCount     = alerts.filter(a => a.alert_type === 'DUE_SOON').length
 
   // Compliance rate colour
   const compRate   = stats.compliance_rate
@@ -474,21 +570,13 @@ export default function Dashboard() {
             {user?.siteName ?? 'Your site'} · As at {dateStr}, {timeStr}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <Link to="/app/calibrations/import-csv"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: '0.82rem', fontWeight: 600, color: NAVY, textDecoration: 'none' }}>
-            <svg style={{ width: 15, height: 15 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Import Calibration
-          </Link>
-          <Link to="/app/instruments"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: BLUE, borderRadius: 8, fontSize: '0.82rem', fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
-            + Record Calibration
-          </Link>
-        </div>
       </div>
 
-      {/* ── Row 1: 5 KPI cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 }}>
+      {/* ── Quick Actions Bar (horizontal) ── */}
+      <QuickActionsBar />
+
+      {/* ── 4 KPI Cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         <StatCard
           label="Overdue"
           value={stats.overdue_count}
@@ -502,13 +590,6 @@ export default function Dashboard() {
           borderColor="#F9A825"
           valueColor="#B45309"
           sub="Action required soon"
-        />
-        <StatCard
-          label="Current"
-          value={currentCount}
-          borderColor="#4CAF50"
-          valueColor={GREEN}
-          sub="Up to date, no action required"
         />
         <StatCard
           label="Total Instruments"
@@ -526,13 +607,18 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* ── Row 2: 3 attention cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+      {/* ── Instrument Health Donut (hero element) ── */}
+      <Card title="Instrument Health Overview">
+        <InstrumentHealthDonut overdue={overdue} dueSoon={dueSoon} estOutOfTol={estOutOfTol} current={current} />
+      </Card>
+
+      {/* ── 3 Attention Cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
         <AttentionCard
           emoji="🔴"
           label="Overdue"
-          count={stats.overdue_count}
-          subText={stats.overdue_count === 0 ? 'All instruments calibrated on time' : 'Instruments past their due date — action needed'}
+          count={overdue}
+          subText={overdue === 0 ? 'All instruments calibrated on time' : 'Instruments past their due date — action needed'}
           to="/app/schedule"
           accentColor="#DC2626"
           bgColor="#FFF5F5"
@@ -551,52 +637,28 @@ export default function Dashboard() {
         <AttentionCard
           emoji="↗"
           label="Drift Alerts"
-          count={degradationCount}
-          subText={degradationCount === 0 ? 'No instruments showing drift trends' : 'Instruments predicted to fail — review now'}
-          to="/app/schedule?tab=drift"
+          count={estOutOfTol}
+          subText={estOutOfTol === 0 ? 'No instruments showing drift trends' : 'Instruments predicted to fail — review now'}
+          to="/app/diagnostics"
           accentColor="#7C3AED"
           bgColor="#F5F3FF"
           borderColor="#DDD6FE"
         />
       </div>
 
-      {/* ── Row 3: Compliance gauge + Area bars ── */}
+      {/* ── Area Bars + Upcoming (2 columns) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 20 }}>
-        <Card
-          title="Calibration Compliance"
-          subtitle="Active instruments calibrated on time, last 12 months"
-        >
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
-            <ComplianceGauge rate={stats.compliance_rate} />
-          </div>
-        </Card>
         <Card
           title="Compliance by Area"
           subtitle="Sorted worst first"
         >
           <AreaBars areas={areas} />
         </Card>
-      </div>
-
-      {/* ── Row 4: Upcoming + Quick Actions ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <Card
           title={`Upcoming — Next 7 Days`}
           subtitle={`${dueThisWeek} instrument${dueThisWeek !== 1 ? 's' : ''} require calibration`}
-          headerRight={
-            dueThisWeek > 8
-              ? <Link to="/app/schedule" style={{ fontSize: '0.78rem', color: BLUE }}>View schedule</Link>
-              : null
-          }
         >
           <UpcomingList instruments={upcoming.results} />
-        </Card>
-
-        <Card
-          title="Quick Actions"
-          subtitle="Common tasks and shortcuts"
-        >
-          <QuickActions />
         </Card>
       </div>
 

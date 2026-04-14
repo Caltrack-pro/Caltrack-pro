@@ -286,3 +286,41 @@ class CalTestPoint(Base):
 
     as_found_result = Column(SAEnum(AsFoundResult, name="as_found_result_enum", values_callable=lambda obj: [e.value for e in obj]))
     as_left_result  = Column(SAEnum(AsLeftResult,  name="as_left_result_enum",  values_callable=lambda obj: [e.value for e in obj]))
+
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    id = Column(
+        UUID(as_uuid=True), primary_key=True,
+        server_default=text("gen_random_uuid()")
+    )
+    site_name         = Column(String(100), nullable=False, index=True)
+    title             = Column(String(255), nullable=False)
+    doc_type          = Column(String(50), nullable=False, server_default="'procedure'")
+    file_name         = Column(String(255), nullable=False)
+    file_size         = Column(Integer)
+    file_url          = Column(Text)
+    notes             = Column(Text)
+    uploaded_by       = Column(String(100), nullable=False, server_default="''")
+    created_at        = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at        = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+
+
+class DocumentInstrument(Base):
+    __tablename__ = "document_instruments"
+
+    id = Column(
+        UUID(as_uuid=True), primary_key=True,
+        server_default=text("gen_random_uuid()")
+    )
+    document_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        nullable=False, index=True
+    )
+    instrument_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("instruments.id", ondelete="CASCADE"),
+        nullable=False, index=True
+    )

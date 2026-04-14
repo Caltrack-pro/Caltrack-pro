@@ -580,18 +580,129 @@ function HistoryReport() {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
+function addDaysForExport(iso, n) {
+  const d = new Date(iso)
+  d.setDate(d.getDate() + n)
+  return d.toISOString().split('T')[0]
+}
+
 const TABS = [
-  { id: 'overdue',  label: 'Overdue Instruments' },
-  { id: 'upcoming', label: 'Upcoming (30 days)' },
-  { id: 'failed',   label: 'Failed Calibrations' },
-  { id: 'history',  label: 'History by Tag' },
+  { id: 'overdue',  label: '🔴 Overdue Report' },
+  { id: 'upcoming', label: '📅 Upcoming Report' },
+  { id: 'failed',   label: '❌ Failed Report' },
+  { id: 'history',  label: '📋 History by Tag' },
 ]
 
 export default function Reports() {
   const [tab, setTab] = useState('overdue')
+  const [exportLoading, setExportLoading] = useState(false)
+
+  function exportAllOverdue() {
+    setExportLoading(true)
+    const site = getUser()?.siteName ?? undefined
+    instrApi.list({ calibration_status: 'overdue', limit: 500, site })
+      .then(res => {
+        const data = res.results ?? res ?? []
+        const headers = ['Tag Number', 'Description', 'Area', 'Type', 'Due Date', 'Days Overdue', 'Last Result']
+        const rows = data.map(i => [
+          i.tag_number,
+          i.description || '',
+          i.area || '',
+          humanise(i.instrument_type),
+          fmtDate(i.calibration_due_date),
+          i.days_overdue ?? '',
+          i.last_calibration_result ?? '',
+        ])
+        downloadCSV('overdue-instruments.csv', headers, rows)
+        setExportLoading(false)
+      })
+      .catch(err => {
+        console.error('Export failed:', err)
+        setExportLoading(false)
+      })
+  }
+
+  function exportAllFailed() {
+    setExportLoading(true)
+    const today = todayISO()
+    const dateFrom = addDaysForExport(today, -90)
+    const site = getUser()?.siteName ?? undefined
+    calApi.list({ result: 'fail', date_from: dateFrom, date_to: today, limit: 500, site })
+      .then(res => {
+        const data = res.results ?? res ?? []
+        const headers = ['Date', 'Tag Number', 'Area', 'Max Error %', 'Technician', 'Adjustment Made', 'Notes']
+        const rows = data.map(r => [
+          fmtDate(r.calibration_date),
+          r.instrument?.tag_number ?? r.instrument_id,
+          r.instrument?.area ?? '',
+          r.max_as_found_error_pct != null ? fmtPct(r.max_as_found_error_pct, 2) : '',
+          r.technician_name ?? '',
+          r.adjustment_made ? 'Yes' : 'No',
+          r.technician_notes ?? '',
+        ])
+        downloadCSV('failed-calibrations.csv', headers, rows)
+        setExportLoading(false)
+      })
+      .catch(err => {
+        console.error('Export failed:', err)
+        setExportLoading(false)
+      })
+  }
+
+  function exportComplianceSummary() {
+    setExportLoading(true)
+    dashApi.complianceByArea()
+      .then(res => {
+        const data = res.results ?? res ?? []
+        const headers = ['Area', 'Total Instruments', 'Compliant', 'Overdue', 'Compliance %']
+        const rows = data.map(area => [
+          area.area || 'Unassigned',
+          area.total ?? 0,
+          area.compliant ?? 0,
+          area.overdue ?? 0,
+          area.compliance_percentage != null ? fmtPct(area.compliance_percentage, 1) : 'N/A',
+        ])
+        downloadCSV('compliance-summary.csv', headers, rows)
+        setExportLoading(false)
+      })
+      .catch(err => {
+        console.error('Export failed:', err)
+        setExportLoading(false)
+      })
+  }
 
   return (
     <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-800">📄 Reports & Exports</h1>
+        <p className="text-sm text-slate-500 mt-1">Generate compliance reports and export calibration data.</p>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 flex-wrap">
+        <span className="text-sm font-semibold text-slate-700">Quick Export:</span>
+        <button
+          onClick={exportAllOverdue}
+          disabled={exportLoading}
+          className="inline-flex items-center gap-1.5 text-sm px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          ⬇ Overdue Instruments CSV
+        </button>
+        <button
+          onClick={exportAllFailed}
+          disabled={exportLoading}
+          className="inline-flex items-center gap-1.5 text-sm px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          ⬇ Failed Calibrations CSV
+        </button>
+        <button
+          onClick={exportComplianceSummary}
+          disabled={exportLoading}
+          className="inline-flex items-center gap-1.5 text-sm px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          ⬇ Compliance Summary CSV
+        </button>
+      </div>
+
       <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
         {TABS.map(t => (
           <button

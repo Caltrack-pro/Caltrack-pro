@@ -1,17 +1,18 @@
 /**
  * Calibrations — "What has been done"
  * Two tabs:
+ *   Activity Log      — all calibration records, newest first (default)
  *   Pending Approvals — submitted records awaiting supervisor/admin review
- *   Activity Log      — all calibration records, newest first
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { calibrations as calApi } from '../utils/api'
+import { calibrations as calApi, instruments as instrApi } from '../utils/api'
 import { ResultBadge, RecordStatusBadge } from '../components/Badges'
 import { fmtDate, fmtPct, humanise, todayISO } from '../utils/formatting'
 import { getUser, canApprove } from '../utils/userContext'
 import { ToastContainer, useToast } from '../components/Toast'
+import { generateSingleCalibrationCert } from '../utils/reportGenerator'
 
 // ── Colour palette ────────────────────────────────────────────────────────────
 const NAVY = '#0B1F3A'
@@ -329,10 +330,27 @@ function ActivityTab() {
                   </td>
                   <td className={TD}><RecordStatusBadge status={rec.record_status} /></td>
                   <td className={`${TD} whitespace-nowrap`}>
-                    <Link to={`/app/instruments/${rec.instrument_id}`}
-                      className="text-xs px-2 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-100 transition-colors">
-                      View
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation()
+                          try {
+                            const instr = await instrApi.get(rec.instrument_id)
+                            generateSingleCalibrationCert(instr, rec)
+                          } catch (err) {
+                            console.error('PDF generation failed', err)
+                          }
+                        }}
+                        className="text-xs px-2 py-1 border border-blue-200 rounded text-blue-600 hover:bg-blue-50 transition-colors"
+                        title="Download calibration certificate PDF"
+                      >
+                        📄 PDF
+                      </button>
+                      <Link to={`/app/instruments/${rec.instrument_id}`}
+                        className="text-xs px-2 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-100 transition-colors">
+                        View
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -347,7 +365,7 @@ function ActivityTab() {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function Calibrations({ defaultTab }) {
-  const [tab, setTab] = useState(defaultTab ?? 'pending')
+  const [tab, setTab] = useState(defaultTab ?? 'activity')
   const [pendingCount, setPendingCount] = useState(null)
 
   // Load pending count for badge
@@ -358,8 +376,8 @@ export default function Calibrations({ defaultTab }) {
   }, [])
 
   const TABS = [
-    { id: 'pending',  emoji: '🕐', label: `Pending Approvals${pendingCount != null && pendingCount > 0 ? ` (${pendingCount})` : ''}` },
     { id: 'activity', emoji: '📋', label: 'Activity Log' },
+    { id: 'pending',  emoji: '🕐', label: `Pending Approvals${pendingCount != null && pendingCount > 0 ? ` (${pendingCount})` : ''}` },
   ]
 
   return (

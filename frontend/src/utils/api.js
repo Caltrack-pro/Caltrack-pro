@@ -245,8 +245,29 @@ export const queue = {
 }
 
 // ---------------------------------------------------------------------------
+// Documents
+// ---------------------------------------------------------------------------
+
+export const documents = {
+  /** List all documents for the site. */
+  list: () => request('/documents'),
+
+  /** Create a new document. */
+  create: (data) => post('/documents', data),
+
+  /** Update an existing document. */
+  update: (id, data) => put(`/documents/${id}`, data),
+
+  /** Delete a document. */
+  delete: (id) => del(`/documents/${id}`),
+
+  /** Get all documents linked to an instrument. */
+  byInstrument: (instrumentId) => request(`/documents/by-instrument/${instrumentId}`),
+}
+
+// ---------------------------------------------------------------------------
 // Convenience re-export for one-line imports
 // ---------------------------------------------------------------------------
 
-const api = { instruments, calibrations, dashboard, queue }
+const api = { instruments, calibrations, dashboard, queue, documents }
 export default api

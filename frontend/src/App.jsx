@@ -29,6 +29,8 @@ import Schedule            from './pages/Schedule'
 import Calibrations        from './pages/Calibrations'
 import AppSettings         from './pages/AppSettings'
 import Reports             from './pages/Reports'
+import SmartDiagnostics    from './pages/SmartDiagnostics'
+import Documents           from './pages/Documents'
 import ImportInstruments   from './pages/ImportInstruments'
 import ImportCalibratorCSV from './pages/ImportCalibratorCSV'
 import Support             from './pages/Support'
@@ -76,6 +78,12 @@ export default function App() {
 
           {/* Reports */}
           <Route path="reports"                  element={<Reports />} />
+
+          {/* Smart Diagnostics — recommendations, drift, repeat failures */}
+          <Route path="diagnostics"              element={<SmartDiagnostics />} />
+
+          {/* Documents — procedures, manuals, certificates */}
+          <Route path="documents"                element={<Documents />} />
 
           {/* Settings — profile, password, team members */}
           <Route path="settings"                 element={<AppSettings />} />

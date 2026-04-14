@@ -195,13 +195,15 @@ export default function Sidebar({ onNavigate, pendingCount }) {
           Navigation
         </p>
 
-        <NavItem to="/app"                emoji="🏠" label="Dashboard"    onClick={onNavigate} />
-        <NavItem to="/app/instruments"    emoji="🔧" label="Instruments"   onClick={onNavigate} />
-        <NavItem to="/app/schedule"       emoji="📅" label="Schedule"      onClick={onNavigate} />
-        <NavItem to="/app/calibrations"   emoji="📋" label="Calibrations"  badge={pendingCount} onClick={onNavigate} />
-        <NavItem to="/app/reports"        emoji="📄" label="Reports"       onClick={onNavigate} />
-        <NavItem to="/app/settings"       emoji="⚙️"  label="Settings"     onClick={onNavigate} />
-        <NavItem to="/app/support"        emoji="🆘" label="Support"       onClick={onNavigate} />
+        <NavItem to="/app"                emoji="🏠" label="Dashboard"           onClick={onNavigate} />
+        <NavItem to="/app/instruments"    emoji="🔧" label="Instruments"       onClick={onNavigate} />
+        <NavItem to="/app/schedule"       emoji="📅" label="Schedule"          onClick={onNavigate} />
+        <NavItem to="/app/calibrations"   emoji="📋" label="Calibrations"      badge={pendingCount} onClick={onNavigate} />
+        <NavItem to="/app/diagnostics"    emoji="🔬" label="Smart Diagnostics" onClick={onNavigate} />
+        <NavItem to="/app/documents"      emoji="📁" label="Documents"         onClick={onNavigate} />
+        <NavItem to="/app/reports"        emoji="📄" label="Reports"           onClick={onNavigate} />
+        <NavItem to="/app/settings"       emoji="⚙️"  label="Settings"         onClick={onNavigate} />
+        <NavItem to="/app/support"        emoji="🆘" label="Support"           onClick={onNavigate} />
 
         {/* ── Divider + utility links ── */}
         <div style={{ paddingTop: 12, marginTop: 10, borderTop: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column', gap: 2 }}>

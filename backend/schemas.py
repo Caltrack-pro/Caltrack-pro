@@ -510,3 +510,52 @@ class QueueAddPayload(BaseModel):
 
 class QueuePriorityPayload(BaseModel):
     priority: int
+
+
+# ===========================================================================
+# Document schemas
+# ===========================================================================
+
+class DocumentCreate(BaseModel):
+    """Payload for POST /api/documents."""
+    title:         str              = Field(..., max_length=255)
+    doc_type:      str              = Field("procedure", max_length=50)
+    file_name:     str              = Field(..., max_length=255)
+    file_size:     Optional[int]    = None
+    file_url:      Optional[str]    = None
+    notes:         Optional[str]    = None
+    instrument_ids: Optional[List[UUID]] = None  # Links to documents
+
+
+class DocumentUpdate(BaseModel):
+    """Payload for PUT /api/documents/{id}. All fields optional."""
+    title:         Optional[str]    = Field(None, max_length=255)
+    doc_type:      Optional[str]    = Field(None, max_length=50)
+    file_name:     Optional[str]    = Field(None, max_length=255)
+    file_size:     Optional[int]    = None
+    file_url:      Optional[str]    = None
+    notes:         Optional[str]    = None
+    instrument_ids: Optional[List[UUID]] = None  # Replace all links
+
+
+class DocumentResponse(BaseModel):
+    """Full document representation returned by read endpoints."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id:            UUID
+    site_name:     str
+    title:         str
+    doc_type:      str
+    file_name:     str
+    file_size:     Optional[int]
+    file_url:      Optional[str]
+    notes:         Optional[str]
+    uploaded_by:   str
+    created_at:    datetime
+    updated_at:    datetime
+    instrument_ids: List[UUID] = []  # Populated by the list endpoint
+
+
+class DocumentListResponse(BaseModel):
+    total:   int
+    results: List[DocumentResponse]
