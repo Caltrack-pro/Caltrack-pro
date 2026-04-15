@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import DemoBlockModal from './DemoBlockModal'
 import { calibrations as calsApi } from '../utils/api'
 
 export default function Layout() {
@@ -50,6 +51,9 @@ export default function Layout() {
           </div>
         </main>
       </div>
+
+      {/* Global demo write-block modal */}
+      <DemoBlockModal />
     </div>
   )
 }

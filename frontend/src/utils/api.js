@@ -69,6 +69,18 @@ async function request(path, options = {}) {
     } catch {
       // keep statusText
     }
+
+    // Friendly demo write-block: show conversion modal instead of raw 403
+    if (response.status === 403) {
+      const { getUser: _getUser } = await import('./userContext')
+      const u = _getUser()
+      if (u && (u.isDemoMode || u.siteName === 'Demo')) {
+        window.dispatchEvent(new CustomEvent('caltrack-demo-blocked'))
+        // Return null so callers don't crash — the modal handles the UX
+        return null
+      }
+    }
+
     throw new ApiError(`${response.status}: ${detail}`, response.status, detail)
   }
 
@@ -157,6 +169,15 @@ export const instruments = {
     if (!response.ok) {
       let detail = response.statusText
       try { const b = await response.json(); detail = b.detail ?? detail } catch {}
+      // Demo write-block for bulk import too
+      if (response.status === 403) {
+        const { getUser: _getUser } = await import('./userContext')
+        const u = _getUser()
+        if (u && (u.isDemoMode || u.siteName === 'Demo')) {
+          window.dispatchEvent(new CustomEvent('caltrack-demo-blocked'))
+          return null
+        }
+      }
       throw new ApiError(`${response.status}: ${detail}`, response.status, detail)
     }
     return response.json()

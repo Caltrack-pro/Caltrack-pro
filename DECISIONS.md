@@ -52,19 +52,22 @@ site_members (id UUID PK, site_id FK→sites, user_id UUID, role TEXT, display_n
 
 ---
 
-## Navigation Restructure — 6 tabs (April 2026)
+## Navigation Restructure — 9 tabs (April 2026)
 
-**Decision:** Replaced the original 5-tab nav (Dashboard, Instruments, Alerts, Approvals, Reports) with a 6-tab emoji-based nav with clear, non-overlapping purposes.
+**Decision:** Replaced the original 5-tab nav with a 9-tab emoji-based nav with clear, non-overlapping purposes.
 
-**New tabs and their single purpose:**
-- 🏠 **Dashboard** — metrics overview and navigation hub only; no detail tables
+**Tabs and their single purpose:**
+- 🏠 **Dashboard** — health donut, quick actions, KPI stat cards, attention cards
 - 🔧 **Instruments** — instrument register (search, filter, bulk actions, add new)
-- 📅 **Schedule** — "what needs to be done": Overdue / Due Soon / Repeat Failures
-- 📋 **Calibrations** — "what was done": Pending Approvals + Activity Log; live badge count
-- 📄 **Reports** — generate and export compliance documents only
-- ⚙️ **Settings** — Profile, Change Password, Team Members (admin)
+- 📅 **Schedule** — Technician Queue (default) + Planner (queue any active instrument, 12-week workload chart)
+- 📋 **Calibrations** — Activity Log (default, with PDF cert per row) + Pending Approvals (live badge count)
+- 🔬 **Smart Diagnostics** — Recommendations (critical/advisory/optimisation) + Drift Alerts (sparklines, projected failure) + Repeat Failures
+- 📁 **Documents** — document library: upload/manage procedures, manuals, certificates; link to instruments
+- 📄 **Reports & Exports** — quick export bar (overdue/failed/compliance CSV) + 4 report tabs
+- ⚙️ **Settings** — Site info, Profile, Change Password, Team Members (admin)
+- 🆘 **Support** — FAQ accordion, tutorials, contact
 
-**Why:** The old nav had heavy overlap — Dashboard, Instruments, Alerts, and Reports all showed similar instrument tables. Each tab now has one clear job.
+**Why:** The old nav had heavy overlap — Dashboard, Instruments, Alerts, and Reports all showed similar instrument tables. Each tab now has one clear job. Smart Diagnostics, Documents, and Support were added to surface features that previously had no dedicated home.
 
 **Legacy routes redirect:** `/app/alerts` → `/app/schedule`, `/app/approvals` → `/app/calibrations`, `/app/bad-actors` → `/app/schedule`, `/app/profile` → `/app/settings`
 

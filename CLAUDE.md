@@ -72,8 +72,9 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - Contact.jsx            — enquiry form: role select, instrument count select, 3-step process
 
 ### Frontend — src/components/
-- Layout.jsx             — app shell: fetches pendingCount for sidebar badge on mount, passes to Sidebar; renders Header + <Outlet>
+- Layout.jsx             — app shell: fetches pendingCount for sidebar badge on mount, passes to Sidebar; renders Header + <Outlet> + DemoBlockModal
 - AuthGuard.jsx          — protects /app/* routes; redirects to /auth/sign-in if no Supabase session
+- DemoBlockModal.jsx     — global modal: listens for 'caltrack-demo-blocked' event; shows friendly conversion message when demo user tries a write action
 - Sidebar.jsx            — emoji nav: 🏠 Dashboard, 🔧 Instruments, 📅 Schedule, 📋 Calibrations (red badge), 🔬 Smart Diagnostics, 📁 Documents, 📄 Reports, ⚙️ Settings, 🆘 Support; user avatar; Try Demo toggle; Back to Website
 - Header.jsx             — top bar: logged-in user name + role; sign-out via Supabase
 - Badges.jsx             — shared status/result badge components (CriticalityBadge, ResultBadge, etc.)
@@ -85,7 +86,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 ### Frontend — src/utils/
 - supabase.js            — Supabase client (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)
 - userContext.js         — getUser(), onAuthStateChange, demo mode toggle; shape: { userId, email, userName, siteName, role, isDemoMode }
-- api.js                 — all API calls; auto-injects Authorization: Bearer <JWT>; exports: instruments, calibrations, dashboard, queue, documents, auth
+- api.js                 — all API calls; auto-injects Authorization: Bearer <JWT>; 403 in demo mode dispatches 'caltrack-demo-blocked' event (friendly modal); exports: instruments, calibrations, dashboard, queue, documents, auth
 - calEngine.js           — pass/fail/marginal calculation logic (mirrors backend)
 - formatting.js          — shared date and number formatting helpers
 - reportGenerator.js     — jsPDF: generateSingleCalibrationCert() + generateMultiCalibrationReport()

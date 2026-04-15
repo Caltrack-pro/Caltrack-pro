@@ -1,324 +1,304 @@
-# Calcheq — Product Roadmap
+# CalCheq — Forward Roadmap
 
-*Last updated: April 2026*
-*Author: synthesised from two independent AI-assisted product reviews*
-
----
-
-## Review Synthesis: Signal vs Noise
-
-Two detailed product reviews were conducted in April 2026. Below is a distilled
-analysis separating genuine product gaps from premature or already-solved concerns.
-
-### What Reviewers Got Right (Signal)
-
-**Infrastructure gaps (blocking commercial launch):**
-- No custom domain — the railway.app URL immediately signals prototype/demo status
-  to any prospective customer
-- Auth is localStorage only — no real security, no password reset, no session
-  management; unacceptable for paying customers
-- No payment integration — the app cannot currently collect money
-- No account gating — /app/* is open to the public; no subscription enforcement
-
-**Product gaps (real UX and workflow problems):**
-- No immutable audit trail — who changed what and when is not tracked; this is a
-  regulatory expectation in process industries (ISO 9001, ISO 17025, ISO 55000)
-- CSV import is backend-only — technicians cannot self-serve migrate their existing
-  data without developer intervention
-- No email notifications — overdue alerts and approval requests only exist inside
-  the app; no proactive communication
-- Mobile/tablet experience is untested — field technicians use tablets on the plant;
-  the current layout is desktop-first
-- Role-based views are undifferentiated — a technician and a maintenance manager see
-  the same interface despite having fundamentally different workflows and priorities
-- Drift trend prediction is missing — this is the product's clearest competitive
-  differentiator and is not yet built
-
-**Messaging and positioning weaknesses:**
-- The headline does not communicate the product's industrial/regulatory context clearly
-- No social proof beyond static testimonials — logo strip, case study numbers, or
-  a reference to the IXOM/Acme Industries origin would increase credibility
-- The pricing page does not speak to compliance value (ISO 9001, 17025, PSSR)
-
-### What Reviewers Got Wrong (Noise — do not act on yet)
-
-**Multi-point calibration:** Both reviewers assumed this was missing. It is already
-built. The CalibrationForm captures 1–20 test points with full as-found/as-left
-measurements, error calculations, and pass/fail/marginal results per point.
-
-**CMMS integration (SAP, Maximo, MEX):** Genuinely useful but a Phase 3+ item.
-Requires scoping actual customer workflows and likely bespoke API work per system.
-Building this speculatively before having paying customers would be wasted effort.
-
-**HART / 4-20mA communicator integration:** Hardware dependency (USB dongles,
-protocol drivers). Phase 3+ at earliest. Cannot be specced without a device in hand.
-
-**SIL / Functional Safety module:** A completely separate product domain (IEC 61511).
-Only relevant if Calcheq explicitly targets safety instrumented systems. Do not add
-until there is a clear customer demand signal.
-
-**AI / predictive analytics:** Reviewers suggested ML-based failure prediction.
-The right foundation is to first collect 12–24 months of real customer calibration
-data. Build the drift prediction engine (see Phase 2) as a rule-based system first;
-introduce statistical modelling when the data volume justifies it.
-
-**SMS notifications:** Low-priority. Email covers the same use case. Revisit when
-a customer specifically requests it.
+*Last updated: 16 April 2026*
 
 ---
 
-## Phased Roadmap
+## What's Been Done (not repeated here — see git history)
+
+Auth (Supabase ES256 JWT), custom domain (calcheq.com), immutable audit trail, CSV import (instruments + Beamex/Fluke calibrator), email notifications (Resend), mobile/tablet responsive pass, demo account hardening (read-only), drift prediction engine, PDF certificate generation, bulk instrument actions, full marketing site (Landing, Pricing, How It Works, Resources, Blog, FAQ, Contact), UX restructure (health donut dashboard, smart diagnostics, documents library, technician queue, export centre).
+
+All of the above is live in production.
 
 ---
 
-### Phase 0 — Commercial Readiness (do first, blocks revenue)
+## Next Steps
 
-These items must be complete before any sales or marketing activity. Nothing else
-matters until these are done.
+### 1. Demo Environment — Make It Sell the Product
 
-**0.1 Custom Domain** *(code complete — external setup remaining)*
+The demo is the most important sales tool. Right now it blocks all writes with a generic 403 and doesn't feel like a real site. Fix this.
 
-Code changes done (April 2026):
-- `backend/notifications.py` + `backend/.env.example`: `APP_URL` updated to `https://calcheq.com`
-- `frontend/index.html`: OG tags, meta description, twitter:card, and canonical URL added
-- All email addresses already used `@calcheq.com`; footer and Contact page already reference `calcheq.com`
-- `CLAUDE.md` Supabase URL config updated with new redirect URLs
+**1.1 Show "Riverdale Water Treatment Plant" in the header**
+The Header.jsx top-right pill currently shows the site name from `currentUser.siteName`, which is "Demo". When `isDemoMode` is true (or siteName is "Demo"), override the display to show "Riverdale Water Treatment Plant" instead. This makes the demo feel like a real customer environment.
 
-Remaining steps (must be done manually — requires dashboard access):
+**1.2 Populate the Team Members table with realistic demo staff**
+Seed the `site_members` table with 5-6 fictional Riverdale employees so the Settings → Team Members section shows a realistic team:
+- Sarah Chen — Admin (Instrumentation Supervisor)
+- Marcus Thompson — Supervisor (Maintenance Planner)
+- Jake Williams — Technician (I&E Technician)
+- Priya Patel — Technician (Calibration Technician)
+- Tom Bradley — Planner (Shutdown Coordinator)
+- Demo User — Admin (the demo login)
 
-~~**Step 1 — Purchase the domain**~~
-~~- Register `calcheq.com` at a registrar (Cloudflare Registrar, Namecheap, GoDaddy etc.)~~
-~~- Optionally also register `calcheq.com.au` (Australian ccTLD) and set it to redirect to `.com`~~
+This requires INSERT statements into `site_members` with the Demo site's `site_id`, using fabricated `user_id` UUIDs (they don't need to be real Supabase auth users — they just need to show up in the team list query).
 
-~~**Step 2 — Add custom domain in Railway**~~
-~~- Railway Dashboard → your project → Settings → Domains~~
-~~- Click "Add custom domain" → enter `calcheq.com`~~
-~~- Railway will show you a CNAME target (e.g. `something.up.railway.app`)~~
+**1.3 Friendly write-block experience instead of 403 errors**
+When a demo user tries a write action (Calibrate, Add Instrument, Edit, Delete, Approve, Queue, Upload Document), instead of showing a raw HTTP 403 error or failing silently:
+- Catch the 403 in the frontend API layer (`api.js` → `request()` function)
+- When the user is in demo mode and receives a 403, show a styled modal/toast: "This is a read-only demo. Sign up for a free trial to start managing your own instruments." with a CTA button to `/contact` or `/auth/signup`
+- This turns every blocked action into a conversion opportunity
 
-~~**Step 3 — Configure DNS at your registrar**~~
-~~- Add a CNAME record: `calcheq.com` → Railway's CNAME target~~
-~~- If your registrar supports CNAME flattening at the apex (Cloudflare does), use that~~
-~~- Otherwise add `www` as CNAME and redirect bare domain to www~~
-~~- Railway provisions SSL automatically once the CNAME propagates (usually < 5 minutes on Cloudflare)~~
+**1.4 Pre-seed demo data richness**
+Review the Riverdale demo dataset (130 instruments from `seed_riverdale_demo.sql`). Ensure the demo has:
+- At least 3-4 instruments in each status (overdue, due soon, current, marginal)
+- A populated calibration queue (so Technician Queue tab isn't empty)
+- Several calibration records with approved/submitted/draft statuses
+- At least 2 documents linked to instruments (so Documents page isn't empty)
+- Several recommendations firing in Smart Diagnostics
 
-**Step 4 — Update Railway environment variable**
-- Railway Dashboard → your service → Variables
-- Change `APP_URL` from `https://caltrack-pro-production.up.railway.app` to `https://calcheq.com`
-- Redeploy (Railway does this automatically on env var save)
-
-**Step 5 — Update Supabase Auth redirect URLs**
-- Supabase Dashboard → Authentication → URL Configuration
-- Site URL: change to `https://calcheq.com`
-- Add `https://calcheq.com/auth/reset-password` to the Redirect URLs list
-- Keep `https://caltrack-pro-production.up.railway.app/auth/reset-password` until you confirm the new domain works
-
-**Step 6 — Smoke test**
-- Visit https://calcheq.com — should load landing page
-- Sign in → check JWT session works
-- Request a password reset → confirm reset email link uses calcheq.com
-
-*Effort: 1–2 hours once domain is registered and DNS propagates*
-
-~~**0.2 Supabase Auth Migration**~~
-~~- Replace localStorage site/user/member state with Supabase Auth (email + password)~~
-~~- Add a `sites` table: id, name, slug, subscription_status, created_at~~
-~~- Add a `site_members` table: site_id (FK), user_id (FK), role, invited_at~~
-~~- Keep existing `created_by` site-isolation on instruments (rename to `site_id` FK later)~~
-~~- Replace custom DOM event (`caltrack-user-change`) with `supabase.auth.onAuthStateChange`~~
-~~- Add email verification, password reset, and session token handling~~
-~~- See DECISIONS.md for the migration plan~~
-~~- *Effort: 1–2 weeks*~~
-
-**0.3 Stripe Payment Integration**
-- Add Stripe Checkout for plan selection (Starter / Professional / Enterprise)
-- Store `subscription_status` and `plan` on the `sites` table
-- Handle Stripe webhooks: `customer.subscription.created`, `updated`, `deleted`
-- Add a billing page under /app/settings/billing
-- *Effort: 1 week*
-
-**0.4 Account Gating**
-- Gate /app/* behind Supabase Auth (must be signed in)
-- Gate feature access behind subscription status (must have active subscription)
-- Build a self-serve sign-up flow: registration → Stripe checkout → site creation → seeded demo instruments
-- Add a 14-day free trial with no credit card required to reduce friction
-- *Effort: 3–5 days (depends on 0.2 and 0.3 being complete)*
+The demo should show every feature in action, not empty states.
 
 ---
 
-### Phase 1 — Core Product Hardening (first 30 days post-launch)
+### 2. Stripe Payment Integration
 
-These are the gaps that will come up in the first customer support tickets or
-the first ISO audit conversation.
+This is the single biggest blocker to revenue. No Stripe = no paying customers.
 
-~~**✅ 1.1 Immutable Audit Trail** *(completed April 2026)*~~
-~~- `audit_log` table: site_id, entity_type, entity_id, user_id, user_name, action, changed_fields JSONB, created_at~~
-~~- Every create/update/delete/submit/approve/reject writes an audit row in the same DB transaction~~
-~~- "Audit Trail" tab on InstrumentDetail shows all entries for the instrument + its calibration records~~
-~~- `GET /api/instruments/{id}/audit-log` — per-instrument; `GET /api/audit` — admin-only site-wide log~~
+**2.1 Stripe Checkout for plan selection**
+- 3 plans: Starter ($49/mo AUD), Professional ($129/mo AUD), Enterprise (custom)
+- Monthly/annual toggle (annual = 2 months free)
+- Stripe Checkout Session created server-side, redirect to Stripe-hosted payment page
+- On success, redirect back to `/app` with active subscription
 
-~~**✅ 1.2 CSV Import UI** *(completed April 2026)*~~
-~~- `POST /api/instruments/bulk-import` — multipart/form-data CSV upload; `?dry_run=true` for preview~~
-~~- Frontend at `/app/import`: file picker → dry-run preview table → confirm import~~
-~~- "Import CSV" button added to InstrumentList header~~
-~~- Supports all columns from caltrack_import_TEMPLATE.csv; duplicate tags skipped, errors reported per row~~
+**2.2 Stripe webhooks**
+- `customer.subscription.created` → set `subscription_status = 'active'` on sites table
+- `customer.subscription.updated` → handle plan changes, payment method updates
+- `customer.subscription.deleted` → set `subscription_status = 'cancelled'`, begin grace period
+- `invoice.payment_failed` → set `subscription_status = 'past_due'`, trigger email
 
-~~**✅ 1.3 Email Notifications** *(completed April 2026)*~~
-~~- Resend integration in `backend/notifications.py`; gracefully skipped if `RESEND_API_KEY` not set~~
-~~- Immediate: calibration submitted → supervisors; approved/rejected → submitting technician~~
-~~- Digest: daily overdue alert (08:00 UTC) + weekly due-soon (Mondays 08:00 UTC) via APScheduler~~
-~~- `site_members.email` stored on register, back-filled on every `/api/auth/me` call~~
-~~- `notification_preferences` table created for future per-user opt-in/out controls~~
-~~- Required Railway env vars: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `APP_URL`~~
+**2.3 Billing page at /app/settings/billing**
+- Current plan display
+- Next billing date
+- Update payment method (redirect to Stripe Customer Portal)
+- Cancel subscription (with confirmation)
+- Invoice history
 
-~~**✅ 1.4 Mobile / Tablet UI Audit** *(completed April 2026)*~~
-~~- Layout already had mobile sidebar with hamburger + backdrop overlay (lg: breakpoint)~~
-~~- Header already passes `onMenuClick`; Sidebar already accepts `onNavigate` to auto-close on navigation~~
-~~- BadActors page: wrapped `grid-cols-12` list in `overflow-x-auto` + `min-w-[600px]` (was squishing on 390px)~~
-~~- InstrumentList: search input changed from fixed `w-56` to `w-full sm:w-56`~~
-~~- CalibrationForm: SectionCard padding responsive-reduced to `px-4 py-4 sm:px-6 sm:py-5`~~
-~~- InstrumentList, PendingApprovals, CalibrationForm test-points table, InstrumentDetail tabs: all already had `overflow-x-auto`~~
-~~- All form grids already used `grid-cols-1 gap-4 sm:grid-cols-2`; action buttons use `flex flex-wrap`~~
+**2.4 Subscription enforcement**
+- Gate feature access behind `subscription_status` on the sites table
+- Free trial: 14 days, no credit card required
+- Expired trial: read-only access with upgrade banner
+- Past due: 7-day grace period, then read-only
 
-~~**✅ 1.5 Demo Account Hardening** *(completed April 2026)*~~
-~~- Added `assert_writable_site(current_user, created_by?)` helper to `auth.py`~~
-~~- Applied to all write endpoints: instruments (create, update, delete, bulk-import) and calibrations (create, update, submit, approve, reject)~~
-~~- Returns HTTP 403 "The Demo site is read-only" when signed-in user's site is Demo OR target resource's created_by is Demo~~
-~~- Also fixes a latent security bug: previously any authenticated user could modify Demo instruments (check_instrument_access returned early for Demo)~~
+**2.5 Self-serve sign-up → Stripe checkout flow**
+Registration (already built) → plan selection → Stripe checkout → site created → redirect to `/app` with first-run onboarding.
 
 ---
 
-### Phase 2 — Product Depth (30–90 days post-launch)
+### 3. Website & Marketing — Visual and Strategic Overhaul
 
-These items deepen the product's value and build toward the key differentiator:
-drift prediction.
+The marketing site currently works but does not maximise its potential to convert visitors into trial signups. A deep analysis follows.
 
-**2.1 Role-Based Views**
-- Technician view: personal task queue showing instruments due for calibration,
-  assigned to their area; sorted by urgency; one-click to start a calibration
-- Manager / Supervisor view: compliance dashboard showing area-by-area status,
-  approval queue count, bad actor summary, upcoming workload
-- Planner view: scheduling calendar showing all instruments due by week/month
-- Role is already stored — this is a UI routing/layout change, not a data change
-- *Effort: 1–2 weeks*
+**3.1 Colour palette assessment**
 
-~~**✅ 2.2 Drift Prediction Engine** *(completed April 2026)*~~
-~~- Linear regression on historical as-found error % per instrument~~
-~~- `GET /api/instruments/{id}/drift` returns drift_rate_per_year, projected_failure_date, drift_status~~
-~~- Drift statuses: critical / warning / watch / stable / exceeded~~
-~~- "Drift Analysis" tab added to InstrumentDetail~~
-~~- "Predicted to Fail" alert type added to Alerts page~~
+Current palette: Navy (#0B1F3A) backgrounds, blue (#2196F3) accents, orange (#F57C00) CTAs, light grey (#F4F7FC) sections.
 
-~~**✅ 2.3 Reporting Improvements** *(completed April 2026)*~~
-~~- Area filter added to Overdue and Upcoming tabs on Reports page~~
-~~- Area, instrument type, and technician filters added to Failed tab~~
-~~- Date-range filtering implemented via useMemo client-side~~
-~~- Single calibration certificate PDF (jsPDF + jspdf-autotable) in reportGenerator.js~~
-~~- Multi-calibration history report PDF — downloadable from InstrumentDetail~~
+What works:
+- Navy conveys authority and trust — appropriate for industrial/compliance software
+- The blue accent is clean and modern
+- Orange CTAs have high contrast against navy backgrounds
 
-~~**✅ 2.4 Instrument Bulk Actions** *(completed April 2026)*~~
-~~- Checkbox selection with select-all / indeterminate state in InstrumentList~~
-~~- Bulk CSV export of selected instruments~~
-~~- Clear selection bar with item count indicator~~
+What could improve:
+- The site feels monotone — nearly everything is navy-to-blue. There is no visual "warmth" or energy outside the CTA buttons. Industrial SaaS competitors (Limble CMMS, Fiix, UpKeep) use more white space and warmer accent colours to avoid feeling cold/corporate
+- The hero section gradient (navy → slightly lighter navy) lacks drama. A subtle background pattern, a diagonal cut, or a hero image/illustration of a technician with a tablet at a plant would immediately communicate "this is for real people in real facilities"
+- Section transitions are abrupt — all hard colour changes. Subtle gradients or angled dividers between sections would create visual flow
+- The compliance badge strip is well-intentioned but the badges are low-contrast small text. They should be more prominent — these are the trust signals that close deals in this industry
 
-~~**✅ 2.5 Beamex / Fluke Calibrator CSV Integration** *(completed April 2026)*~~
-~~- `frontend/src/utils/calibratorCsvParser.js` — client-side parser for Beamex MC6/MC4/MC2 and~~
-~~  Fluke 754/729/726 CSV exports; heuristic format detection; extracts tag, date, technician,~~
-~~  reference standard, test points, results; handles AU date formats; returns structured object + errors array~~
-~~- `frontend/src/pages/ImportCalibratorCSV.jsx` — 3-step UI (Upload → Review → Confirm):~~
-~~  drag-and-drop or file picker, parsed data preview with test point table, instrument~~
-~~  selection (auto-matches by tag), manual overrides for any missing field, save-as-draft~~
-~~  or submit-for-approval on confirmation~~
-~~- Route: `/app/calibrations/import-csv` (standalone) or `?instrumentId=xxx` (pre-fills instrument)~~
-~~- "Import CSV" button added to InstrumentDetail header (visible to technicians and above)~~
+Recommendations:
+- Introduce a warm accent colour (teal #0D9488 or green #059669) for "positive" elements (checkmarks, success states, trust badges) to contrast the navy/orange palette
+- Add a hero illustration or product screenshot with a real "plant floor" feel — even a stylised SVG of a technician scanning instruments. The current fake browser chrome preview is generic
+- Increase white space between sections by 30-40%. The page currently feels dense
+- Make the compliance badge strip a full-width, visually distinct section with larger badge icons and brief explanations (not just text labels)
 
----
+**3.2 Above-the-fold conversion analysis**
 
-### Phase 3 — Ecosystem & Scale (3–6 months post-launch)
+The hero headline "Always know which instruments need attention — before they become a problem" is solid but generic. It could apply to any monitoring tool. The subheading is too long (40+ words). 
 
-These are medium-to-long-term items that require real customer data and demand
-signals before investing engineering time.
+Recommendations:
+- Sharpen the headline to be more specific: "Stop Chasing Overdue Calibrations. Start Preventing Them." or "Your Calibration Spreadsheet Is a Compliance Liability" (this was the original and it's stronger)
+- Subheading should be 15-20 words max: "Real-time calibration tracking, drift prediction, and compliance reporting for Australian processing plants."
+- Add a third trust element above the fold: either "Trusted by X technicians" (once you have numbers) or "ISO 17025 / NATA compliant" badge prominently placed
+- The two CTAs ("Start Free 30-Day Trial" + "See the Live Demo") are correct. Consider making the demo CTA more prominent — demo is lower commitment than trial and feeds the funnel
 
-**3.1 CMMS Integration**
-- Priority order based on likely customer base: MEX → Maximo → SAP PM → Infor EAM
-- Start with a one-way sync: CalTrack pushes completed calibration records to the
-  CMMS work order history
-- Build as a webhook/API connector, not a bespoke integration per system
-- Do not build until at least one paying customer requests it with a specific CMMS
+**3.3 Social proof and trust signals**
 
-**3.2 QR Code / NFC Tag Support**
-- Generate printable QR code labels for instruments (links to InstrumentDetail)
-- Technician scans QR code on tablet → opens instrument in app → taps "Start Calibration"
-- This improves the field workflow significantly but is not a launch-blocker
+The site currently has zero social proof — no logos, no testimonials, no case study numbers. In B2B industrial SaaS, this is the single biggest credibility gap.
 
-**3.3 Advanced Analytics**
-- Once 12+ months of real customer data exists, introduce statistical failure
-  prediction (regression on drift rate, instrument age, environmental factors)
-- Fleet benchmarking: how does a customer's failure rate compare to similar
-  instruments across the anonymised platform dataset
-- This requires data volume that will not exist at launch
+Before launch:
+- Add an "As used at" logo strip — even if it's just 3-4 industry logos or generic industry silhouettes. If you can't use real logos yet, use industry category labels: "Water Treatment | Mining & Resources | Oil & Gas | Food Processing"
+- Add a quantified results block: "30-second calibration lookups | 85% reduction in overdue instruments | 100% audit-ready records" — these can be projections from the Riverdale demo data
+- "Built by a calibration technician" origin story — authenticity is the strongest trust signal for niche industrial software. A brief "About" section or blog post about why you built this
 
-**3.4 API / Webhook Access**
-- Public REST API for customers who want to integrate CalTrack data into their
-  own BI tools or CMMS systems
-- Webhook events for key actions (calibration submitted, approved, instrument overdue)
-- Required for Enterprise tier customers
+Post-launch:
+- Real testimonials with name, role, and company
+- Case study numbers from pilot customers
+
+**3.4 Content strategy for organic traffic**
+
+The blog has 6 articles — good start. To build organic traffic in this niche:
+- Target long-tail keywords: "calibration management software Australia", "ISO 17025 calibration tracking", "instrument calibration spreadsheet template", "how to calculate calibration drift", "NATA calibration requirements"
+- Write 2 articles per month targeting these terms
+- Create a downloadable "Calibration Interval Optimisation Guide" (PDF) as a lead magnet behind an email gate
+- Each blog post should end with a soft CTA to the demo or free trial
+
+**3.5 Page speed and technical SEO**
+
+- Add structured data (JSON-LD) for SoftwareApplication schema
+- Ensure all images use WebP format with proper alt text
+- Add a sitemap.xml (can be static for now)
+- Add robots.txt
+- Verify the site in Google Search Console
+- Consider adding Plausible or Fathom analytics (privacy-friendly, no cookie banner needed in Australia)
 
 ---
 
-## Marketing & Positioning Track (parallel to engineering)
+### 4. Logo Recommendation
 
-These do not require code changes and can be done at any time.
+The current logo is an SVG gauge icon (semicircular dial with a needle) rendered inline in the Sidebar and marketing nav, with "CalCheq" as styled text (white "Cal" + blue "Cheq").
 
-~~**✅ M.1 Messaging Rewrite** *(completed April 2026)*~~
-~~- Landing.jsx fully rewritten: Australian-focused hero ("Your calibration spreadsheet is a compliance liability"),~~
-~~  pain-point section with 6 customer-voice quote cards, feature deep-dive, 4-step how-it-works,~~
-~~  3-tier AUD pricing preview, stat block (30 Days / 500 instruments / 48h setup / $0),~~
-~~  compliance badge strip (AS/NZS ISO 17025:2017, NATA, IEC 61511, ISO 9001, WHS Act, ILAC-G24),~~
-~~  FAQ accordion, and final CTA~~
-~~- Pricing.jsx fully rewritten: monthly/annual toggle with AUD pricing, feature comparison table,~~
-~~  pricing FAQ accordion~~
-~~- FAQ.jsx fully rewritten: 23 Q&As across 5 sections, Australian compliance focus~~
-~~- Contact.jsx fully rewritten: two-column layout with 3-step process, role/instrument-count selects~~
-~~- HowItWorks.jsx created: "Up and running in 48 hours", 4-step setup, 6 feature cards, 4 role cards~~
-~~- Resources.jsx created: 10 resource cards, tag filter, newsletter subscribe form~~
-~~- MarketingNav.jsx updated: new nav links (How It Works, Resources), CTA → "Start Free Trial"~~
+**Assessment:**
 
-**M.2 Social Proof** *(next priority)*
-- Add real customer logo strip or testimonial block to the Landing page
-- Add a quantified results section with verified numbers once pilot customers are onboarded
-- "Built by calibration technicians" origin story for blog
+Strengths:
+- The gauge/dial metaphor directly communicates "calibration" and "measurement" — immediately recognisable to the target audience
+- The split-colour wordmark (Cal + Cheq) is clean and memorable
+- Green needle on the gauge adds a "healthy/pass" connotation
 
-~~**✅ M.3 SEO Fundamentals** *(completed April 2026)*~~
-~~- Meta description and `document.title` set via useEffect on every marketing page~~
-~~- OG tags added to `frontend/index.html`~~
-~~- All marketing page content uses Australian industry terminology for search relevance~~
+Weaknesses:
+- The gauge icon is generic — it could be any monitoring/dashboard product
+- At small sizes (favicon, mobile), the gauge detail is lost
+- There is no visual connection to the "Cheq" part of the name (check, verification, compliance)
 
-~~**✅ M.4 Pricing Page Trust Signals** *(completed April 2026)*~~
-~~- Compliance FAQ accordion added to Pricing.jsx~~
-~~- Feature comparison table highlights ISO 17025 compliance features~~
-~~- Enterprise CTA is "Talk to Our Team" (contact form)~~
+**Recommended direction:**
+
+Keep the gauge concept but evolve it to incorporate a "check" element:
+
+**Option A — Gauge + Checkmark (recommended):**
+A simplified gauge dial where the needle points to the green zone, and the needle tip or the green zone itself forms a subtle checkmark shape. This merges "calibration" (gauge) with "check/verified" (cheq). The wordmark stays as-is.
+
+**Option B — Shield + Gauge:**
+A shield outline (compliance/protection) containing a simplified gauge dial. This emphasises the compliance/protection value proposition. Works well at small sizes.
+
+**Option C — Stylised "C" as gauge:**
+The letter "C" rendered as a gauge arc with a needle, doubling as both the brand initial and the calibration metaphor. Minimal and scales well to favicon.
+
+For all options:
+- Primary colours: Navy (#0B1F3A) + Blue (#2196F3) + Green (#22C55E)
+- The wordmark "CalCheq" with the blue "Cheq" should remain — it's already recognisable
+- The logo should work at 3 sizes: full (sidebar/nav), compact (favicon/mobile tab), and icon-only (app icon)
+- Commission a professional vector version once you choose a direction — the current inline SVG approach works for now but a proper logo file (.svg + .png at multiple sizes) is needed before any print material or app store listing
 
 ---
 
-## What Not to Build (until there is a clear customer signal)
+### 5. Onboarding Experience
 
-- SIL / IEC 61511 functional safety module
-- HART communicator / 4-20mA device integration (hardware dependency)
+First-run experience after sign-up — currently there is none.
+
+**5.1 Welcome wizard (3 steps)**
+- Step 1: Site name, timezone, industry type
+- Step 2: Upload your first instruments (CSV or manual entry of 3-5)
+- Step 3: Invite your first team member
+
+**5.2 Empty state guidance**
+Every page should have a helpful empty state when no data exists yet:
+- Dashboard: "Welcome to CalCheq. Add your first instrument to get started." with a prominent button
+- Instruments: "No instruments yet. Import from CSV or add manually."
+- Schedule: "Your calibration queue is empty. Head to the Planner to schedule work."
+
+Some of these already exist but should be reviewed for consistency and helpfulness.
+
+---
+
+### 6. Role-Based Views
+
+Different users need different default experiences.
+
+**6.1 Technician view**
+- Dashboard shows their assigned area's instruments first
+- Schedule defaults to their queue items
+- Simplified nav (hide Reports, Smart Diagnostics — these are manager tools)
+
+**6.2 Manager/Supervisor view**
+- Dashboard shows site-wide compliance overview
+- Smart Diagnostics prominent
+- Approval queue badge always visible
+
+**6.3 Planner view**
+- Schedule → Planner tab as default
+- Workload chart is the hero element
+
+Role is already stored on `site_members` — this is a frontend routing/layout change, not a data change.
+
+---
+
+### 7. Scheduled Report Delivery
+
+Automated compliance reports by email — high-value feature for managers.
+
+- Weekly compliance summary (PDF) every Monday morning
+- Monthly calibration report (PDF) on the 1st of each month
+- Overdue instrument digest (already built as daily email — extend to PDF attachment)
+- Configurable per-user in notification preferences
+- Uses existing Resend + APScheduler infrastructure
+
+---
+
+### 8. Header Updates for New Pages
+
+The Header.jsx `getPageTitle()` function needs entries for the new routes:
+- `/app/diagnostics` → 'Smart Diagnostics'
+- `/app/documents` → 'Documents'
+
+Minor fix, do alongside other changes.
+
+---
+
+### 9. DECISIONS.md Update
+
+Update the Navigation Restructure decision to reflect the new 9-tab structure:
+- 🏠 Dashboard (health donut, quick actions, KPIs)
+- 🔧 Instruments (register, search, bulk actions)
+- 📅 Schedule (Technician Queue + Planner)
+- 📋 Calibrations (Activity Log + Pending Approvals)
+- 🔬 Smart Diagnostics (Recommendations + Drift Alerts + Repeat Failures)
+- 📁 Documents (procedures, manuals, certificates)
+- 📄 Reports (export centre)
+- ⚙️ Settings (profile, password, team, billing)
+- 🆘 Support (FAQ, tutorials, contact)
+
+---
+
+### 10. Phase 3+ (3-6 months post-launch, requires customer signal)
+
+These items are not speculative — they are the right next steps once real customers are generating data and feedback. Do not build until there is demand.
+
+- **CMMS Integration** — MEX first (most common in Australian water/mining), then Maximo/SAP PM. Start with one-way sync: push completed calibrations to CMMS work order history.
+- **QR Code / NFC Tags** — Printable QR labels linking to InstrumentDetail. Technician scans on tablet → taps "Start Calibration". Significant field workflow improvement.
+- **Advanced Analytics** — Statistical failure prediction once 12+ months of real data exists. Fleet benchmarking across anonymised platform data.
+- **Public API / Webhooks** — REST API for Enterprise customers to integrate with BI tools. Webhook events for key actions (calibration submitted, instrument overdue).
+
+---
+
+### What Not to Build (until clear customer signal)
+
+- SIL / IEC 61511 functional safety module (separate product domain)
+- HART / 4-20mA communicator integration (hardware dependency)
 - SMS notifications (email covers this)
-- Native mobile app (responsive web is sufficient for field use)
-- AI/ML failure prediction (build rule-based drift engine first; ML comes later)
-- Multi-language / internationalisation (English-only is fine for the initial market)
+- Native mobile app (responsive web is sufficient)
+- AI/ML prediction (rule-based drift engine covers this for now)
+- Multi-language (English-only for initial market)
 
 ---
 
-## Definition of "Launch-Ready"
+## Priority Order
 
-The product is ready for its first paid customer when:
+| # | Item | Blocks Revenue? | Effort |
+|---|------|----------------|--------|
+| 1 | Demo environment polish (1.1-1.4) | Indirectly — it's the sales tool | 2-3 days |
+| 2 | Stripe integration (2.1-2.5) | **Yes — no Stripe = no revenue** | 1-2 weeks |
+| 3 | Website visual overhaul (3.1-3.5) | Indirectly — affects conversion | 1 week |
+| 4 | Logo refinement (4) | No, but improves brand perception | External: 1-2 weeks |
+| 5 | Onboarding wizard (5) | No, but reduces churn | 3-4 days |
+| 6 | Header + DECISIONS updates (8-9) | No | 30 minutes |
+| 7 | Role-based views (6) | No | 1-2 weeks |
+| 8 | Scheduled reports (7) | No | 3-5 days |
 
-- [x] ~~Custom domain is live with SSL~~ *(partially complete: domain purchased, Railway added, DNS configured; steps 4–6 pending)*
-- [x] ~~Supabase Auth is in place (real login, not localStorage)~~ *(completed April 2026)*
-- [ ] Stripe payment integration is working end-to-end
-- [ ] /app/* is gated behind a valid subscription *(auth gating complete; subscription enforcement pending)*
-- [ ] Self-serve sign-up flow works without developer intervention
-- [x] ~~Demo site resets nightly (or is read-only for guests)~~ *(completed April 2026: read-only demo implemented)*
-- [ ] At least one real customer has completed onboarding on the live URL
+Items 1 and 2 should be done before any outbound sales or marketing activity. Item 3 should be done before spending any money on ads or SEO.

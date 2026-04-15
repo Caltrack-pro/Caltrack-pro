@@ -15,7 +15,9 @@ function getPageTitle(pathname) {
     '/app/schedule':               'Schedule',
     '/app/calibrations':           'Calibrations',
     '/app/calibrations/import-csv':'Import Calibrator CSV',
-    '/app/reports':                'Reports',
+    '/app/diagnostics':            'Smart Diagnostics',
+    '/app/documents':              'Documents',
+    '/app/reports':                'Reports & Exports',
     '/app/settings':               'Settings',
     '/app/import':                 'Import Instruments',
     '/app/support':                'Support',
@@ -190,7 +192,7 @@ export default function Header({ onMenuClick }) {
               </p>
               <div className="flex items-center gap-1">
                 <span className="text-[10px] text-slate-400 truncate leading-tight">
-                  {currentUser.siteName}
+                  {currentUser.isDemoMode || currentUser.siteName === 'Demo' ? 'Riverdale Water Treatment Plant' : currentUser.siteName}
                 </span>
                 <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${roleBadge}`}>
                   {roleLabel}
@@ -212,7 +214,7 @@ export default function Header({ onMenuClick }) {
             <div className="px-4 py-3 border-b border-slate-100">
               <p className="text-xs font-bold text-slate-800 truncate">{currentUser.userName}</p>
               <p className="text-xs text-slate-400 truncate">{currentUser.email}</p>
-              <p className="text-xs text-slate-400 truncate">{currentUser.siteName}</p>
+              <p className="text-xs text-slate-400 truncate">{currentUser.isDemoMode || currentUser.siteName === 'Demo' ? 'Riverdale Water Treatment Plant' : currentUser.siteName}</p>
               <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1 ${roleBadge}`}>
                 {roleLabel}
               </span>
