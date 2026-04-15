@@ -562,6 +562,52 @@ export default function Dashboard() {
       {/* ── Demo banner ── */}
       {isDemoMode && <DemoBanner />}
 
+      {/* ── Welcome banner for new sites with zero instruments ── */}
+      {!isDemoMode && stats.total_instruments === 0 && (
+        <div style={{
+          background: 'linear-gradient(135deg, #1565C0 0%, #0B1F3A 100%)',
+          borderRadius: 16,
+          padding: '36px 32px',
+          color: '#fff',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+          <div style={{ position: 'absolute', bottom: -40, right: 60, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 8 }}>
+            Welcome to CalCheq, {user?.userName || 'there'}!
+          </h2>
+          <p style={{ fontSize: '0.95rem', opacity: 0.85, maxWidth: 480, lineHeight: 1.6, marginBottom: 24 }}>
+            Get started by adding your instruments. Import your existing register from a CSV, or add a few manually to see CalCheq in action.
+          </p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <Link to="/app/onboarding" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '12px 24px', borderRadius: 10, fontWeight: 600, fontSize: '0.9rem',
+              background: '#fff', color: '#1565C0', textDecoration: 'none',
+            }}>
+              🚀 Get Started
+            </Link>
+            <Link to="/app/import" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '12px 24px', borderRadius: 10, fontWeight: 600, fontSize: '0.9rem',
+              background: 'rgba(255,255,255,0.15)', color: '#fff', textDecoration: 'none',
+              border: '1px solid rgba(255,255,255,0.25)',
+            }}>
+              📥 Import CSV
+            </Link>
+            <Link to="/app/instruments/new" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '12px 24px', borderRadius: 10, fontWeight: 600, fontSize: '0.9rem',
+              background: 'rgba(255,255,255,0.15)', color: '#fff', textDecoration: 'none',
+              border: '1px solid rgba(255,255,255,0.25)',
+            }}>
+              ✏️ Add Manually
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* ── Page header ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>

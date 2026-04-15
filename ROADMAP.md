@@ -14,8 +14,7 @@ Auth (Supabase ES256 JWT), custom domain (calcheq.com), immutable audit trail, C
 - Website improvements (3.1–3.5): hero headline sharpened, pricing set to $199/$449/$899 (research-backed), trial updated to 14 days, industry trust labels, quantified results block, robots.txt, sitemap.xml, JSON-LD structured data
 - DECISIONS.md updated for 9-tab nav
 - Header getPageTitle entries for new routes
-
-All of the above is live in production (pending git push).
+- Onboarding wizard (5.1–5.2): 3-step welcome wizard (/app/onboarding), Dashboard welcome banner for empty sites, enhanced empty states on Instruments page
 
 ---
 

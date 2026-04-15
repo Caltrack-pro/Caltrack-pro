@@ -21,13 +21,31 @@ function Spinner() {
 function EmptyState({ filtered }) {
   return (
     <tr>
-      <td colSpan={10} className="px-6 py-16 text-center text-slate-400">
-        <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-        </svg>
-        {filtered
-          ? 'No instruments match your filters.'
-          : 'No instruments found. Add one to get started.'}
+      <td colSpan={10} className="px-6 py-16 text-center">
+        {filtered ? (
+          <div className="text-slate-400">
+            <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+            </svg>
+            No instruments match your filters.
+          </div>
+        ) : (
+          <div>
+            <div className="text-4xl mb-4">🔧</div>
+            <h3 className="text-lg font-semibold text-slate-700 mb-2">No instruments yet</h3>
+            <p className="text-sm text-slate-400 mb-6 max-w-md mx-auto">
+              Add your first instruments to start tracking calibrations. Import from a CSV file or add them one by one.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <Link to="/app/import" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">
+                📥 Import CSV
+              </Link>
+              <Link to="/app/instruments/new" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50">
+                ✏️ Add Manually
+              </Link>
+            </div>
+          </div>
+        )}
       </td>
     </tr>
   )

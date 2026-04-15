@@ -34,6 +34,7 @@ import Documents           from './pages/Documents'
 import ImportInstruments   from './pages/ImportInstruments'
 import ImportCalibratorCSV from './pages/ImportCalibratorCSV'
 import Support             from './pages/Support'
+import Onboarding          from './pages/Onboarding'
 
 export default function App() {
   return (
@@ -57,6 +58,9 @@ export default function App() {
         <Route path="/demo"         element={<DemoPage />} />
         <Route path="/blog"         element={<Blog />} />
         <Route path="/blog/:slug"   element={<BlogPost />} />
+
+        {/* ── Onboarding wizard (auth required, no sidebar) ─────────── */}
+        <Route path="/app/onboarding" element={<AuthGuard><Onboarding /></AuthGuard>} />
 
         {/* ── App pages (gated by AuthGuard, then inside Layout) ──────── */}
         <Route path="/app" element={<AuthGuard><Layout /></AuthGuard>}>

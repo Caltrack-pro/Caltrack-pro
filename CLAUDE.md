@@ -57,6 +57,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - AppSettings.jsx        — 5 sections: Site info / Profile / Change Password / Team Members (admin) / Billing & Subscription (admin); route: /app/settings
 - Reports.jsx            — export centre: quick export bar (overdue/failed/compliance CSV), 4 report tabs (overdue/upcoming/failed/history); route: /app/reports
 - Support.jsx            — FAQ accordion (5 sections, 20 Q&As), tutorial placeholders, contact email; route: /app/support
+- Onboarding.jsx         — 3-step welcome wizard (site setup → add instruments → invite team); route: /app/onboarding; no sidebar, full-page
 
 ### Legacy pages (files still exist but routes now redirect to above)
 - Alerts.jsx → /app/schedule | PendingApprovals.jsx → /app/calibrations | BadActors.jsx → /app/schedule | Profile.jsx → /app/settings
@@ -159,6 +160,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 | /app/settings                       | AppSettings         | Profile / Password / Team       |
 | /app/import                         | ImportInstruments   | bulk CSV import                 |
 | /app/support                        | Support             | FAQ accordion, tutorials, contact |
+| /app/onboarding                     | Onboarding          | 3-step welcome wizard (no sidebar) |
 
 ### Legacy redirects (old bookmarks still work)
 | Old path        | → New path          |
