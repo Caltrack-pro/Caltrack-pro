@@ -365,15 +365,23 @@ function ActivityTab() {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function Calibrations({ defaultTab }) {
+  const user = getUser()
   const [tab, setTab] = useState(defaultTab ?? 'activity')
   const [pendingCount, setPendingCount] = useState(null)
 
-  // Load pending count for badge
+  // Load pending count for badge — and if supervisor/admin, auto-switch to approvals tab
   useEffect(() => {
     calApi.list({ record_status: 'submitted', limit: 200 })
-      .then(res => setPendingCount((res?.results ?? res ?? []).length))
+      .then(res => {
+        const count = (res?.results ?? res ?? []).length
+        setPendingCount(count)
+        // Default to approvals tab for approvers when there are pending records
+        if (!defaultTab && count > 0 && canApprove(user)) {
+          setTab('pending')
+        }
+      })
       .catch(() => {})
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const TABS = [
     { id: 'activity', emoji: '📋', label: 'Activity Log' },

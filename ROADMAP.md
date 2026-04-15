@@ -15,6 +15,7 @@ Auth (Supabase ES256 JWT), custom domain (calcheq.com), immutable audit trail, C
 - DECISIONS.md updated for 9-tab nav
 - Header getPageTitle entries for new routes
 - Onboarding wizard (5.1–5.2): 3-step welcome wizard (/app/onboarding), Dashboard welcome banner for empty sites, enhanced empty states on Instruments page
+- Role-based views (6.1–6.3): Technician nav hides Reports + Smart Diagnostics; Planner defaults to Planner tab on Schedule; Supervisor/Admin defaults to Pending Approvals tab on Calibrations when approvals exist
 
 ---
 

@@ -598,7 +598,10 @@ export default function Schedule() {
   const [searchParams] = useSearchParams()
   const paramTab = searchParams.get('tab')
   const validTab = TABS.find(t => t.id === paramTab)?.id
-  const [tab, setTab] = useState(validTab ?? 'queue')
+  // Planner role defaults to the Planner tab; everyone else starts on the Queue
+  const user = getUser()
+  const defaultTab = user?.role === 'planner' ? 'planner' : 'queue'
+  const [tab, setTab] = useState(validTab ?? defaultTab)
 
   // If the URL tab param changes (e.g. navigated from Dashboard), sync
   useEffect(() => {
