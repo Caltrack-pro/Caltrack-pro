@@ -147,6 +147,32 @@ site_members (id UUID PK, site_id FK→sites, user_id UUID, role TEXT, display_n
 
 ---
 
+## Role-Based Views: Smarter Defaults, Not Hard Gating (April 2026)
+
+**Decision:** Different roles see different default tabs and a simplified nav, but all roles still have URL access to every page.
+
+**Changes:**
+- **Technician:** Sidebar hides Smart Diagnostics and Reports (manager-only tools). Reduces clutter.
+- **Planner:** Schedule page defaults to the Planner tab (workload chart) instead of Technician Queue.
+- **Supervisor/Admin:** Calibrations page auto-switches to Pending Approvals tab when there are items waiting for review.
+
+**Why soft gating, not hard:** At many smaller sites, one person wears multiple hats. Hard-blocking a technician from viewing reports creates friction. The nav simplification guides them to what they need most, but direct URL access remains available.
+
+---
+
+## Onboarding Wizard: 3-Step Welcome Flow (April 2026)
+
+**Decision:** New sites see a welcome banner on the Dashboard (when 0 instruments) with a link to `/app/onboarding`. The wizard is a full-page 3-step flow outside the Layout shell.
+
+**Steps:**
+1. Site setup (industry, timezone)
+2. Add first instruments (CSV import or manual entry of up to 5)
+3. Invite first team member
+
+**Why:** New users with empty dashboards don't know where to start. The wizard provides a guided path. All steps are skippable — experienced users can dismiss and go straight to bulk import.
+
+---
+
 ## Calibration PDF Import: Client-Side Parser
 
 **Decision:** Beamex and Fluke calibrator CSV exports are parsed in the browser (`calibratorCsvParser.js`) before being sent to the backend.

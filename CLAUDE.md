@@ -43,15 +43,15 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - ResetPassword.jsx      — handles reset link, sets new password
 
 ### Frontend — src/pages/ (app pages, all under /app/*)
-- Dashboard.jsx          — metrics hub: horizontal quick actions bar, 4 KPI stat cards, Instrument Health donut (current/due-soon/overdue/est-out-of-tolerance), 3 attention cards, area compliance bars, upcoming 7-day list
+- Dashboard.jsx          — metrics hub: horizontal quick actions bar, 4 KPI stat cards, Instrument Health donut (current/due-soon/overdue/est-out-of-tolerance), 3 attention cards, area compliance bars, upcoming 7-day list; welcome banner for new sites with 0 instruments
 - InstrumentList.jsx     — paginated/filterable instrument register with bulk CSV export
 - InstrumentForm.jsx     — create and edit instrument (shared form)
 - InstrumentDetail.jsx   — single instrument view: calibration history, trend charts, drift analysis, audit trail tabs
 - CalibrationForm.jsx    — enter calibration results (as-found / as-left test points, 1–20 points)
 - ImportCalibratorCSV.jsx — 3-step Beamex/Fluke CSV import: Upload → Review → Confirm; route: /app/calibrations/import-csv
 - ImportInstruments.jsx  — bulk instrument CSV import UI; route: /app/import
-- Schedule.jsx           — 2 tabs: Technician Queue (default, shows queued instruments as table) / Planner (queue any active instrument, 12-week workload chart); route: /app/schedule
-- Calibrations.jsx       — 2 tabs: Activity Log (default, with PDF cert download per row) / Pending Approvals (with live count badge); route: /app/calibrations
+- Schedule.jsx           — 2 tabs: Technician Queue / Planner; default tab is role-aware (planner role → Planner tab); route: /app/schedule
+- Calibrations.jsx       — 2 tabs: Activity Log / Pending Approvals (with live count badge); supervisor/admin auto-switches to Pending Approvals when items exist; route: /app/calibrations
 - SmartDiagnostics.jsx   — 3 tabs: Recommendations (critical/advisory/optimisation, rule-based engine) / Drift Alerts (sparklines, projected failure dates) / Repeat Failures (bad actors); route: /app/diagnostics
 - Documents.jsx          — document library: upload/manage procedures, manuals, certificates; link to instruments; CRUD via /api/documents; route: /app/documents
 - AppSettings.jsx        — 5 sections: Site info / Profile / Change Password / Team Members (admin) / Billing & Subscription (admin); route: /app/settings
@@ -76,7 +76,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - Layout.jsx             — app shell: fetches pendingCount for sidebar badge on mount, passes to Sidebar; renders Header + <Outlet> + DemoBlockModal
 - AuthGuard.jsx          — protects /app/* routes; redirects to /auth/sign-in if no Supabase session
 - DemoBlockModal.jsx     — global modal: listens for 'caltrack-demo-blocked' event; shows friendly conversion message when demo user tries a write action
-- Sidebar.jsx            — emoji nav: 🏠 Dashboard, 🔧 Instruments, 📅 Schedule, 📋 Calibrations (red badge), 🔬 Smart Diagnostics, 📁 Documents, 📄 Reports, ⚙️ Settings, 🆘 Support; user avatar; Try Demo toggle; Back to Website
+- Sidebar.jsx            — emoji nav: 🏠 Dashboard, 🔧 Instruments, 📅 Schedule, 📋 Calibrations (red badge), 🔬 Smart Diagnostics (hidden for technician), 📁 Documents, 📄 Reports (hidden for technician), ⚙️ Settings, 🆘 Support; user avatar; Try Demo toggle; Back to Website
 - Header.jsx             — top bar: logged-in user name + role; sign-out via Supabase
 - Badges.jsx             — shared status/result badge components (CriticalityBadge, ResultBadge, etc.)
 - Toast.jsx              — notification toast system
@@ -329,14 +329,18 @@ overall record: fail > marginal > pass (worst point wins)
 
 ## Pending Work
 
-### Before first paying customer (must do)
-- **Stripe payment integration** — plan selection (Starter/Professional/Enterprise), webhooks, `subscription_status` on sites table, billing page at /app/settings/billing
-- **Subscription enforcement** — gate feature access behind active subscription (auth gating done; plan check not built)
-- **Self-serve sign-up → Stripe checkout** — registration built; needs Stripe connection
+### Completed (April 2026)
+- ✅ Stripe payment integration — 3 plans ($199/$449/$899 AUD), checkout sessions, webhooks, customer portal, billing settings, 402 enforcement
+- ✅ Subscription enforcement — `assert_active_subscription` in auth.py; 402 → redirect to billing
+- ✅ Self-serve sign-up → Stripe checkout — full flow working
+- ✅ Role-based views — technician nav simplified, planner defaults to Planner tab, supervisor defaults to Approvals
+- ✅ Onboarding wizard — 3-step welcome wizard at /app/onboarding; Dashboard welcome banner for empty sites
+- ✅ Demo environment polish — Riverdale header, team seeded, friendly 403 modal, queue/docs/links seeded
+- ✅ Website overhaul — hero, pricing ($199/$449/$899), 14-day trial, social proof, SEO (robots.txt, sitemap, JSON-LD)
 
 ### Phase 2 (30–90 days post-launch)
-- **Role-based views** — technician task queue vs manager compliance dashboard vs planner calendar
 - **Scheduled report delivery** — weekly/monthly compliance PDF by email (Resend + APScheduler already in place)
+- **Subscription plan enforcement** — gate specific features (drift prediction, imports) behind Professional+ plan
 
 ### Phase 3 (post-launch with real customers)
 - CMMS integration (MEX first, then Maximo / SAP PM)
