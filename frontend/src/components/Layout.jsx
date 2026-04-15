@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import DemoBlockModal from './DemoBlockModal'
 import { calibrations as calsApi } from '../utils/api'
 
 export default function Layout() {
+  const navigate = useNavigate()
   const [sidebarOpen,  setSidebarOpen]  = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
 
@@ -17,6 +18,13 @@ export default function Layout() {
       .catch(() => {})
     return () => { cancelled = true }
   }, [])
+
+  // Listen for 402 subscription-required events — redirect to billing
+  useEffect(() => {
+    function handler() { navigate('/app/settings?billing=required') }
+    window.addEventListener('caltrack-subscription-required', handler)
+    return () => window.removeEventListener('caltrack-subscription-required', handler)
+  }, [navigate])
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">

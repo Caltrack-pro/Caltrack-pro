@@ -8,7 +8,14 @@
 
 Auth (Supabase ES256 JWT), custom domain (calcheq.com), immutable audit trail, CSV import (instruments + Beamex/Fluke calibrator), email notifications (Resend), mobile/tablet responsive pass, demo account hardening (read-only), drift prediction engine, PDF certificate generation, bulk instrument actions, full marketing site (Landing, Pricing, How It Works, Resources, Blog, FAQ, Contact), UX restructure (health donut dashboard, smart diagnostics, documents library, technician queue, export centre).
 
-All of the above is live in production.
+**Completed 16 April 2026:**
+- Demo environment polish (1.1–1.4): Riverdale header, team members seeded, friendly 403 write-block modal, queue/docs/document-instrument links pre-seeded
+- Stripe billing integration (2.1–2.5): 3 products + 6 prices created, checkout sessions, webhooks, customer portal, billing settings page, 402 subscription enforcement, trial_ends_at tracking
+- Website improvements (3.1–3.5): hero headline sharpened, pricing set to $199/$449/$899 (research-backed), trial updated to 14 days, industry trust labels, quantified results block, robots.txt, sitemap.xml, JSON-LD structured data
+- DECISIONS.md updated for 9-tab nav
+- Header getPageTitle entries for new routes
+
+All of the above is live in production (pending git push).
 
 ---
 
@@ -55,7 +62,7 @@ The demo should show every feature in action, not empty states.
 This is the single biggest blocker to revenue. No Stripe = no paying customers.
 
 **2.1 Stripe Checkout for plan selection**
-- 3 plans: Starter ($49/mo AUD), Professional ($129/mo AUD), Enterprise (custom)
+- 3 plans: Starter ($199/mo AUD), Professional ($449/mo AUD), Enterprise ($899/mo AUD)
 - Monthly/annual toggle (annual = 2 months free)
 - Stripe Checkout Session created server-side, redirect to Stripe-hosted payment page
 - On success, redirect back to `/app` with active subscription

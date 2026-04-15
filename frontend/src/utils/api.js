@@ -76,9 +76,14 @@ async function request(path, options = {}) {
       const u = _getUser()
       if (u && (u.isDemoMode || u.siteName === 'Demo')) {
         window.dispatchEvent(new CustomEvent('caltrack-demo-blocked'))
-        // Return null so callers don't crash — the modal handles the UX
         return null
       }
+    }
+
+    // Subscription expired/inactive: redirect to billing
+    if (response.status === 402) {
+      window.dispatchEvent(new CustomEvent('caltrack-subscription-required'))
+      return null
     }
 
     throw new ApiError(`${response.status}: ${detail}`, response.status, detail)
@@ -287,8 +292,25 @@ export const documents = {
 }
 
 // ---------------------------------------------------------------------------
+// Billing / Stripe
+// ---------------------------------------------------------------------------
+
+export const billing = {
+  /** Get current subscription status for the site. */
+  subscription: () => request('/billing/subscription'),
+
+  /** Create a Stripe Checkout session. Returns { url } to redirect to. */
+  createCheckout: (plan, interval) =>
+    post('/billing/create-checkout-session', { plan, interval }),
+
+  /** Create a Stripe Customer Portal session. Returns { url } to redirect to. */
+  createPortal: () =>
+    post('/billing/create-portal-session', {}),
+}
+
+// ---------------------------------------------------------------------------
 // Convenience re-export for one-line imports
 // ---------------------------------------------------------------------------
 
-const api = { instruments, calibrations, dashboard, queue, documents }
+const api = { instruments, calibrations, dashboard, queue, documents, billing }
 export default api

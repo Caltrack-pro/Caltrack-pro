@@ -12,3 +12,4 @@ alembic==1.13.3
 python-multipart==0.0.12
 resend==2.10.0
 apscheduler==3.10.4
+stripe==11.4.1

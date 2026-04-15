@@ -139,12 +139,21 @@ def me(
             member.email = current_user.email
             db.commit()
 
+    # Fetch subscription status for the frontend
+    site = db.query(Site).filter(Site.name == current_user.site_name).first()
+    sub_status = site.subscription_status if site else None
+    sub_plan   = site.subscription_plan   if site else None
+    trial_end  = site.trial_ends_at.isoformat() if site and site.trial_ends_at else None
+
     return {
-        "user_id":      current_user.user_id,
-        "email":        current_user.email,
-        "site_name":    current_user.site_name,
-        "role":         current_user.role,
-        "display_name": current_user.display_name,
+        "user_id":             current_user.user_id,
+        "email":               current_user.email,
+        "site_name":           current_user.site_name,
+        "role":                current_user.role,
+        "display_name":        current_user.display_name,
+        "subscription_status": sub_status,
+        "subscription_plan":   sub_plan,
+        "trial_ends_at":       trial_end,
     }
 
 

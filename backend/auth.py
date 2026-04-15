@@ -256,6 +256,31 @@ def check_instrument_access(created_by: Optional[str], current_user: Optional[Us
         raise HTTPException(status_code=403, detail="Access denied")
 
 
+def assert_active_subscription(
+    current_user: UserContext,
+    db: "Session",
+) -> None:
+    """
+    Raise 402 if the site's subscription is not active or trialing.
+    Demo site is always allowed (it's read-only, so this check is moot).
+    Call in write routes that should be gated behind a paid subscription.
+    """
+    if current_user.site_name == DEMO_SITE:
+        return  # Demo is handled by assert_writable_site
+
+    from models import Site
+    site = db.query(Site).filter(Site.name == current_user.site_name).first()
+    if not site:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    allowed = {"active", "trialing"}
+    if site.subscription_status not in allowed:
+        raise HTTPException(
+            status_code=402,
+            detail="Your subscription is inactive. Please update your billing to continue.",
+        )
+
+
 def assert_writable_site(
     current_user: UserContext,
     created_by: Optional[str] = None,

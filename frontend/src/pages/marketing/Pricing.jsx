@@ -128,7 +128,7 @@ export default function Pricing() {
             Transparent pricing for Australian processing plants
           </h1>
           <p className="text-slate-500 text-lg leading-relaxed">
-            From 150 instruments to unlimited. No surprises. Cancel anytime.
+            From 50 instruments to unlimited. No surprises. Cancel anytime.
           </p>
         </div>
       </section>
@@ -172,11 +172,11 @@ export default function Pricing() {
 
           <PlanCard
             name="Starter"
-            price={isAnnual ? '$199' : '$239'}
-            priceNote="/mo AUD"
-            description="Perfect for smaller operations with up to 150 instruments and basic compliance needs."
+            price={isAnnual ? '$1,990' : '$199'}
+            priceNote={isAnnual ? '/yr AUD' : '/mo AUD'}
+            description="Perfect for smaller operations with up to 50 instruments and essential compliance tools."
             features={[
-              { text: 'Up to 150 instruments', included: true },
+              { text: 'Up to 50 instruments', included: true },
               { text: 'Up to 5 users', included: true },
               { text: 'Real-time dashboard', included: true },
               { text: 'Automated alerts', included: true },
@@ -190,8 +190,8 @@ export default function Pricing() {
 
           <PlanCard
             name="Professional"
-            price={isAnnual ? '$449' : '$539'}
-            priceNote="/mo AUD"
+            price={isAnnual ? '$4,490' : '$449'}
+            priceNote={isAnnual ? '/yr AUD' : '/mo AUD'}
             badge="MOST POPULAR"
             highlight
             description="Everything you need: predictive alerts, criticality ranking, and unlimited users. Trusted by mid-market sites."
@@ -206,13 +206,14 @@ export default function Pricing() {
               { text: 'Advanced reporting', included: true },
               { text: 'Priority support', included: true },
             ]}
-            cta="Start Free 30-Day Pilot"
+            cta="Start Free 14-Day Trial"
           />
 
           <PlanCard
             name="Enterprise"
-            price="Custom"
-            description="Unlimited instruments, advanced integrations, and dedicated support for large multi-site deployments."
+            price={isAnnual ? '$8,990' : '$899'}
+            priceNote={isAnnual ? '/yr AUD' : '/mo AUD'}
+            description="Unlimited instruments and users, advanced integrations, and dedicated support for large multi-site deployments."
             features={[
               { text: 'Unlimited instruments', included: true },
               { text: 'Unlimited users', included: true },
@@ -223,7 +224,7 @@ export default function Pricing() {
               { text: '99.5% uptime commitment', included: true },
               { text: 'Dedicated account manager', included: true },
             ]}
-            cta="Request Quote"
+            cta="Start Free 14-Day Trial"
           />
 
         </div>
@@ -233,7 +234,7 @@ export default function Pricing() {
       <section className="py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto bg-blue-50 border border-blue-200 rounded-lg p-6">
           <p className="text-sm text-slate-700 leading-relaxed">
-            <strong>All prices in AUD including GST.</strong> Annual billing saves you 2 months. You can upgrade, downgrade, or cancel anytime. Free 30-day trial includes full Professional plan features.
+            <strong>All prices in AUD including GST.</strong> Annual billing saves you 2 months. You can upgrade, downgrade, or cancel anytime. Free 14-day trial includes full plan features.
           </p>
         </div>
       </section>
@@ -254,8 +255,8 @@ export default function Pricing() {
               </thead>
               <tbody>
                 {[
-                  { feature: 'Max Instruments', starter: true, prof: true, ent: true, value: '150 / 500 / Unlimited' },
-                  { feature: 'Max Users', starter: '5', prof: 'Unlimited', ent: 'Unlimited', valueOnly: true },
+                  { feature: 'Max Instruments', starter: true, prof: true, ent: true, value: '50 / 500 / Unlimited' },
+                  { feature: 'Max Users', starter: '3', prof: '15', ent: 'Unlimited', valueOnly: true },
                   { feature: 'Dashboard & Alerts', starter: true, prof: true, ent: true },
                   { feature: 'Criticality Ranking', starter: false, prof: true, ent: true },
                   { feature: 'Predictive Degradation', starter: false, prof: true, ent: true },
@@ -292,7 +293,7 @@ export default function Pricing() {
           <div className="space-y-1">
             <AccordionFaqItem
               q="Is there a free trial?"
-              a="Yes. Start a 30-day free trial with the full Professional plan. No credit card required. After 30 days, you can choose to upgrade to a paid plan, downgrade to Starter, or cancel."
+              a="Yes. Start a 14-day free trial with the full plan features. No credit card required. After 14 days, you can choose to upgrade to a paid plan, downgrade, or cancel."
             />
             <AccordionFaqItem
               q="Can I change plans anytime?"
@@ -300,7 +301,7 @@ export default function Pricing() {
             />
             <AccordionFaqItem
               q="What's included in the free trial?"
-              a="The full Professional plan — criticality ranking, drift prediction, approval workflow, Beamex/Fluke CSV import, unlimited users — for 30 days. You import your own instrument data using our guided CSV wizard. Email support is included. No credit card required, no automatic billing."
+              a="The full plan features for your chosen tier — criticality ranking, drift prediction, approval workflow, Beamex/Fluke CSV import, multi-site management — for 14 days. You import your own instrument data using our guided CSV wizard. Email support is included. No credit card required, no automatic billing."
             />
             <AccordionFaqItem
               q="How does annual billing work?"
@@ -325,7 +326,7 @@ export default function Pricing() {
             Ready to simplify calibration management?
           </h2>
           <p className="text-lg text-slate-600 mb-8">
-            Start your 30-day free trial today. No credit card required.
+            Start your 14-day free trial today. No credit card required.
           </p>
           <Link
             to="/contact"

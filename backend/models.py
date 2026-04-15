@@ -199,9 +199,17 @@ class Site(Base):
         server_default=text("gen_random_uuid()")
     )
     name                = Column(String(100), nullable=False, unique=True)
-    subscription_status = Column(String(50),  nullable=False, server_default=text("'trial'"))
+    subscription_status = Column(String(50),  nullable=False, server_default=text("'trialing'"))
     plan                = Column(String(50),  nullable=False, server_default=text("'starter'"))
     created_at          = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    # Stripe integration fields
+    stripe_customer_id              = Column(String(255))
+    stripe_subscription_id          = Column(String(255))
+    subscription_plan               = Column(String(50))   # starter / professional / enterprise
+    subscription_interval           = Column(String(20))   # month / year
+    trial_ends_at                   = Column(DateTime(timezone=True))
+    subscription_current_period_end = Column(DateTime(timezone=True))
 
 
 class SiteMember(Base):

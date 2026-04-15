@@ -54,7 +54,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - Calibrations.jsx       — 2 tabs: Activity Log (default, with PDF cert download per row) / Pending Approvals (with live count badge); route: /app/calibrations
 - SmartDiagnostics.jsx   — 3 tabs: Recommendations (critical/advisory/optimisation, rule-based engine) / Drift Alerts (sparklines, projected failure dates) / Repeat Failures (bad actors); route: /app/diagnostics
 - Documents.jsx          — document library: upload/manage procedures, manuals, certificates; link to instruments; CRUD via /api/documents; route: /app/documents
-- AppSettings.jsx        — 4 sections: Site info / Profile / Change Password / Team Members (admin only); route: /app/settings
+- AppSettings.jsx        — 5 sections: Site info / Profile / Change Password / Team Members (admin) / Billing & Subscription (admin); route: /app/settings
 - Reports.jsx            — export centre: quick export bar (overdue/failed/compliance CSV), 4 report tabs (overdue/upcoming/failed/history); route: /app/reports
 - Support.jsx            — FAQ accordion (5 sections, 20 Q&As), tutorial placeholders, contact email; route: /app/support
 
@@ -85,8 +85,8 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 
 ### Frontend — src/utils/
 - supabase.js            — Supabase client (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)
-- userContext.js         — getUser(), onAuthStateChange, demo mode toggle; shape: { userId, email, userName, siteName, role, isDemoMode }
-- api.js                 — all API calls; auto-injects Authorization: Bearer <JWT>; 403 in demo mode dispatches 'caltrack-demo-blocked' event (friendly modal); exports: instruments, calibrations, dashboard, queue, documents, auth
+- userContext.js         — getUser(), onAuthStateChange, demo mode toggle; shape: { userId, email, userName, siteName, role, isDemoMode, subscriptionStatus, subscriptionPlan, trialEndsAt }
+- api.js                 — all API calls; auto-injects Authorization: Bearer <JWT>; 403 in demo mode dispatches 'caltrack-demo-blocked' event; 402 dispatches 'caltrack-subscription-required' event; exports: instruments, calibrations, dashboard, queue, documents, auth, billing
 - calEngine.js           — pass/fail/marginal calculation logic (mirrors backend)
 - formatting.js          — shared date and number formatting helpers
 - reportGenerator.js     — jsPDF: generateSingleCalibrationCert() + generateMultiCalibrationReport()
@@ -94,10 +94,10 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 
 ### Backend — backend/
 - main.py               — FastAPI app entry point, CORS, router registration
-- models.py             — SQLAlchemy ORM models (Instrument, CalibrationRecord, CalTestPoint, AuditLog, CalibrationQueue, Document, DocumentInstrument)
+- models.py             — SQLAlchemy ORM models (Instrument, CalibrationRecord, CalTestPoint, AuditLog, CalibrationQueue, Document, DocumentInstrument, Site, SiteMember)
 - schemas.py            — Pydantic v2 request/response schemas
 - database.py           — Supabase/PostgreSQL connection via SQLAlchemy
-- auth.py               — ES256 JWT verification via JWKS; get_current_user / get_optional_user / resolve_site / assert_writable_site
+- auth.py               — ES256 JWT verification via JWKS; get_current_user / get_optional_user / resolve_site / assert_writable_site / assert_active_subscription
 - calibration_engine.py — server-side pass/fail calculation (source of truth)
 - notifications.py      — Resend email: submit/approve/reject alerts + daily overdue digest + weekly due-soon digest + member invite email
 - routes/auth.py        — GET /api/auth/check-site, POST /api/auth/register, GET /api/auth/me, GET /api/auth/members, POST /api/auth/invite
@@ -108,6 +108,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - routes/queue.py       — GET/POST/DELETE/PATCH /api/queue; calibration work queue with auto-cleanup
 - routes/documents.py   — GET/POST/PUT/DELETE /api/documents; document library with instrument linking
 - routes/audit.py       — GET /api/instruments/{id}/audit-log, GET /api/audit (admin only)
+- routes/billing.py     — POST /api/billing/create-checkout-session, POST /api/billing/create-portal-session, GET /api/billing/subscription, POST /api/billing/webhook (Stripe)
 
 ### Root-level scripts
 - seed_instruments.py              — 30 demo instruments for "Demo" site
@@ -177,7 +178,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 ## Auth System (Supabase Auth — ES256 JWT)
 
 ### Database tables
-- `sites`        — id (UUID), name, slug, created_at
+- `sites`        — id (UUID), name, slug, created_at, stripe_customer_id, stripe_subscription_id, subscription_status, subscription_plan, subscription_interval, trial_ends_at, subscription_current_period_end
 - `site_members` — site_id (FK), user_id (FK→auth.users), role, display_name, email, created_at
 - `calibration_queue` — id, site_name, instrument_id (FK), added_by_name, added_at, priority, notes
 - `documents`    — id, site_name, title, doc_type, file_name, file_size, file_url, notes, uploaded_by, created_at, updated_at
@@ -223,6 +224,48 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - `RESEND_API_KEY`            — email notifications
 - `RESEND_FROM_EMAIL`         — info@calcheq.com
 - `APP_URL`                   — https://calcheq.com
+- `STRIPE_SECRET_KEY`         — Stripe secret key (sk_test_... or sk_live_...)
+- `STRIPE_WEBHOOK_SECRET`     — Stripe webhook signing secret (whsec_...)
+
+---
+
+## Stripe Billing Integration
+
+### Stripe Account
+- Account: CalCheq sandbox (acct_1TMZ6QCMuZPI8s0m)
+- Mode: Test (sandbox) — switch to live keys for production
+
+### Products & Prices (AUD)
+| Plan          | Product ID             | Monthly Price ID                          | Annual Price ID                           |
+|---------------|------------------------|-------------------------------------------|-------------------------------------------|
+| Starter       | prod_ULFonbTdcyxDUS    | price_1TMZiHCMuZPI8s0maMKcFOjC ($199)     | price_1TMZiICMuZPI8s0mOMAdEphF ($1,990)   |
+| Professional  | prod_ULFoborT7qGhoA    | price_1TMZiKCMuZPI8s0mJTZeAXd6 ($449)     | price_1TMZiLCMuZPI8s0mb2WfQE7t ($4,490)   |
+| Enterprise    | prod_ULFplYpi6ymvkI    | price_1TMZiNCMuZPI8s0mAuuMqELL ($899)     | price_1TMZiOCMuZPI8s0mZLuhfHFu ($8,990)   |
+
+### Flow
+1. User clicks "Choose a Plan" in Settings → Billing
+2. Frontend calls POST /api/billing/create-checkout-session with plan + interval
+3. Backend creates Stripe Checkout Session with 14-day trial, redirects to Stripe
+4. On success, Stripe sends webhook → backend updates sites table
+5. User redirected to /app/settings?billing=success
+
+### Subscription Statuses
+- `trialing` — 14-day free trial (default for new sites)
+- `active` — paying customer
+- `past_due` — payment failed, 7-day grace
+- `cancelled` — subscription cancelled
+- `incomplete` — first payment pending
+
+### Webhook Events Handled
+- `checkout.session.completed` — link Stripe sub to site
+- `customer.subscription.created` / `updated` — sync status, plan, period
+- `customer.subscription.deleted` — mark cancelled
+- `invoice.payment_failed` — mark past_due
+
+### Subscription Enforcement
+- `assert_active_subscription(user, db)` in auth.py raises HTTP 402 if not active/trialing
+- Frontend api.js catches 402 → dispatches 'caltrack-subscription-required' event → redirects to Settings billing
+- Not yet applied to all write routes — add gradually after launch
 
 ---
 

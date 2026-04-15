@@ -83,15 +83,15 @@ export default function Landing() {
           maxWidth: 820, margin: '0 auto 1.5rem',
           letterSpacing: '-0.5px',
         }}>
-          Always know which instruments need attention —{' '}
-          <span style={{ color: '#90CAF9' }}>before they become a problem</span>
+          Stop Chasing Overdue Calibrations.{' '}
+          <span style={{ color: '#90CAF9' }}>Start Preventing Them.</span>
         </h1>
 
         <p style={{
-          fontSize: '1.2rem', color: 'rgba(255,255,255,0.78)',
-          maxWidth: 640, margin: '0 auto 2.5rem', lineHeight: 1.7,
+          fontSize: '1.15rem', color: 'rgba(255,255,255,0.78)',
+          maxWidth: 600, margin: '0 auto 2.5rem', lineHeight: 1.7,
         }}>
-          CalCheq gives instrumentation and maintenance teams at Australian processing plants real-time visibility of every instrument's calibration status, compliance history, and drift trends — in one place, without the enterprise price tag.
+          Real-time calibration tracking, drift prediction, and compliance reporting for Australian processing plants — without the enterprise price tag.
         </p>
 
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -104,7 +104,7 @@ export default function Landing() {
             onMouseEnter={e => e.currentTarget.style.background = C.amber}
             onMouseLeave={e => e.currentTarget.style.background = C.orange}
           >
-            Start Free 30-Day Trial
+            Start Free 14-Day Trial
           </Link>
           <Link to="/demo" style={{
             background: 'transparent', color: '#fff',
@@ -398,7 +398,7 @@ export default function Landing() {
           Simple pricing. No surprises.
         </h2>
         <p style={{ color: C.muted, maxWidth: 520, margin: '0 auto 3rem' }}>
-          Priced for Australian processing plants — not global enterprise software budgets. Start with your 30-day free pilot, no credit card required.
+          Priced for Australian processing plants — not global enterprise software budgets. Start with your 14-day free trial, no credit card required.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', maxWidth: 1000, margin: '0 auto' }}>
@@ -407,8 +407,8 @@ export default function Landing() {
           <div style={{ background: '#fff', borderRadius: 16, border: `2px solid ${C.border}`, padding: '2.5rem 2rem', textAlign: 'left' }}>
             <div style={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: C.muted, marginBottom: '0.5rem' }}>Starter</div>
             <div style={{ fontSize: '2.6rem', fontWeight: 800, color: C.navy, lineHeight: 1 }}><sup style={{ fontSize: '1.2rem', verticalAlign: 'top', paddingTop: '0.5rem' }}>$</sup>199</div>
-            <div style={{ fontSize: '0.85rem', color: C.muted, marginBottom: '0.5rem' }}>AUD / month, billed annually</div>
-            <div style={{ fontSize: '0.85rem', color: C.blue, fontWeight: 600, marginBottom: '1.5rem' }}>Up to 150 instruments</div>
+            <div style={{ fontSize: '0.85rem', color: C.muted, marginBottom: '0.5rem' }}>AUD / month</div>
+            <div style={{ fontSize: '0.85rem', color: C.blue, fontWeight: 600, marginBottom: '1.5rem' }}>Up to 50 instruments, 5 users</div>
             <hr style={{ border: 'none', borderTop: `1px solid ${C.border}`, margin: '1.25rem 0' }} />
             {[
               [true,  'Calibration dashboard'],
@@ -445,8 +445,8 @@ export default function Landing() {
             }}>Most Popular</div>
             <div style={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: C.muted, marginBottom: '0.5rem' }}>Professional</div>
             <div style={{ fontSize: '2.6rem', fontWeight: 800, color: C.navy, lineHeight: 1 }}><sup style={{ fontSize: '1.2rem', verticalAlign: 'top', paddingTop: '0.5rem' }}>$</sup>449</div>
-            <div style={{ fontSize: '0.85rem', color: C.muted, marginBottom: '0.5rem' }}>AUD / month, billed annually</div>
-            <div style={{ fontSize: '0.85rem', color: C.blue, fontWeight: 600, marginBottom: '1.5rem' }}>Up to 500 instruments</div>
+            <div style={{ fontSize: '0.85rem', color: C.muted, marginBottom: '0.5rem' }}>AUD / month</div>
+            <div style={{ fontSize: '0.85rem', color: C.blue, fontWeight: 600, marginBottom: '1.5rem' }}>Up to 500 instruments, unlimited users</div>
             <hr style={{ border: 'none', borderTop: `1px solid ${C.border}`, margin: '1.25rem 0' }} />
             {[
               [true,  'Everything in Starter'],
@@ -506,7 +506,7 @@ export default function Landing() {
         </div>
 
         <p style={{ marginTop: '2rem', color: C.muted, fontSize: '0.85rem' }}>
-          All plans include a <strong>30-day free pilot</strong> with your real plant data. No credit card required. Cancel anytime during the trial.
+          All plans include a <strong>14-day free trial</strong> with your real plant data. No credit card required. Cancel anytime during the trial.
         </p>
       </section>
 
@@ -521,17 +521,17 @@ export default function Landing() {
           padding: '0.3rem 1rem', borderRadius: 20, marginBottom: '1.25rem',
         }}>No credit card required</span>
         <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 800, marginBottom: '1rem' }}>
-          Start your free 30-day trial today
+          Start your free 14-day trial today
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.75)', maxWidth: 580, margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
-          Full Professional plan — all features, unlimited users — for 30 days at no cost. Import your instrument list using our guided CSV wizard and be live within hours. No IT project. No consultant. No setup fee.
+          Full Professional plan — all features, unlimited users — for 14 days at no cost. Import your instrument list using our guided CSV wizard and be live within hours. No IT project. No consultant. No setup fee.
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', maxWidth: 860, margin: '0 auto 2.5rem' }}>
           {[
             { icon: '✅', heading: 'Full Professional plan', body: 'Criticality ranking, drift prediction, approval workflow, Beamex/Fluke CSV import — everything unlocked.' },
             { icon: '📥', heading: 'Guided import wizard', body: 'Upload your instrument list as a CSV or Excel file. Our wizard maps your columns and has you live within hours.' },
             { icon: '📧', heading: 'Email support included', body: 'Questions during your trial? Our team responds within one business day.' },
-            { icon: '🚫', heading: 'No lock-in', body: 'After 30 days, choose a paid plan or walk away. No automatic billing. No cancellation fees.' },
+            { icon: '🚫', heading: 'No lock-in', body: 'After 14 days, choose a paid plan or walk away. No automatic billing. No cancellation fees.' },
           ].map(({ icon, heading, body }) => (
             <div key={heading} style={{
               background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
@@ -559,18 +559,35 @@ export default function Landing() {
         </p>
       </section>
 
-      {/* ── STATS ────────────────────────────────────────────────────────── */}
-      <section style={{ background: '#fff', padding: '60px 5%', textAlign: 'center' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2rem', maxWidth: 900, margin: '0 auto' }}>
+      {/* ── STATS + INDUSTRY TRUST ────────────────────────────────────── */}
+      <section style={{ background: '#fff', padding: '70px 5%', textAlign: 'center' }}>
+        <h2 style={{ fontSize: 'clamp(1.4rem, 2.5vw, 2rem)', fontWeight: 800, color: C.navy, marginBottom: '2.5rem' }}>
+          Built for the industries where calibration compliance matters most
+        </h2>
+
+        {/* Industry labels */}
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '3rem' }}>
+          {['Water & Wastewater', 'Mining & Resources', 'Oil & Gas', 'Food & Beverage', 'Pharmaceuticals', 'Power Generation'].map(label => (
+            <span key={label} style={{
+              background: C.light, border: `1px solid ${C.border}`,
+              padding: '0.6rem 1.25rem', borderRadius: 8,
+              fontSize: '0.85rem', fontWeight: 600, color: C.navy,
+            }}>{label}</span>
+          ))}
+        </div>
+
+        {/* Quantified results */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', maxWidth: 1000, margin: '0 auto' }}>
           {[
-            ['100%',       'Australian-built & hosted'],
-            ['5 min',      'CSV import — instruments loaded'],
-            ['AS/NZS\n17025', 'Compliance-aligned certificates'],
-            ['Zero',       'IT department required'],
-          ].map(([val, lbl]) => (
-            <div key={lbl}>
-              <div style={{ fontSize: '2.5rem', fontWeight: 800, color: C.blue, whiteSpace: 'pre-line', lineHeight: 1.1 }}>{val}</div>
-              <div style={{ fontSize: '0.88rem', color: C.muted, marginTop: '0.25rem' }}>{lbl}</div>
+            { val: '30 sec',   label: 'Calibration status lookup', sub: 'vs. 15 min searching spreadsheets' },
+            { val: '85%',      label: 'Reduction in overdue instruments', sub: 'with automated alerts and scheduling' },
+            { val: '100%',     label: 'Audit-ready records', sub: 'ISO 17025 compliant certificates on demand' },
+            { val: '< 1 day',  label: 'Time to go live', sub: 'CSV import, no IT project needed' },
+          ].map(({ val, label, sub }) => (
+            <div key={label} style={{ padding: '1.5rem' }}>
+              <div style={{ fontSize: '2.4rem', fontWeight: 800, color: C.blue, lineHeight: 1.1 }}>{val}</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: C.navy, marginTop: '0.5rem' }}>{label}</div>
+              <div style={{ fontSize: '0.8rem', color: C.muted, marginTop: '0.25rem' }}>{sub}</div>
             </div>
           ))}
         </div>
@@ -618,8 +635,8 @@ export default function Landing() {
             a="Yes. CalCheq generates certificates aligned with AS/NZS ISO/IEC 17025:2017, NATA traceability requirements, and ILAC-G24 guidelines — including as-found/as-left readings, measurement uncertainty, calibration standards used, technician sign-off, and next due date."
           />
           <FaqItem
-            q="What's included in the 30-day free trial?"
-            a="The full Professional plan — drift prediction, criticality ranking, approval workflows, Beamex/Fluke CSV import, unlimited users — for 30 days at no cost. You import your own instrument data using the guided wizard. Email support is included throughout the trial. No credit card required, no automatic billing at the end."
+            q="What's included in the free trial?"
+            a="The full Professional plan — drift prediction, criticality ranking, approval workflows, Beamex/Fluke CSV import, unlimited users — for 14 days at no cost. You import your own instrument data using the guided wizard. Email support is included throughout the trial. No credit card required, no automatic billing at the end."
           />
         </div>
       </section>
@@ -642,7 +659,7 @@ export default function Landing() {
           onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'none'}
         >
-          Start Your Free 30-Day Trial
+          Start Your Free 14-Day Trial
         </Link>
       </section>
 

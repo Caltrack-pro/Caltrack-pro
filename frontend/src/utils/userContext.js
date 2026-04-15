@@ -56,11 +56,14 @@ async function _fetchUserContext(session) {
 
     const data = await res.json()
     return {
-      userId:   session.user.id,
-      email:    session.user.email,
-      userName: data.display_name || session.user.email.split('@')[0],
-      siteName: data.site_name,
-      role:     data.role,
+      userId:             session.user.id,
+      email:              session.user.email,
+      userName:           data.display_name || session.user.email.split('@')[0],
+      siteName:           data.site_name,
+      role:               data.role,
+      subscriptionStatus: data.subscription_status || null,
+      subscriptionPlan:   data.subscription_plan   || null,
+      trialEndsAt:        data.trial_ends_at       || null,
     }
   } catch {
     return null

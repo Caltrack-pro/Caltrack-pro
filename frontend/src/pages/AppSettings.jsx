@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getUser, signOut, ROLES, DEMO_SITE } from '../utils/userContext'
 import { supabase } from '../utils/supabase'
-import { auth as authApi } from '../utils/api'
+import { auth as authApi, billing as billingApi } from '../utils/api'
 
 // ── Role colours ──────────────────────────────────────────────────────────────
 
@@ -310,17 +310,229 @@ function TeamSection({ currentUserId, isDemo }) {
   )
 }
 
+// ── Section: Billing ─────────────────────────────────────────────────────────
+
+const PLAN_DETAILS = {
+  starter:      { label: 'Starter',       monthlyPrice: 199,  yearlyPrice: 1990,  color: 'bg-slate-100 text-slate-700' },
+  professional: { label: 'Professional',  monthlyPrice: 449,  yearlyPrice: 4490,  color: 'bg-blue-100 text-blue-700' },
+  enterprise:   { label: 'Enterprise',    monthlyPrice: 899,  yearlyPrice: 8990,  color: 'bg-purple-100 text-purple-700' },
+}
+
+function BillingSection({ isDemo }) {
+  const [sub, setSub]           = useState(null)
+  const [loading, setLoading]   = useState(true)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [showPlans, setShowPlans] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState('professional')
+  const [selectedInterval, setSelectedInterval] = useState('month')
+  const [msg, setMsg] = useState(null)
+
+  useEffect(() => {
+    billingApi.subscription()
+      .then(data => setSub(data))
+      .catch(() => setSub(null))
+      .finally(() => setLoading(false))
+  }, [])
+
+  async function handleCheckout() {
+    setActionLoading(true); setMsg(null)
+    try {
+      const { url } = await billingApi.createCheckout(selectedPlan, selectedInterval)
+      if (url) window.location.href = url
+    } catch (err) {
+      setMsg({ type: 'error', text: err.message || 'Failed to start checkout.' })
+    } finally { setActionLoading(false) }
+  }
+
+  async function handlePortal() {
+    setActionLoading(true); setMsg(null)
+    try {
+      const { url } = await billingApi.createPortal()
+      if (url) window.location.href = url
+    } catch (err) {
+      setMsg({ type: 'error', text: err.message || 'Failed to open billing portal.' })
+    } finally { setActionLoading(false) }
+  }
+
+  if (isDemo) {
+    return (
+      <Card title="Billing & Subscription" emoji="💳">
+        <p className="text-sm text-slate-500">Billing is not available on the Demo account. Sign up for your own site to manage subscriptions.</p>
+      </Card>
+    )
+  }
+
+  if (loading) {
+    return (
+      <Card title="Billing & Subscription" emoji="💳">
+        <p className="text-sm text-slate-400">Loading billing info…</p>
+      </Card>
+    )
+  }
+
+  const plan = sub?.subscription_plan ? PLAN_DETAILS[sub.subscription_plan] : null
+  const status = sub?.subscription_status || 'trialing'
+  const isActive = status === 'active' || status === 'trialing'
+
+  const STATUS_LABELS = {
+    active: { text: 'Active', cls: 'bg-green-100 text-green-700' },
+    trialing: { text: 'Free Trial', cls: 'bg-blue-100 text-blue-700' },
+    past_due: { text: 'Past Due', cls: 'bg-red-100 text-red-700' },
+    cancelled: { text: 'Cancelled', cls: 'bg-slate-100 text-slate-600' },
+    incomplete: { text: 'Incomplete', cls: 'bg-amber-100 text-amber-700' },
+  }
+  const statusBadge = STATUS_LABELS[status] || { text: status, cls: 'bg-slate-100 text-slate-600' }
+
+  return (
+    <Card title="Billing & Subscription" emoji="💳">
+      <div className="space-y-5">
+        {msg && <InlineAlert type={msg.type} message={msg.text} onDismiss={() => setMsg(null)} />}
+
+        {/* Current plan summary */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusBadge.cls}`}>{statusBadge.text}</span>
+            {plan && (
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${plan.color}`}>{plan.label}</span>
+            )}
+            {sub?.subscription_interval && (
+              <span className="text-xs text-slate-400">{sub.subscription_interval === 'year' ? 'Annual' : 'Monthly'} billing</span>
+            )}
+          </div>
+        </div>
+
+        {/* Trial / period info */}
+        {status === 'trialing' && sub?.trial_ends_at && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800">
+            Your free trial ends on{' '}
+            <strong>{new Date(sub.trial_ends_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
+            Choose a plan below to continue after your trial.
+          </div>
+        )}
+
+        {status === 'past_due' && (
+          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
+            Your last payment failed. Please update your payment method to keep your account active.
+          </div>
+        )}
+
+        {status === 'active' && sub?.current_period_end && (
+          <p className="text-sm text-slate-500">
+            Next billing date:{' '}
+            <strong>{new Date(sub.current_period_end).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
+          </p>
+        )}
+
+        {/* Actions: manage existing or choose a plan */}
+        {sub?.has_subscription ? (
+          <button onClick={handlePortal} disabled={actionLoading}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-slate-800 text-white rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors">
+            {actionLoading ? 'Opening…' : '💳 Manage Subscription'}
+          </button>
+        ) : (
+          <>
+            {!showPlans ? (
+              <button onClick={() => setShowPlans(true)}
+                className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-lg transition-colors"
+                style={{ background: '#F57C00' }}
+                onMouseEnter={e => e.target.style.background = '#FFA000'}
+                onMouseLeave={e => e.target.style.background = '#F57C00'}>
+                Choose a Plan
+              </button>
+            ) : (
+              <div className="border border-slate-200 rounded-xl p-5 space-y-4">
+                {/* Interval toggle */}
+                <div className="flex items-center gap-2 bg-slate-100 rounded-lg p-1 w-fit">
+                  {['month', 'year'].map(iv => (
+                    <button key={iv} onClick={() => setSelectedInterval(iv)}
+                      className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                        selectedInterval === iv ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                      }`}>
+                      {iv === 'month' ? 'Monthly' : 'Annual'}
+                      {iv === 'year' && <span className="ml-1.5 text-xs text-green-600 font-semibold">Save 17%</span>}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Plan cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {Object.entries(PLAN_DETAILS).map(([key, p]) => {
+                    const price = selectedInterval === 'year' ? p.yearlyPrice : p.monthlyPrice
+                    const perMonth = selectedInterval === 'year' ? Math.round(p.yearlyPrice / 12) : p.monthlyPrice
+                    return (
+                      <button key={key} onClick={() => setSelectedPlan(key)}
+                        className={`text-left border rounded-xl p-4 transition-colors ${
+                          selectedPlan === key
+                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        }`}>
+                        <p className="text-sm font-bold text-slate-800">{p.label}</p>
+                        <p className="text-2xl font-bold text-slate-900 mt-1">
+                          ${perMonth}<span className="text-sm font-normal text-slate-400">/mo</span>
+                        </p>
+                        {selectedInterval === 'year' && (
+                          <p className="text-xs text-slate-400 mt-0.5">Billed ${price}/year</p>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Subscribe button */}
+                <div className="flex items-center gap-3">
+                  <button onClick={handleCheckout} disabled={actionLoading}
+                    className="px-5 py-2.5 text-sm font-semibold text-white rounded-lg disabled:opacity-50 transition-colors"
+                    style={{ background: '#F57C00' }}
+                    onMouseEnter={e => e.target.style.background = '#FFA000'}
+                    onMouseLeave={e => e.target.style.background = '#F57C00'}>
+                    {actionLoading ? 'Redirecting to Stripe…' : `Subscribe to ${PLAN_DETAILS[selectedPlan].label}`}
+                  </button>
+                  <button onClick={() => setShowPlans(false)}
+                    className="px-4 py-2 text-sm border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
+                    Cancel
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400">14-day free trial included. No charge until the trial ends. Cancel anytime.</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </Card>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AppSettings() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [user, setUserState] = useState(() => getUser())
+  const [billingMsg, setBillingMsg] = useState(null)
 
   useEffect(() => {
     function onUserChange(e) { setUserState(e.detail) }
     window.addEventListener('caltrack-user-change', onUserChange)
     return () => window.removeEventListener('caltrack-user-change', onUserChange)
   }, [])
+
+  // Handle Stripe redirect query params
+  useEffect(() => {
+    const billingResult = searchParams.get('billing')
+    if (billingResult === 'success') {
+      setBillingMsg({ type: 'success', text: 'Subscription activated! Welcome to CalCheq.' })
+      searchParams.delete('billing'); searchParams.delete('session_id')
+      setSearchParams(searchParams, { replace: true })
+    } else if (billingResult === 'cancelled') {
+      setBillingMsg({ type: 'error', text: 'Checkout was cancelled. No charges were made.' })
+      searchParams.delete('billing')
+      setSearchParams(searchParams, { replace: true })
+    } else if (billingResult === 'required') {
+      setBillingMsg({ type: 'error', text: 'Your subscription is inactive. Please choose a plan to continue using CalCheq.' })
+      searchParams.delete('billing')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isDemo  = user?.siteName?.toLowerCase() === DEMO_SITE.toLowerCase()
   const isAdmin = user?.role === 'admin'
@@ -361,6 +573,11 @@ export default function AppSettings() {
         </div>
       )}
 
+      {/* Billing redirect message */}
+      {billingMsg && (
+        <InlineAlert type={billingMsg.type} message={billingMsg.text} onDismiss={() => setBillingMsg(null)} />
+      )}
+
       {/* Site card */}
       <Card title="Site" emoji="🏢">
         <div className="flex items-center gap-4">
@@ -377,6 +594,7 @@ export default function AppSettings() {
       <ProfileSection user={user} />
       <PasswordSection isDemo={isDemo} />
       {isAdmin && <TeamSection currentUserId={user.userId} isDemo={isDemo} />}
+      {isAdmin && <BillingSection isDemo={isDemo} />}
 
       {/* Sign out */}
       <Card title="Session" emoji="🚪">
