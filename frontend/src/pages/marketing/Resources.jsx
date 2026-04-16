@@ -165,7 +165,7 @@ export default function Resources() {
             {filtered.map((r, i) => (
               <Link
                 key={i}
-                to={`/resources/${r.slug}`}
+                to={`/blog/${r.slug}`}
                 className="group bg-white rounded-2xl border border-slate-100 shadow-sm p-6 hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col"
               >
                 <div className="text-3xl mb-4">{r.emoji}</div>

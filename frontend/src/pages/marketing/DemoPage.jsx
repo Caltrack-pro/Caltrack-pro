@@ -217,7 +217,7 @@ export default function DemoPage() {
                 your instruments and see your own calibration schedule in action.
               </p>
               <p style={{ color: C.muted, marginBottom: '1.5rem', lineHeight: 1.7 }}>
-                Start a 30-day free trial and our team will import your data, configure your workflows,
+                Start a 30-day free trial and our team will help you import your data, configure your workflows,
                 and get you recording calibrations within 48 hours.
               </p>
               <Link

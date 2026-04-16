@@ -53,6 +53,7 @@ export default function App() {
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/pricing"      element={<Pricing />} />
         <Route path="/resources"    element={<Resources />} />
+        <Route path="/resources/:slug" element={<Navigate to="/blog" replace />} />
         <Route path="/faq"          element={<FAQ />} />
         <Route path="/contact"      element={<Contact />} />
         <Route path="/demo"         element={<DemoPage />} />

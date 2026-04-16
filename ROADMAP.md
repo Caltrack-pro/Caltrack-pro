@@ -1,6 +1,6 @@
 # CalCheq — Forward Roadmap
 
-*Last updated: 16 April 2026*
+*Last updated: 17 April 2026*
 
 ---
 
@@ -16,6 +16,14 @@ Auth (Supabase ES256 JWT), custom domain (calcheq.com), immutable audit trail, C
 - Header getPageTitle entries for new routes
 - Onboarding wizard (5.1–5.2): 3-step welcome wizard (/app/onboarding), Dashboard welcome banner for empty sites, enhanced empty states on Instruments page
 - Role-based views (6.1–6.3): Technician nav hides Reports + Smart Diagnostics; Planner defaults to Planner tab on Schedule; Supervisor/Admin defaults to Pending Approvals tab on Calibrations when approvals exist
+
+**Completed 17 April 2026:**
+- Trial period updated from 14 days to 30 days across all copy (Landing, Pricing, AppSettings) and backend Stripe checkout session
+- Resources tab links fixed: cards now link to `/blog/${slug}` instead of broken `/resources/${slug}`; App.jsx redirect added for `/resources/:slug` → `/blog`
+- Contact.jsx + DemoPage.jsx copy: "our team will import" → "our team will help you import"
+- Drift Analysis 500 error fixed: SAEnum `.in_()` now uses enum members (not .value strings); calculation wrapped in try/except; calibration_date datetime/date coercion added; div/0 safeguards added
+- Audit Trail empty state: improved message explains why seeded instruments show no entries
+- PDF certificate auto-email on approval: `fpdf2` added to requirements.txt, `pdf_generator.py` created, `notifications.send_calibration_cert()` added, approve endpoint emails PDF to technician + supervisors/admins as `{tag_number}_{date}.pdf` attachment
 
 ---
 
@@ -281,6 +289,7 @@ These items are not speculative — they are the right next steps once real cust
 - **QR Code / NFC Tags** — Printable QR labels linking to InstrumentDetail. Technician scans on tablet → taps "Start Calibration". Significant field workflow improvement.
 - **Advanced Analytics** — Statistical failure prediction once 12+ months of real data exists. Fleet benchmarking across anonymised platform data.
 - **Public API / Webhooks** — REST API for Enterprise customers to integrate with BI tools. Webhook events for key actions (calibration submitted, instrument overdue).
+- **Enterprise: AI-Generated Calibration Procedures** — For Enterprise tier, auto-generate a draft calibration procedure document based on instrument model, type, and range (manufacturer name + instrument model → structured procedure with test points, tolerances, equipment list). Delivered as a downloadable PDF or Word document from the instrument detail page. Requires LLM integration (OpenAI/Anthropic API). Useful for sites that need procedures but haven't yet formalised them — technicians can review and sign off rather than write from scratch. Requires customer signal before building.
 
 ---
 

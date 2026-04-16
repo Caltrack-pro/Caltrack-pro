@@ -214,7 +214,7 @@ export default function Contact() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-slate-900 text-sm mb-1">48-Hour Setup</h4>
-                    <p className="text-slate-500 text-sm">Our team will import your instrument data, configure calibration intervals, set up your team, and record your first calibration live with you.</p>
+                    <p className="text-slate-500 text-sm">Our team will help you import your instrument data, configure calibration intervals, set up your team, and record your first calibration live with you.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">

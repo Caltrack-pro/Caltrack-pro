@@ -116,7 +116,7 @@ def create_checkout_session(
         success_url=f"{APP_URL}/app/settings?billing=success&session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{APP_URL}/app/settings?billing=cancelled",
         subscription_data={
-            "trial_period_days": 14,
+            "trial_period_days": 30,
             "metadata": {"site_id": str(site.id), "site_name": site.name},
         },
         metadata={"site_id": str(site.id), "site_name": site.name},

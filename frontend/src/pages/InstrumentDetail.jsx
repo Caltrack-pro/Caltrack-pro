@@ -597,7 +597,8 @@ function TabAuditTrail({ instrumentId }) {
   if (error) return <p className="pt-6 text-center text-sm text-slate-400">{error}</p>
   if (!log || log.total === 0) return (
     <div className="pt-6 flex flex-col items-center justify-center py-16 text-center">
-      <p className="text-slate-400 text-sm">No audit entries found for this instrument.</p>
+      <p className="text-slate-500 text-sm font-medium mb-1">No audit entries yet</p>
+      <p className="text-slate-400 text-xs max-w-sm">Audit entries are recorded when actions are taken through the system — edits, calibration submissions, approvals, and deletions will all appear here.</p>
     </div>
   )
 

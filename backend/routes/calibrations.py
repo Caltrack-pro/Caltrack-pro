@@ -533,10 +533,13 @@ def approve_calibration(
     db.commit()
     db.refresh(rec)
 
-    # Notify technician — fire-and-forget after commit
+    # Notify technician + send PDF certificate — fire-and-forget after commit
     try:
         tech_email = _technician_email(rec.technician_id, db)
         instr = _get_instrument_or_404(rec.instrument_id, db)
+        test_points = _fetch_test_points(rec.id, db)
+
+        # Approval notification (existing)
         notif.notify_approved(
             instrument_tag=instr.tag_number,
             instrument_desc=instr.description,
@@ -544,6 +547,39 @@ def approve_calibration(
             record_id=str(rec.id),
             technician_email=tech_email,
         )
+
+        # Generate PDF certificate and email to technician + all site admins
+        try:
+            from pdf_generator import generate_calibration_cert, cert_filename
+            pdf_bytes = generate_calibration_cert(rec, instr, test_points)
+            pdf_name  = cert_filename(instr.tag_number, rec.calibration_date)
+
+            # Collect recipients: technician + supervisors/admins
+            cert_recipients = []
+            if tech_email:
+                cert_recipients.append(tech_email)
+            for sup_email in _supervisor_emails(current_user, db):
+                if sup_email not in cert_recipients:
+                    cert_recipients.append(sup_email)
+
+            result_val = rec.as_left_result or rec.as_found_result
+            result_str = (result_val.value if hasattr(result_val, "value") else result_val) or "approved"
+
+            if cert_recipients:
+                notif.send_calibration_cert(
+                    instrument_tag=instr.tag_number,
+                    instrument_desc=instr.description,
+                    cal_date=rec.calibration_date.isoformat() if rec.calibration_date else "—",
+                    result=result_str,
+                    pdf_bytes=pdf_bytes,
+                    pdf_filename=pdf_name,
+                    recipient_emails=cert_recipients,
+                )
+        except Exception as pdf_exc:
+            import logging
+            logging.getLogger(__name__).warning(
+                "PDF cert generation/send failed for record %s: %s", rec.id, pdf_exc
+            )
     except Exception:
         pass
 

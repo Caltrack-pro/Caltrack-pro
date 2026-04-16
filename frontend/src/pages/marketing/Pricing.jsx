@@ -206,7 +206,7 @@ export default function Pricing() {
               { text: 'Advanced reporting', included: true },
               { text: 'Priority support', included: true },
             ]}
-            cta="Start Free 14-Day Trial"
+            cta="Start Free 30-Day Trial"
           />
 
           <PlanCard
@@ -224,7 +224,7 @@ export default function Pricing() {
               { text: '99.5% uptime commitment', included: true },
               { text: 'Dedicated account manager', included: true },
             ]}
-            cta="Start Free 14-Day Trial"
+            cta="Start Free 30-Day Trial"
           />
 
         </div>
@@ -234,7 +234,7 @@ export default function Pricing() {
       <section className="py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto bg-blue-50 border border-blue-200 rounded-lg p-6">
           <p className="text-sm text-slate-700 leading-relaxed">
-            <strong>All prices in AUD including GST.</strong> Annual billing saves you 2 months. You can upgrade, downgrade, or cancel anytime. Free 14-day trial includes full plan features.
+            <strong>All prices in AUD including GST.</strong> Annual billing saves you 2 months. You can upgrade, downgrade, or cancel anytime. Free 30-day trial includes full plan features.
           </p>
         </div>
       </section>
@@ -293,7 +293,7 @@ export default function Pricing() {
           <div className="space-y-1">
             <AccordionFaqItem
               q="Is there a free trial?"
-              a="Yes. Start a 14-day free trial with the full plan features. No credit card required. After 14 days, you can choose to upgrade to a paid plan, downgrade, or cancel."
+              a="Yes. Start a 30-day free trial with the full plan features. No credit card required. After 30 days, you can choose to upgrade to a paid plan, downgrade, or cancel."
             />
             <AccordionFaqItem
               q="Can I change plans anytime?"
@@ -301,7 +301,7 @@ export default function Pricing() {
             />
             <AccordionFaqItem
               q="What's included in the free trial?"
-              a="The full plan features for your chosen tier — criticality ranking, drift prediction, approval workflow, Beamex/Fluke CSV import, multi-site management — for 14 days. You import your own instrument data using our guided CSV wizard. Email support is included. No credit card required, no automatic billing."
+              a="The full plan features for your chosen tier — criticality ranking, drift prediction, approval workflow, Beamex/Fluke CSV import, multi-site management — for 30 days. You import your own instrument data using our guided CSV wizard. Email support is included. No credit card required, no automatic billing."
             />
             <AccordionFaqItem
               q="How does annual billing work?"
@@ -326,7 +326,7 @@ export default function Pricing() {
             Ready to simplify calibration management?
           </h2>
           <p className="text-lg text-slate-600 mb-8">
-            Start your 14-day free trial today. No credit card required.
+            Start your 30-day free trial today. No credit card required.
           </p>
           <Link
             to="/contact"

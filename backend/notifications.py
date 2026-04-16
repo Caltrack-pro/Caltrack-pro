@@ -155,6 +155,74 @@ def notify_rejected(
 
 
 # ---------------------------------------------------------------------------
+# Calibration certificate email (with PDF attachment)
+# ---------------------------------------------------------------------------
+
+def send_calibration_cert(
+    *,
+    instrument_tag:   str,
+    instrument_desc:  Optional[str],
+    cal_date:         str,
+    result:           str,
+    pdf_bytes:        bytes,
+    pdf_filename:     str,
+    recipient_emails: list[str],
+) -> None:
+    """
+    Email a calibration certificate PDF to one or more recipients.
+    Called after a calibration record is approved.
+    """
+    if not recipient_emails or not RESEND_API_KEY:
+        return
+
+    import base64
+    pdf_b64 = base64.b64encode(pdf_bytes).decode()
+
+    result_upper = result.upper() if result else "—"
+    desc  = instrument_desc or instrument_tag
+    html  = f"""
+<p>A calibration has been approved for <strong>{instrument_tag}</strong> — {desc}.</p>
+<table style="font-family:sans-serif;font-size:14px;border-collapse:collapse">
+  <tr><td style="padding:4px 12px 4px 0;color:#64748b">Instrument:</td>
+      <td><strong>{instrument_tag}</strong> — {desc}</td></tr>
+  <tr><td style="padding:4px 12px 4px 0;color:#64748b">Date:</td>
+      <td>{cal_date}</td></tr>
+  <tr><td style="padding:4px 12px 4px 0;color:#64748b">Result:</td>
+      <td><strong>{result_upper}</strong></td></tr>
+</table>
+<p style="margin-top:12px;font-size:13px;color:#64748b">
+  The calibration certificate is attached to this email as a PDF.
+</p>
+<p style="margin-top:16px">
+  <a href="{APP_URL}/app/calibrations"
+     style="background:#3b82f6;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-size:14px">
+    View in CalCheq
+  </a>
+</p>
+"""
+    import resend
+    resend.api_key = RESEND_API_KEY
+
+    for email in recipient_emails:
+        try:
+            resend.Emails.send({
+                "from":    FROM_EMAIL,
+                "to":      [email],
+                "subject": f"[CalCheq] Calibration certificate — {instrument_tag} ({result_upper})",
+                "html":    html,
+                "attachments": [
+                    {
+                        "filename": pdf_filename,
+                        "content":  pdf_b64,
+                    }
+                ],
+            })
+            logger.info("Certificate email sent to %s for %s", email, instrument_tag)
+        except Exception as exc:
+            logger.warning("Failed to send certificate to %s: %s", email, exc)
+
+
+# ---------------------------------------------------------------------------
 # Digest notifications (called by the scheduler)
 # ---------------------------------------------------------------------------
 

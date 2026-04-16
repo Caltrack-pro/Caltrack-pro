@@ -373,13 +373,14 @@ def get_drift_analysis(
         raise HTTPException(status_code=404, detail="Instrument not found")
 
     # Fetch approved/submitted records with test points, ordered by date
+    # Use enum members directly (not .value) for SAEnum column comparisons
     records = (
         db.query(CalibrationRecord)
         .filter(
             CalibrationRecord.instrument_id == instrument_id,
             CalibrationRecord.record_status.in_([
-                RecordStatus.APPROVED.value,
-                RecordStatus.SUBMITTED.value,
+                RecordStatus.APPROVED,
+                RecordStatus.SUBMITTED,
             ]),
             CalibrationRecord.as_found_result.isnot(None),
         )
@@ -398,98 +399,108 @@ def get_drift_analysis(
             "drift_status": "insufficient_data",
         }
 
-    # Get tolerance value for the instrument
-    tol_value = instrument.tolerance_value or 1.0
-    tol_type = (instrument.tolerance_type.value if hasattr(instrument.tolerance_type, "value") else instrument.tolerance_type) or "percent_span"
-    output_span = (instrument.measurement_urv or 100) - (instrument.measurement_lrv or 0)
+    try:
+        # Get tolerance value for the instrument
+        tol_value = instrument.tolerance_value or 1.0
+        tol_type = (instrument.tolerance_type.value if hasattr(instrument.tolerance_type, "value") else instrument.tolerance_type) or "percent_span"
+        output_span = (instrument.measurement_urv or 100) - (instrument.measurement_lrv or 0)
+        if output_span == 0:
+            output_span = 100  # safeguard — avoid div/0
 
-    # Calculate absolute tolerance as % of span for comparison
-    if tol_type == "percent_span":
-        tol_pct = tol_value
-    elif tol_type == "percent_reading":
-        mid = ((instrument.measurement_urv or 100) + (instrument.measurement_lrv or 0)) / 2
-        tol_pct = (tol_value / 100 * abs(mid)) / output_span * 100 if output_span else tol_value
-    else:  # absolute
-        tol_pct = (tol_value / output_span * 100) if output_span else tol_value
+        # Calculate absolute tolerance as % of span for comparison
+        if tol_type == "percent_span":
+            tol_pct = tol_value
+        elif tol_type == "percent_reading":
+            mid = ((instrument.measurement_urv or 100) + (instrument.measurement_lrv or 0)) / 2
+            tol_pct = (tol_value / 100 * abs(mid)) / output_span * 100
+        else:  # absolute
+            tol_pct = tol_value / output_span * 100
+        if not tol_pct or tol_pct <= 0:
+            tol_pct = 1.0  # safeguard
 
-    # Build time-series of max as-found error per record
-    today = date.today()
-    data_points = []
-    for rec in records:
-        if rec.max_as_found_error_pct is not None:
-            days_ago = (today - rec.calibration_date).days
-            data_points.append({
-                "date": rec.calibration_date.isoformat(),
-                "days_ago": days_ago,
-                "error_pct": abs(rec.max_as_found_error_pct),
-            })
+        # Build time-series of max as-found error per record
+        today = date.today()
+        data_points = []
+        for rec in records:
+            if rec.max_as_found_error_pct is not None and rec.calibration_date is not None:
+                cal_date = rec.calibration_date
+                if hasattr(cal_date, "date"):
+                    cal_date = cal_date.date()
+                days_ago = (today - cal_date).days
+                data_points.append({
+                    "date": cal_date.isoformat(),
+                    "days_ago": days_ago,
+                    "error_pct": abs(float(rec.max_as_found_error_pct)),
+                })
 
-    if len(data_points) < 3:
-        return {
-            "instrument_id": str(instrument_id),
-            "sufficient_data": False,
-            "record_count": len(records),
-            "message": "Insufficient error data in calibration records for drift analysis.",
-            "test_point_trends": [],
-            "projected_fail_date": None,
-            "drift_status": "insufficient_data",
-        }
+        if len(data_points) < 3:
+            return {
+                "instrument_id": str(instrument_id),
+                "sufficient_data": False,
+                "record_count": len(records),
+                "message": "Insufficient error data in calibration records for drift analysis.",
+                "test_point_trends": [],
+                "projected_fail_date": None,
+                "drift_status": "insufficient_data",
+            }
 
-    # Simple linear regression on (days_ago, error_pct)
-    # Convert days_ago to days_from_first (positive direction = time passing)
-    first_date = records[0].calibration_date
-    xs = [(rec.calibration_date - first_date).days for rec in records if rec.max_as_found_error_pct is not None]
-    ys = [abs(rec.max_as_found_error_pct) for rec in records if rec.max_as_found_error_pct is not None]
+        # Simple linear regression on (days_from_first, error_pct)
+        first_date = data_points[0]["date"]
+        from datetime import date as _date
+        first_dt = _date.fromisoformat(first_date)
+        xs = [(_date.fromisoformat(dp["date"]) - first_dt).days for dp in data_points]
+        ys = [dp["error_pct"] for dp in data_points]
 
-    if len(xs) < 2:
-        slope = 0
-    else:
-        n = len(xs)
-        mean_x = sum(xs) / n
-        mean_y = sum(ys) / n
-        num = sum((xs[i] - mean_x) * (ys[i] - mean_y) for i in range(n))
-        den = sum((xs[i] - mean_x) ** 2 for i in range(n))
-        slope = num / den if den != 0 else 0  # error_pct per day
+        if len(xs) < 2 or xs[-1] == 0:
+            slope = 0.0
+        else:
+            n = len(xs)
+            mean_x = sum(xs) / n
+            mean_y = sum(ys) / n
+            num = sum((xs[i] - mean_x) * (ys[i] - mean_y) for i in range(n))
+            den = sum((xs[i] - mean_x) ** 2 for i in range(n))
+            slope = num / den if den != 0 else 0.0  # error_pct per day
 
-    drift_rate_per_year = round(slope * 365, 4)
+        drift_rate_per_year = round(slope * 365, 4)
 
-    # Current error level (most recent record)
-    current_error_pct = ys[-1] if ys else 0
-    days_elapsed = xs[-1] if xs else 0
+        # Current error level (most recent record)
+        current_error_pct = ys[-1] if ys else 0.0
 
-    # Project failure date
-    projected_fail_date = None
-    drift_status = "stable"
-
-    if slope > 0 and current_error_pct < tol_pct:
-        days_to_fail = (tol_pct - current_error_pct) / slope
-        if days_to_fail < 3650:  # only project up to 10 years
-            projected_date = today + timedelta(days=int(days_to_fail))
-            projected_fail_date = projected_date.isoformat()
-            # Determine urgency
-            if days_to_fail < 90:
-                drift_status = "critical"
-            elif days_to_fail < 365:
-                drift_status = "warning"
-            else:
-                drift_status = "watch"
-    elif current_error_pct >= tol_pct:
-        drift_status = "exceeded"
-    else:
+        # Project failure date
+        projected_fail_date = None
         drift_status = "stable"
 
-    return {
-        "instrument_id": str(instrument_id),
-        "sufficient_data": True,
-        "record_count": len(records),
-        "tolerance_pct": round(tol_pct, 4),
-        "current_error_pct": round(current_error_pct, 4),
-        "drift_rate_per_year": drift_rate_per_year,
-        "projected_fail_date": projected_fail_date,
-        "drift_status": drift_status,
-        "data_points": data_points,
-        "message": None,
-    }
+        if slope > 0 and current_error_pct < tol_pct:
+            days_to_fail = (tol_pct - current_error_pct) / slope
+            if days_to_fail < 3650:  # only project up to 10 years
+                projected_date = today + timedelta(days=int(days_to_fail))
+                projected_fail_date = projected_date.isoformat()
+                if days_to_fail < 90:
+                    drift_status = "critical"
+                elif days_to_fail < 365:
+                    drift_status = "warning"
+                else:
+                    drift_status = "watch"
+        elif current_error_pct >= tol_pct:
+            drift_status = "exceeded"
+
+        return {
+            "instrument_id": str(instrument_id),
+            "sufficient_data": True,
+            "record_count": len(records),
+            "tolerance_pct": round(tol_pct, 4),
+            "current_error_pct": round(current_error_pct, 4),
+            "drift_rate_per_year": drift_rate_per_year,
+            "projected_fail_date": projected_fail_date,
+            "drift_status": drift_status,
+            "data_points": data_points,
+            "message": None,
+        }
+
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("Drift analysis error for %s: %s", instrument_id, exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Drift analysis calculation failed: {exc}")
 
 
 # ---------------------------------------------------------------------------
