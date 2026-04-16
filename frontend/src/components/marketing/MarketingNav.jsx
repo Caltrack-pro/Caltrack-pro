@@ -19,8 +19,13 @@ export default function MarketingNav() {
       <div className="px-[5%] flex items-center justify-between h-16">
 
         {/* Logo */}
-        <Link to="/" className="text-white text-2xl font-extrabold tracking-tight" style={{ letterSpacing: '-0.5px' }}>
-          Cal<span style={{ color: '#2196F3' }}>Cheq</span>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
+          <img
+            src="/assets/calcheq-logo-horizontal-lockup.svg"
+            alt="CalCheq"
+            height="38"
+            style={{ height: 38, width: 'auto' }}
+          />
         </Link>
 
         {/* Desktop nav */}

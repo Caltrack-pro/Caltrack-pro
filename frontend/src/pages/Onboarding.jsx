@@ -609,20 +609,11 @@ export default function Onboarding() {
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-            <svg style={{ width: 32, height: 32, color: SKY }} viewBox="0 0 32 32" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6.4 25.6A13 13 0 1 1 25.6 25.6" />
-              <line x1="5"  y1="16" x2="7"  y2="16" strokeWidth="1.5" />
-              <line x1="27" y1="16" x2="29" y2="16" strokeWidth="1.5" />
-              <line x1="16" y1="3"  x2="16" y2="5"  strokeWidth="1.5" />
-              <path d="M16 16 11 8" strokeWidth="2.5" stroke="#22C55E" />
-              <circle cx="16" cy="16" r="2" fill="#22C55E" stroke="none" />
-            </svg>
-            <span style={{ fontSize: '1.3rem', fontWeight: 700, color: NAVY }}>
-              Cal<span style={{ color: SKY }}>Cheq</span>
-            </span>
-          </div>
+          <img
+            src="/assets/calcheq-logo-light.svg"
+            alt="CalCheq"
+            style={{ height: 48, width: 'auto' }}
+          />
         </div>
 
         {step <= 3 && <Stepper current={step} />}

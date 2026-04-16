@@ -21,6 +21,17 @@ export default function MarketingFooter() {
       textAlign: 'center',
       fontSize: '0.85rem',
     }}>
+      {/* Logo */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+        <Link to="/" style={{ lineHeight: 0 }}>
+          <img
+            src="/assets/calcheq-logo-horizontal-lockup.svg"
+            alt="CalCheq"
+            style={{ height: 32, width: 'auto', opacity: 0.85 }}
+          />
+        </Link>
+      </div>
+
       <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
         {links.map(l => (
           <Link
@@ -35,7 +46,7 @@ export default function MarketingFooter() {
         ))}
       </div>
       <p style={{ margin: 0 }}>
-        © {year} CalCheq Pty Ltd · Purpose-built calibration management for Australian processing plants ·{' '}
+        © {year} CalCheq · ABN 19 731 880 044 · Purpose-built calibration management for Australian processing plants ·{' '}
         <a
           href="mailto:info@calcheq.com"
           style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'none' }}

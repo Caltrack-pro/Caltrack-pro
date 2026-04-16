@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="80" viewBox="0 0 400 80" role="img" aria-label="CalCheq — Calibration Intelligence Reliability">
+  <title>CalCheq</title>
+  <desc>CalCheq horizontal lockup logo — gauge arc with checkmark icon and wordmark with tagline</desc>
+  <defs>
+    <linearGradient id="hArc" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0D2250" stop-opacity="0"/>
+      <stop offset="20%" stop-color="#2E8ED8" stop-opacity=".7"/>
+      <stop offset="60%" stop-color="#1FCAD8"/>
+      <stop offset="100%" stop-color="#3FF2DC"/>
+    </linearGradient>
+    <linearGradient id="hCheck" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6DFBB0"/>
+      <stop offset="100%" stop-color="#0F8A4A"/>
+    </linearGradient>
+    <linearGradient id="hWord" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2E8ED8"/>
+      <stop offset="100%" stop-color="#3FF2DC"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon: gauge arc + checkmark -->
+  <g>
+    <!-- Faint background track -->
+    <path d="M16 60 A36 36 0 1 1 96 60" fill="none" stroke="#1864C8" stroke-width="4" stroke-linecap="round" opacity=".12"/>
+    <!-- Main gradient arc -->
+    <path d="M16 60 A36 36 0 1 1 96 60" fill="none" stroke="url(#hArc)" stroke-width="4" stroke-linecap="round"/>
+    <!-- Graduated tick marks -->
+    <g stroke-linecap="round">
+      <line x1="22" y1="48" x2="26" y2="46" stroke="#1864C8" stroke-width="1" opacity=".4"/>
+      <line x1="34" y1="32" x2="38" y2="34" stroke="#2E8ED8" stroke-width="1" opacity=".6"/>
+      <line x1="56" y1="22" x2="56" y2="26" stroke="#2E8ED8" stroke-width="1.2" opacity=".8"/>
+      <line x1="78" y1="32" x2="74" y2="34" stroke="#1FCAD8" stroke-width="1"/>
+      <line x1="90" y1="48" x2="86" y2="46" stroke="#3FF2DC" stroke-width="1.2"/>
+    </g>
+    <!-- Endpoint cap -->
+    <circle cx="96" cy="60" r="3" fill="#3FF2DC"/>
+    <circle cx="96" cy="60" r="1.5" fill="#FFFFFF"/>
+    <!-- Main checkmark -->
+    <path d="M34 50 L46 62 L80 28" fill="none" stroke="url(#hCheck)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Checkmark highlight -->
+    <path d="M35.5 49 L46 60 L79 27" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity=".3"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="120" y="52" font-family="'Inter','SF Pro Display',-apple-system,BlinkMacSystemFont,system-ui,sans-serif" font-size="36" font-weight="700" letter-spacing="-1">
+    <tspan fill="#FFFFFF">Cal</tspan><tspan fill="url(#hWord)" font-weight="300">Cheq</tspan>
+  </text>
+
+  <!-- Divider -->
+  <line x1="120" y1="62" x2="340" y2="62" stroke="#1A2D50" stroke-width="0.5"/>
+
+  <!-- Tagline -->
+  <text x="120" y="74" font-family="-apple-system,BlinkMacSystemFont,system-ui,sans-serif" font-size="8" font-weight="500" letter-spacing="2.5" fill="#4A7AA8">CALIBRATION · INTELLIGENCE · RELIABILITY</text>
+</svg>
