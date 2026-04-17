@@ -3,8 +3,9 @@ import Layout from './components/Layout'
 import AuthGuard from './components/AuthGuard'
 
 // Auth pages
-import SignIn         from './pages/auth/SignIn'
-import SignUp         from './pages/auth/SignUp'
+import SignIn        from './pages/auth/SignIn'
+import SignUp        from './pages/auth/SignUp'
+import AuthCallback  from './pages/auth/AuthCallback'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword  from './pages/auth/ResetPassword'
 
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="/auth/signin"          element={<SignIn />} />
         <Route path="/auth/sign-in"         element={<Navigate to="/auth/signin" replace />} />
         <Route path="/auth/signup"          element={<SignUp />} />
+        <Route path="/auth/callback"        element={<AuthCallback />} />
         <Route path="/auth/forgot-password" element={<ForgotPassword />} />
         <Route path="/auth/reset-password"  element={<ResetPassword />} />
 
@@ -52,13 +54,14 @@ export default function App() {
         <Route path="/"             element={<Landing />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/pricing"      element={<Pricing />} />
-        <Route path="/resources"    element={<Resources />} />
-        <Route path="/resources/:slug" element={<Navigate to="/blog" replace />} />
-        <Route path="/faq"          element={<FAQ />} />
-        <Route path="/contact"      element={<Contact />} />
-        <Route path="/demo"         element={<DemoPage />} />
-        <Route path="/blog"         element={<Blog />} />
-        <Route path="/blog/:slug"   element={<BlogPost />} />
+        <Route path="/resources"       element={<Resources />} />
+        <Route path="/resources/:slug" element={<BlogPost />} />
+        <Route path="/faq"             element={<FAQ />} />
+        <Route path="/contact"         element={<Contact />} />
+        <Route path="/demo"            element={<DemoPage />} />
+        {/* /blog is now an alias for /resources; /blog/:slug still serves articles */}
+        <Route path="/blog"            element={<Navigate to="/resources" replace />} />
+        <Route path="/blog/:slug"      element={<BlogPost />} />
 
         {/* ── Onboarding wizard (auth required, no sidebar) ─────────── */}
         <Route path="/app/onboarding" element={<AuthGuard><Onboarding /></AuthGuard>} />

@@ -8,7 +8,6 @@ export default function MarketingNav() {
     { to: '/how-it-works', label: 'How It Works' },
     { to: '/pricing',      label: 'Pricing'      },
     { to: '/demo',         label: 'Demo'         },
-    { to: '/blog',         label: 'Blog'         },
     { to: '/resources',    label: 'Resources'    },
     { to: '/faq',          label: 'FAQ'          },
     { to: '/contact',      label: 'Contact'      },
@@ -52,7 +51,7 @@ export default function MarketingNav() {
             Sign In
           </Link>
           <Link
-            to="/contact"
+            to="/auth/signup"
             className="text-sm font-bold text-white rounded-md px-5 py-2 transition-colors"
             style={{ background: '#F57C00' }}
             onMouseEnter={e => e.target.style.background = '#FFA000'}
@@ -98,7 +97,7 @@ export default function MarketingNav() {
             Sign In
           </Link>
           <Link
-            to="/contact"
+            to="/auth/signup"
             onClick={() => setMenuOpen(false)}
             className="block mt-3 py-3 text-sm font-bold text-white text-center rounded-md"
             style={{ background: '#F57C00' }}

@@ -108,6 +108,8 @@ function del(path) {
 
 export const auth = {
   me: () => request('/auth/me'),
+  /** Creates the site + site_members row after email confirmation. */
+  register: () => post('/auth/register', {}),
   listMembers: () => request('/auth/members'),
   inviteMember: (data) => post('/auth/invite', data),
 }

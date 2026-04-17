@@ -36,13 +36,20 @@ def submit_contact(data: ContactRequest):
     to the CalCheq team via Resend.  Always returns 200 so the frontend can show
     a success message even if the email provider is down.
     """
-    _send_lead_notification(data)
+    sent = _send_lead_notification(data)
+    if not sent:
+        # Log loudly so Railway shows this in logs even though we return 200
+        logger.error(
+            "CONTACT FORM: email NOT sent for %s <%s> from %s — check RESEND_API_KEY and CONTACT_NOTIFY_EMAIL",
+            f"{data.firstName} {data.lastName}", data.email, data.company
+        )
+    _send_confirmation_to_lead(data)
     return {"ok": True}
 
 
 # ---------------------------------------------------------------------------
 
-def _send_lead_notification(data: ContactRequest) -> None:
+def _send_lead_notification(data: ContactRequest) -> bool:
     from notifications import _send  # reuse shared Resend helper
 
     role_labels = {
@@ -106,9 +113,53 @@ def _send_lead_notification(data: ContactRequest) -> None:
 </div>
 """
 
-    _send(
+    sent = _send(
         to=NOTIFY_EMAIL,
         subject=f"[CalCheq] New pilot request — {data.firstName} {data.lastName} ({data.company})",
         html=html,
     )
-    logger.info("Contact notification sent for %s at %s", data.email, data.company)
+    logger.info("Contact notification sent=%s for %s at %s", sent, data.email, data.company)
+    return sent
+
+
+def _send_confirmation_to_lead(data: ContactRequest) -> None:
+    """Send a brief confirmation email to the person who submitted the form."""
+    from notifications import _send
+
+    html = f"""
+<div style="font-family:sans-serif;font-size:14px;color:#1e293b;max-width:520px">
+  <div style="background:#0B1F3A;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center">
+    <p style="color:white;font-size:20px;font-weight:700;margin:0">CalCheq</p>
+  </div>
+  <div style="background:#f8fafc;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
+    <h2 style="color:#0B1F3A;margin-top:0">Thanks, {data.firstName} — we've received your request.</h2>
+    <p style="color:#475569">
+      We'll be in touch within 2 business hours to get your 30-day pilot set up.
+      In the meantime, you can explore the live demo at
+      <a href="{APP_URL}/app" style="color:#2563eb">{APP_URL}/app</a> — no sign-up needed.
+    </p>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px;margin:24px 0">
+      <p style="margin:0 0 8px;font-weight:600;color:#1e40af">Your pilot includes:</p>
+      <ul style="margin:0;padding-left:20px;color:#1e40af;line-height:1.8">
+        <li>500 instruments managed — full Professional plan</li>
+        <li>Personal onboarding and setup within 48 hours</li>
+        <li>All compliance and reporting features</li>
+        <li>No credit card required</li>
+      </ul>
+    </div>
+    <p style="color:#475569">
+      Questions in the meantime? Reply to this email or contact us at
+      <a href="mailto:info@calcheq.com" style="color:#2563eb">info@calcheq.com</a>.
+    </p>
+    <p style="color:#94a3b8;font-size:12px;margin-top:24px">
+      CalCheq · ABN 19 731 880 044 · calcheq.com
+    </p>
+  </div>
+</div>
+"""
+
+    _send(
+        to=data.email,
+        subject=f"Your CalCheq pilot request — we'll be in touch shortly",
+        html=html,
+    )

@@ -8,49 +8,65 @@ import MarketingFooter from '../../components/marketing/MarketingFooter'
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ARTICLES = {
-  'overdue-calibrations': {
-    tag: 'Case Study',
-    tagColor: 'bg-green-100 text-green-700',
-    emoji: '🛢️',
-    title: 'How a Refinery Cut Overdue Calibrations from 23% to Under 4%',
-    date: 'March 2026',
-    readTime: '5 min read',
+  'pressure-transmitter-procedure': {
+    tag: 'Guide',
+    tagColor: 'bg-amber-100 text-amber-700',
+    emoji: '🔩',
+    title: 'How to Calibrate a Pressure Transmitter: A Step-by-Step Field Procedure',
+    date: 'April 2026',
+    readTime: '8 min read',
     sections: [
       {
-        heading: 'The Problem: A Compliance Timebomb',
-        body: `A mid-sized oil refinery in Queensland had a problem that many maintenance teams will recognise: their calibration program was running on a shared Excel spreadsheet that nobody fully trusted. Due dates were calculated manually, notifications went to a single email address that was only checked sporadically, and field technicians often weren't sure whether a particular instrument had been done or not.
+        heading: 'Scope and Applicability',
+        body: `This procedure covers the calibration of a 4–20 mA two-wire pressure transmitter using a handheld pressure source and a calibrated digital multimeter or loop calibrator. It is applicable to gauge, absolute, and differential pressure transmitters used in process measurement. The same five-point method applies regardless of manufacturer.
 
-The result was predictable. At any given time, roughly 23% of their instrumented loop inventory — over 140 instruments — was overdue for calibration. Two of those instruments were safety-critical pressure switches on a high-pressure gas header.`
+Before starting, confirm the following: the calibration interval for this instrument is due or overdue; a valid calibration certificate is held for the reference standard you are using; the instrument has been isolated from the process and depressurised; and if the transmitter is in a safety instrumented system, the appropriate bypass or inhibit is in place per your management of change procedure.`
       },
       {
-        heading: 'The Trigger: A Near-Miss',
-        body: `During a routine process upset, the control room team noticed that a pressure transmitter on the main feed line was reading several percent below what the independent backup gauge showed. Investigation revealed the transmitter had last been calibrated 19 months earlier — its nominal interval was 12 months. Nobody had flagged it as overdue because the spreadsheet had last been updated 4 months prior.
+        heading: 'Equipment Required',
+        body: `You will need a calibrated pressure source with an output range that covers at least 110% of the transmitter's upper range value (URV). For most process transmitters this will be a hand pump with a digital reference gauge, or a purpose-built loop calibrator such as a Beamex MC6 or Fluke 729. The reference standard must have a valid calibration certificate traceable to NATA-accredited standards or equivalent national measurement standards.
 
-A corrective calibration confirmed the instrument was reading 4.2% low — just outside the 3.5% span tolerance. In the right process conditions, that error could have masked a developing overpressure situation. It was classified as a near-miss by the site's HSE team, and the maintenance superintendent was asked to present an improvement plan within 30 days.`
+Additionally: a 24 VDC loop power supply (if the transmitter requires external power), a 250 Ω resistor for reading the 4–20 mA output as a millivolt signal if your reference standard does not have a built-in mA input, and a HART communicator if the transmitter requires range changes or trim via digital protocol.`
       },
       {
-        heading: 'The Solution: Deploying Calcheq',
-        body: `The maintenance team migrated their instrument register into Calcheq over a long weekend. Rather than re-entering every instrument manually, they uploaded a CSV export from their CMMS (Maximo) and mapped the columns — tag number, description, area, calibration interval, and last calibration date. The migration took approximately six hours.
+        heading: 'Pre-Calibration As-Found Check',
+        body: `The as-found check is the most important part of the calibration. It records the transmitter's accuracy before any adjustment is made, which is what matters for compliance and process risk assessment purposes.
 
-With the data loaded, the dashboard immediately showed the full picture: 143 overdue instruments, 31 due within 14 days, and 8 instruments with previous failed calibrations that had not triggered a formal corrective action.
+Apply each of the five test inputs in the upscale direction and record the transmitter's output. Standard test points are 0%, 25%, 50%, 75%, and 100% of span — which correspond to the LRV (lower range value), quarter-span, mid-span, three-quarter-span, and URV of the transmitter. For a transmitter ranging 0–600 kPa, the test inputs would be 0, 150, 300, 450, and 600 kPa, with expected outputs of 4.00, 8.00, 12.00, 16.00, and 20.00 mA respectively.
 
-The team set up user accounts for all 12 instrument technicians and 3 supervisors. Technicians used the mobile-friendly interface on their tablets to check daily what was due and to enter calibration results directly in the field.`
+Record the actual output at each test point. Calculate the absolute error (actual minus expected) and the percentage-of-span error at each point. The worst-case error determines the overall as-found result. If any point exceeds the stated tolerance (for example, ±0.5% of span = ±0.08 mA on a 16 mA span), the as-found result is "fail."
+
+Do not make any adjustments before completing the as-found test. The as-found data is the historical record of how the instrument was performing.`
       },
       {
-        heading: 'Results: 90 Days Later',
-        body: `Within 90 days of going live, the overdue rate had dropped from 23% to under 4% — and the remaining 4% was almost entirely instruments that were physically inaccessible due to planned shutdown scheduling rather than being genuinely forgotten.
+        heading: 'Zero and Span Adjustment',
+        body: `If the as-found test shows any test point outside tolerance, an adjustment is required. Most transmitters allow zero and span adjustment either via external zero/span screws, via local pushbuttons, or via HART trim commands.
 
-Two additional prevented incidents occurred during this period. Calcheq's consecutive failure detection identified a differential pressure transmitter on a heat exchanger that had failed its as-found calibration twice in 8 months. The pattern had gone unnoticed in the spreadsheet system. A maintenance investigation found that the impulse lines had a partial blockage that was causing periodic zero drift. The instrument was corrected and the root cause resolved — before any process impact.`
+Zero adjustment: apply 0% input (LRV). Trim the output to exactly 4.00 mA (or the equivalent for HART digital output). This sets the zero intercept of the transfer function.
+
+Span adjustment: apply 100% input (URV). Trim the output to exactly 20.00 mA. This sets the slope. Note that adjusting span does not affect zero — but adjusting zero shifts the entire output curve, which changes the apparent span reading slightly. For this reason, always adjust zero first, then span, then verify both again.
+
+For HART transmitters, use the Lower Trim and Upper Trim commands in your communicator rather than mechanical screws where possible — this gives you a more precise adjustment and creates a HART configuration record.
+
+If the zero or span drift exceeds approximately ±2% of span, investigate before simply adjusting: this level of drift may indicate a failing cell, moisture ingress, or process contamination rather than normal calibration drift.`
       },
       {
-        heading: 'Key Takeaways',
-        body: `For maintenance teams still relying on spreadsheets for calibration management, the Queensland refinery's experience highlights three critical gaps:
+        heading: 'As-Left Verification and Documentation',
+        body: `After any adjustment, repeat the full five-point test in the upscale direction. This is the as-left check. All five test points must pass within tolerance before the instrument can be returned to service. Record the as-left readings with the same level of detail as the as-found readings.
 
-Visibility: You cannot manage what you cannot see. A real-time dashboard that shows overdue instruments, due-soon alerts, and failure trends is not a luxury — it's the foundation of a functioning calibration program.
+For ISO 17025 and ISO 9001 compliance, your calibration record must include: the instrument tag number and serial number; the date of calibration; the technician's name; the reference standard description, serial number, certificate number, and certificate expiry date; whether the instrument was adjusted; the as-found and as-left readings at all five test points; and the name of the supervisor who reviewed and approved the record.
 
-Accountability: When calibration records exist only in a shared file, it's easy for items to fall through the cracks. Calcheq's approval workflow means every calibration record is reviewed and signed off by a supervisor before it updates the instrument's status.
+Return the instrument to service only after the as-left test passes and the record has been submitted for supervisor approval. Update the calibration due date accordingly — calculated from the date of calibration, not the date of the previous due date.`
+      },
+      {
+        heading: 'Common Problems and How to Identify Them',
+        body: `Zero drift without span drift: the output curve has shifted parallel to the correct slope. Most commonly caused by overpressure events, ambient temperature change, or static pressure effect on differential pressure transmitters. Correct with zero adjustment.
 
-Pattern detection: Single failures can be random. Consecutive failures almost never are. The system's bad actor tracking would have surfaced the heat exchanger transmitter issue months earlier if it had been in place from the start.`
+Span drift without zero drift: the slope of the transfer function has changed but the zero is correct. Often indicates sensing element fatigue or a reference pressure port issue on DP transmitters. If span drift exceeds 1% per calibration interval consistently, consider shortening the interval or investigating the root cause.
+
+Non-linearity (errors at mid-span points that don't fit a straight line): indicates cell degradation or contamination. A zero and span adjustment will not fully correct this — the instrument may need replacement if mid-span errors remain outside tolerance after adjustment.
+
+Inconsistent as-found readings (the reading changes while you hold a constant input pressure): usually indicates a process fluid fill in impulse lines that has not been fully drained, a leaking isolation valve, or a partially blocked port. Resolve the installation issue before continuing the calibration.`
       },
     ],
   },
@@ -261,6 +277,114 @@ If your site's procedure requires a full Part 11 compliant electronic signature 
     ],
   },
 
+  'cascade-loop-calibration': {
+    tag: 'Industry Insights',
+    tagColor: 'bg-amber-100 text-amber-700',
+    emoji: '🔄',
+    title: 'Calibration Errors in Cascade Loops: How One Drifting Transmitter Affects the Whole Loop',
+    date: 'March 2026',
+    readTime: '6 min read',
+    sections: [
+      {
+        heading: 'What a Cascade Loop Is',
+        body: `A cascade control loop is a common process control architecture used when a single manipulated variable (such as a control valve) needs to be controlled based on two separate measurements rather than one. The classic example is reactor temperature control: an outer (primary) controller measures reactor temperature and calculates a setpoint for an inner (secondary) controller, which measures jacket coolant flow and manipulates the jacket valve directly.
+
+The distinguishing feature of cascade control is that the output of the primary controller becomes the setpoint of the secondary controller. This structure improves disturbance rejection for the inner loop and prevents windup in the outer loop during inner-loop disturbances. It is widely used in temperature, pressure, and flow control across refining, chemicals, food processing, and water treatment.
+
+What is less often discussed is what happens when one of the transmitters in a cascade loop drifts outside its calibration tolerance.`
+      },
+      {
+        heading: 'Error Propagation Through the Loop',
+        body: `In a single-loop control system, a transmitter calibration error causes the controller to act on an incorrect process variable reading. The controller drives the process toward the wrong setpoint. The magnitude of the process impact equals roughly the transmitter error divided by the loop gain.
+
+In a cascade system the error mechanism is different, and in some configurations it can be more insidious. Consider the reactor temperature cascade example. If the outer (temperature) transmitter drifts 2°C low, the outer controller will drive its output — the inner loop's coolant flow setpoint — upward to try to "heat" the reactor toward what it thinks is the correct temperature. The inner loop faithfully executes this setpoint, increasing coolant flow. The net result is the reactor runs 2°C hotter than the operator intends, but because the control system appears to be working normally (no alarms, stable readings), the error may go unnoticed for the entire calibration interval.
+
+If the inner (flow) transmitter drifts instead, the outer loop will still see a correct temperature and will adjust its setpoint output to compensate — but the compensation will be based on an incorrect understanding of how much coolant is actually flowing. The outer loop masks the inner transmitter error from the operator perspective, while the inner loop's actual control performance degrades.`
+      },
+      {
+        heading: 'Why Tighter Tolerances Apply to the Outer Loop Transmitter',
+        body: `In a cascade architecture, the outer transmitter is the ultimate reference for product quality or process safety. Its accuracy determines whether the controlled variable is actually at the intended setpoint. The inner transmitter's accuracy determines how well the inner loop tracks its setpoint, which affects control stability but not necessarily the final controlled variable.
+
+This means calibration tolerance requirements are not symmetrical across a cascade loop. Best practice is to apply your tightest tolerance specification to the outer (primary) transmitter, since an error there propagates directly to the process outcome you care most about.
+
+For safety-critical cascades — such as a pressure override that acts as a secondary safety layer — both the outer and inner transmitters may warrant safety-critical calibration intervals and tolerances, because the inner loop's performance is directly relevant to whether the safety function activates at the correct process condition.`
+      },
+      {
+        heading: 'Calibration Interval Coordination',
+        body: `A practical question that arises with cascade loops is whether the outer and inner transmitter calibration intervals should be synchronised. There is no universal rule, but two principles are useful.
+
+First, the outer transmitter should generally have a calibration interval no longer than the inner transmitter's interval. There is little benefit in maintaining precise inner loop control if the outer loop's reference measurement can drift between calibrations.
+
+Second, if the cascade loop is used for a safety function or for quality-critical control, consider calibrating both transmitters at the same time during planned shutdowns or process lulls. This avoids the scenario where the outer loop has just been calibrated but the inner transmitter is near the end of its interval — creating a period where outer accuracy is high but inner accuracy is uncertain.
+
+Calcheq's area-based calibration grouping is useful here: tagging both transmitters with the same plant area and loop reference makes it straightforward to filter the calibration schedule by loop and ensure they are due around the same time.`
+      },
+      {
+        heading: 'Detecting Cascade Calibration Issues Without Waiting for the Next Scheduled Calibration',
+        body: `One of the diagnostic signs of an outer transmitter drift in a cascade loop is a sustained, unexplained shift in the inner loop's operating setpoint. If the outer controller is continuously demanding more or less of the inner loop than historical norms suggest, this warrants investigation before the next scheduled calibration.
+
+Similarly, if the inner transmitter has drifted, you may observe the outer loop integrating unusually — making large corrections that are inconsistent with the disturbance level on the process. This is because the outer loop's model of the inner loop's gain is wrong: it is asking for, say, 50 units of flow, but the actual flow is 47 units, and the outer loop cannot see the discrepancy.
+
+If your DCS historian records inner loop setpoint, inner loop process variable, and outer loop output, trend these together over several months. A gradual divergence between inner loop SP and PV (at steady state) suggests inner transmitter drift. A gradual, unexplained shift in the outer loop's output at a constant product setpoint suggests outer transmitter drift. These trends can often identify a failing calibration well before the scheduled calibration date.`
+      },
+    ],
+  },
+
+  'ph-probe-health': {
+    tag: 'Guide',
+    tagColor: 'bg-amber-100 text-amber-700',
+    emoji: '🧪',
+    title: 'Calibrating a pH Transmitter Is Not the Same as Fixing a Degraded pH Probe',
+    date: 'February 2026',
+    readTime: '7 min read',
+    sections: [
+      {
+        heading: 'The Confusion Between Calibration and Sensor Health',
+        body: `This is one of the most common misunderstandings in process analytical instrumentation. A pH transmitter can be perfectly calibrated — its two-point buffer calibration checks out, the slope and offset are within specification, the calibration record passes — and yet the pH measurement it delivers to the control system can still be significantly wrong under process conditions.
+
+The reason is that transmitter calibration and probe condition are two different things. Calibration adjusts the transmitter's interpretation of the signal it receives from the probe. It cannot compensate for a probe that is responding slowly, reading incorrectly at high ionic strength, or fouled with process deposits. If the probe itself is degraded, a perfect transmitter calibration will faithfully transmit the wrong answer.`
+      },
+      {
+        heading: 'How a pH Probe Degrades',
+        body: `A glass pH electrode generates a millivolt potential proportional to the pH of the solution it contacts, based on the Nernst equation. The theoretical slope of this response is −59.16 mV per pH unit at 25°C. In practice, a new, healthy electrode achieves 95–102% of this theoretical slope.
+
+As the electrode ages and the glass membrane degrades, several things happen. The slope decreases — the electrode becomes less sensitive, so the millivolt difference between pH 4 and pH 7 is smaller than theory predicts. The response time slows — the electrode takes longer to reach equilibrium after a step change in pH, which causes the transmitter reading to lag behind the actual process pH. The asymmetry potential (the offset at pH 7) drifts — this shows up as a zero-point shift in the calibration, which the two-point buffer calibration can mask by adjusting the transmitter offset.
+
+The reference junction — the porous plug or sleeve that provides the electrochemical connection between the reference electrolyte and the process — can also become blocked or contaminated, particularly in high-solids or coating process streams. A blocked reference junction increases the junction potential and can cause large, unpredictable measurement errors that vary with temperature and process composition.`
+      },
+      {
+        heading: 'What the Two-Point Buffer Calibration Actually Checks',
+        body: `A standard pH transmitter calibration involves placing the probe in two buffer solutions of known pH (typically pH 4.01 and 7.00, or pH 7.00 and 10.01) and adjusting the transmitter offset and slope to read correctly in both buffers. This check confirms that the probe produces the correct millivolt output in clean buffer solutions under laboratory conditions.
+
+What it does not confirm: probe performance in the actual process fluid, which may have different ionic strength, temperature, or fouling characteristics than the buffer. It does not confirm response time. It does not directly measure the condition of the reference junction or the state of the glass membrane.
+
+A probe with a slow response time or marginal slope may still produce readings that are close enough to the buffer values during a static calibration check. Under dynamic process conditions, the same probe may lag by several minutes and read incorrectly at process pH values far from the calibration buffers.`
+      },
+      {
+        heading: 'Using As-Found Calibration Data to Track Probe Health',
+        body: `The most practical early warning indicator for probe degradation is the trend in as-found calibration data over successive calibration cycles. Specifically, two metrics are worth tracking.
+
+Slope trend: at each calibration, the technician typically notes the probe slope percentage (displayed on modern transmitters and communicators). A new probe typically shows 97–100% slope. As the glass degrades, slope decreases. Once slope falls below approximately 92–93%, measurement accuracy in the process starts to become unreliable, particularly at pH extremes. Below 90%, the probe should be replaced regardless of whether the calibration passes.
+
+As-found offset drift: if the zero offset required at each successive calibration is drifting consistently in one direction — requiring increasingly large adjustments to read correctly at pH 7 — this suggests a slow deterioration of the glass membrane or a developing reference junction blockage. The calibration record passes each time because the technician makes the necessary adjustment. But the trend in required adjustment is a leading indicator that the probe is nearing end of life.
+
+Calcheq's as-found data capture across calibration history makes this trend analysis straightforward. Plot the maximum as-found error percentage and the required offset adjustment at each calibration over the past six to twelve months. A consistent one-directional drift is a reliable signal to schedule probe replacement at the next convenient opportunity rather than waiting for the probe to fail completely in service.`
+      },
+      {
+        heading: 'Practical Maintenance Workflow',
+        body: `The recommended workflow for maintaining pH measurements in critical process applications has three components that are distinct from transmitter calibration.
+
+Probe cleaning: schedule regular cleaning of the glass membrane and reference junction on a frequency appropriate for the process. In clean water or dilute chemical applications, this may be quarterly. In high-solids, coating, or biological growth environments, monthly or more frequent cleaning is often necessary. Cleaning removes fouling that would otherwise shift the calibration and reduce slope.
+
+Slope and response time verification: at each calibration, record the probe slope and note the time constant (how long the probe takes to equilibrate in the buffer). These values, logged against date in Calcheq's technician notes fields, create a quantitative health record for the probe over its service life.
+
+Planned replacement: establish a probe replacement policy based on slope and age. A common approach is: replace if slope drops below 92% regardless of age; replace at 12–18 months regardless of slope in critical applications; replace immediately if response time in buffer exceeds 30 seconds for a standard glass electrode.
+
+Following this workflow, a calibration failure attributable to genuine probe degradation should never come as a surprise. The as-found trend will have indicated it was coming, typically one to three calibration cycles in advance.`
+      },
+    ],
+  },
+
   'field-technician-workflow': {
     tag: 'Guide',
     tagColor: 'bg-amber-100 text-amber-700',
@@ -356,7 +480,7 @@ export default function BlogPost() {
           <p className="text-6xl mb-4">📭</p>
           <h1 className="text-2xl font-bold text-slate-800 mb-3">Article not found</h1>
           <p className="text-slate-500 mb-6">This article may have moved or the link may be incorrect.</p>
-          <Link to="/blog" className="inline-block bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors text-sm">
+          <Link to="/resources" className="inline-block bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors text-sm">
             Back to all articles
           </Link>
         </div>
@@ -372,7 +496,7 @@ export default function BlogPost() {
       {/* Hero */}
       <section className="pt-32 pb-12 px-4 sm:px-6 bg-gradient-to-b from-slate-50 to-white">
         <div className="max-w-3xl mx-auto">
-          <Link to="/blog" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-600 transition-colors mb-6">
+          <Link to="/resources" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-600 transition-colors mb-6">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5M12 5l-7 7 7 7" />
             </svg>
@@ -420,7 +544,7 @@ export default function BlogPost() {
 
           {/* Back link */}
           <div className="mt-10 text-center">
-            <Link to="/blog" className="text-sm text-blue-600 hover:underline font-medium">
+            <Link to="/resources" className="text-sm text-blue-600 hover:underline font-medium">
               ← Back to all articles
             </Link>
           </div>

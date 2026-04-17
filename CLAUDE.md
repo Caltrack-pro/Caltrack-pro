@@ -225,6 +225,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - `SUPABASE_SERVICE_ROLE_KEY` — for POST /api/auth/invite (bypasses RLS — keep secret)
 - `RESEND_API_KEY`            — email notifications
 - `RESEND_FROM_EMAIL`         — info@calcheq.com
+- `CONTACT_NOTIFY_EMAIL`      — email address to receive pilot/contact form submissions (e.g. nfish82@hotmail.com); falls back to RESEND_FROM_EMAIL if not set
 - `APP_URL`                   — https://calcheq.com
 - `STRIPE_SECRET_KEY`         — Stripe secret key (sk_test_... or sk_live_...)
 - `STRIPE_WEBHOOK_SECRET`     — Stripe webhook signing secret (whsec_...)
