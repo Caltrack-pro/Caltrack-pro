@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../utils/supabase'
 
 // ---------------------------------------------------------------------------
@@ -79,10 +79,18 @@ function StepIndicator({ step }) {
 
 export default function SignUp() {
   const navigate = useNavigate()
+  const [searchParams]  = useSearchParams()
+
+  // If a plan is pre-selected via ?plan=starter|professional|enterprise,
+  // jump straight to Step 2 with that plan pre-filled.
+  const paramPlan  = searchParams.get('plan')
+  const validPlans = ['starter', 'professional', 'enterprise']
+  const initPlan   = validPlans.includes(paramPlan) ? paramPlan : 'professional'
+  const initStep   = validPlans.includes(paramPlan) ? 2 : 1
 
   // Step 1 — plan selection
-  const [step,          setStep]          = useState(1)
-  const [selectedPlan,  setSelectedPlan]  = useState('professional')
+  const [step,          setStep]          = useState(initStep)
+  const [selectedPlan,  setSelectedPlan]  = useState(initPlan)
   const [interval,      setInterval]      = useState('monthly')
 
   // Step 2 — account details

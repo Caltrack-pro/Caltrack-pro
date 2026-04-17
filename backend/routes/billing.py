@@ -58,6 +58,52 @@ PLAN_FROM_PRODUCT = {
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _is_trial_eligible(email: str, current_site_id, db: Session) -> bool:
+    """
+    Returns True if this email/domain has never had a free trial before.
+    For company email domains, any prior trial at the same domain = ineligible.
+    For personal providers (gmail, hotmail, etc.), exact email match is checked.
+    """
+    from models import SiteMember
+
+    # Personal email providers — check exact email, not domain
+    personal_domains = {
+        'gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com',
+        'icloud.com', 'protonmail.com', 'live.com', 'me.com',
+        'yahoo.com.au', 'bigpond.com', 'bigpond.net.au',
+    }
+
+    parts = email.lower().split('@')
+    domain = parts[-1] if len(parts) == 2 else None
+
+    if not domain:
+        return True  # can't determine, allow trial
+
+    if domain in personal_domains:
+        # Exact email match
+        prior_members = db.query(SiteMember).filter(
+            SiteMember.email == email.lower()
+        ).all()
+    else:
+        # Company domain — anyone from this domain counts
+        prior_members = db.query(SiteMember).filter(
+            SiteMember.email.ilike(f'%@{domain}')
+        ).all()
+
+    for member in prior_members:
+        if str(member.site_id) == str(current_site_id):
+            continue  # ignore current site
+        prior_site = db.query(Site).filter(Site.id == member.site_id).first()
+        if prior_site and prior_site.trial_ends_at is not None:
+            logger.info(
+                "Trial denied for %s — prior trial found on site %s",
+                email, prior_site.name,
+            )
+            return False
+
+    return True
+
+
 def _get_or_create_stripe_customer(site: Site, email: str, db: Session) -> str:
     """Return existing Stripe customer ID or create one and persist it."""
     if site.stripe_customer_id:
@@ -109,16 +155,19 @@ def create_checkout_session(
             detail="You already have an active subscription. Use the billing portal to change plans.",
         )
 
+    # Only grant a trial if this email/domain has not had one before
+    trial_eligible = _is_trial_eligible(current_user.email, site.id, db)
+    sub_data: dict = {"metadata": {"site_id": str(site.id), "site_name": site.name}}
+    if trial_eligible:
+        sub_data["trial_period_days"] = 30
+
     session = stripe.checkout.Session.create(
         customer=customer_id,
         mode="subscription",
         line_items=[{"price": price_id, "quantity": 1}],
         success_url=f"{APP_URL}/app/settings?billing=success&session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{APP_URL}/app/settings?billing=cancelled",
-        subscription_data={
-            "trial_period_days": 30,
-            "metadata": {"site_id": str(site.id), "site_name": site.name},
-        },
+        subscription_data=sub_data,
         metadata={"site_id": str(site.id), "site_name": site.name},
     )
 

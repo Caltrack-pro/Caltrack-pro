@@ -19,7 +19,7 @@ function Cross() {
   )
 }
 
-function PlanCard({ name, price, priceNote, badge, highlight, description, features, cta }) {
+function PlanCard({ name, price, priceNote, badge, highlight, description, features, cta, ctaHref, signUpPlan }) {
   return (
     <div className={`relative flex flex-col rounded-2xl border ${
       highlight
@@ -56,8 +56,9 @@ function PlanCard({ name, price, priceNote, badge, highlight, description, featu
         ))}
       </ul>
 
+      {/* Primary CTA */}
       <Link
-        to="/contact"
+        to={ctaHref ?? '/contact'}
         className={`block text-center py-3 rounded-xl font-semibold text-sm transition-colors ${
           highlight
             ? 'bg-white text-blue-600 hover:bg-blue-50'
@@ -66,6 +67,20 @@ function PlanCard({ name, price, priceNote, badge, highlight, description, featu
       >
         {cta}
       </Link>
+
+      {/* Secondary CTA — direct sign-up (subscription, no manual onboarding) */}
+      {signUpPlan && (
+        <Link
+          to={`/auth/signup?plan=${signUpPlan}`}
+          className={`block text-center py-2.5 mt-2 rounded-xl text-sm font-semibold transition-colors border ${
+            highlight
+              ? 'border-blue-400 text-blue-100 hover:bg-blue-500'
+              : 'border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600'
+          }`}
+        >
+          Sign Up
+        </Link>
+      )}
     </div>
   )
 }
@@ -185,7 +200,9 @@ export default function Pricing() {
               { text: 'Multi-site management', included: false },
               { text: 'Criticality ranking', included: false },
             ]}
-            cta="Get Started"
+            cta="Start Free Trial"
+            ctaHref="/contact"
+            signUpPlan="starter"
           />
 
           <PlanCard
@@ -207,6 +224,8 @@ export default function Pricing() {
               { text: 'Priority support', included: true },
             ]}
             cta="Start Free 30-Day Trial"
+            ctaHref="/contact"
+            signUpPlan="professional"
           />
 
           <PlanCard
@@ -224,7 +243,8 @@ export default function Pricing() {
               { text: '99.5% uptime commitment', included: true },
               { text: 'Dedicated account manager', included: true },
             ]}
-            cta="Start Free 30-Day Trial"
+            cta="Talk to Sales"
+            ctaHref="/contact"
           />
 
         </div>
@@ -328,12 +348,20 @@ export default function Pricing() {
           <p className="text-lg text-slate-600 mb-8">
             Start your 30-day free trial today. No credit card required.
           </p>
-          <Link
-            to="/contact"
-            className="inline-block px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-md"
-          >
-            Start Your Free Pilot
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              to="/auth/signup"
+              className="inline-block px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-md"
+            >
+              Sign Up Now
+            </Link>
+            <Link
+              to="/contact"
+              className="inline-block px-8 py-3 border border-slate-300 text-slate-700 font-semibold rounded-xl hover:border-blue-400 hover:text-blue-600 transition-colors"
+            >
+              Request a Free Pilot
+            </Link>
+          </div>
         </div>
       </section>
 

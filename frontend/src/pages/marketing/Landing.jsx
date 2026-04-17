@@ -433,6 +433,14 @@ export default function Landing() {
               onMouseEnter={e => { e.currentTarget.style.borderColor = C.blue; e.currentTarget.style.color = C.blue }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.navy }}
             >Start Free Trial</Link>
+            <Link to="/auth/signup?plan=starter" style={{
+              display: 'block', textAlign: 'center', padding: '0.65rem', borderRadius: 8,
+              fontSize: '0.85rem', fontWeight: 600, marginTop: '0.5rem', textDecoration: 'none',
+              background: C.blue, color: '#fff',
+            }}
+              onMouseEnter={e => e.currentTarget.style.background = C.navy}
+              onMouseLeave={e => e.currentTarget.style.background = C.blue}
+            >Sign Up →</Link>
           </div>
 
           {/* Professional (featured) */}
@@ -471,6 +479,15 @@ export default function Landing() {
               onMouseEnter={e => e.currentTarget.style.background = C.navy}
               onMouseLeave={e => e.currentTarget.style.background = C.blue}
             >Start Free Trial</Link>
+            <Link to="/auth/signup?plan=professional" style={{
+              display: 'block', textAlign: 'center', padding: '0.65rem', borderRadius: 8,
+              fontSize: '0.85rem', fontWeight: 600, marginTop: '0.5rem', textDecoration: 'none',
+              background: 'rgba(255,255,255,0.15)', color: '#fff',
+              border: '1px solid rgba(255,255,255,0.3)',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.25)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)' }}
+            >Sign Up →</Link>
           </div>
 
           {/* Enterprise */}
