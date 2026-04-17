@@ -263,15 +263,35 @@ def assert_active_subscription(
     """
     Raise 402 if the site's subscription is not active or trialing.
     Demo site is always allowed (it's read-only, so this check is moot).
+
+    Also auto-expires trials: if subscription_status == 'trialing' and
+    trial_ends_at is in the past, the status is updated to 'cancelled' and
+    a 402 is raised so the user is redirected to billing.
+
     Call in write routes that should be gated behind a paid subscription.
     """
     if current_user.site_name == DEMO_SITE:
         return  # Demo is handled by assert_writable_site
 
+    from datetime import datetime, timezone
     from models import Site
+
     site = db.query(Site).filter(Site.name == current_user.site_name).first()
     if not site:
         raise HTTPException(status_code=404, detail="Site not found")
+
+    # Auto-expire trialing sites whose trial period has ended
+    if (
+        site.subscription_status == "trialing"
+        and site.trial_ends_at is not None
+        and site.trial_ends_at < datetime.now(tz=timezone.utc)
+    ):
+        site.subscription_status = "cancelled"
+        db.commit()
+        raise HTTPException(
+            status_code=402,
+            detail="Your free trial has expired. Please choose a plan to continue.",
+        )
 
     allowed = {"active", "trialing"}
     if site.subscription_status not in allowed:

@@ -102,7 +102,8 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - calibration_engine.py — server-side pass/fail calculation (source of truth)
 - notifications.py      — Resend email: submit/approve/reject alerts + daily overdue digest + weekly due-soon digest + member invite email
 - routes/auth.py        — GET /api/auth/check-site, POST /api/auth/register, GET /api/auth/me, GET /api/auth/members, POST /api/auth/invite
-- routes/contact.py     — POST /api/contact; accepts lead form, emails notification to CONTACT_NOTIFY_EMAIL via Resend; always returns 200
+- routes/contact.py     — POST /api/contact; saves to pilot_requests table with token; emails notification (with Approve/Deny links) to CONTACT_NOTIFY_EMAIL; sends confirmation to lead; always returns 200
+- routes/admin.py      — GET /api/admin/pilot/approve?token=X (creates Supabase user + site, sends welcome email, 30-day trial); GET /api/admin/pilot/deny?token=X (marks denied, sends denial email); returns branded HTML pages
 - routes/instruments.py — CRUD; site derived from JWT via resolve_site
 - routes/calibrations.py — CRUD + submit/approve/reject; ownership checks
 - routes/dashboard.py   — stats, alerts, compliance-by-area, upcoming, bad-actors
@@ -185,6 +186,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - `calibration_queue` — id, site_name, instrument_id (FK), added_by_name, added_at, priority, notes
 - `documents`    — id, site_name, title, doc_type, file_name, file_size, file_url, notes, uploaded_by, created_at, updated_at
 - `document_instruments` — id, document_id (FK→documents), instrument_id (FK→instruments), UNIQUE(doc, instr)
+- `pilot_requests`      — id (UUID), created_at, first_name, last_name, company, location, role, email, phone, num_instruments, current_system, message, status (pending/approved/denied), token (UUID, unique — used in approve/deny links), actioned_at
 
 ### Sign-in flow (2-step)
 1. Company name → GET /api/auth/check-site validates it exists
@@ -338,6 +340,11 @@ overall record: fail > marginal > pass (worst point wins)
 - ✅ Onboarding wizard — 3-step welcome wizard at /app/onboarding; Dashboard welcome banner for empty sites
 - ✅ Demo environment polish — Riverdale header, team seeded, friendly 403 modal, queue/docs/links seeded
 - ✅ Website overhaul — hero, pricing ($199/$449/$899), 14-day trial, social proof, SEO (robots.txt, sitemap, JSON-LD)
+- ✅ Blog/Resources merge — /blog → /resources, BlogPost served at /resources/:slug, nav shows Resources only
+- ✅ Plan-first sign-up — SignUp step 1 = plan selection, stores plan in Supabase user_metadata; AuthCallback (new) handles email confirm → Stripe checkout
+- ✅ Pilot approval system — pilot_requests table; contact form saves to DB with token; notification email has Approve/Deny links; admin routes create Supabase user + site + 30-day trial; welcome email with credentials; trial auto-expiry in assert_active_subscription
+- ✅ Trial abuse prevention — domain-based check in billing.py; personal email providers use exact match, company domains use domain-wide match
+- ✅ MarketingNav — "Start Free Trial" → /contact (30-day managed pilot); green "Sign Up" button → /auth/signup (self-serve plan selection)
 
 ### Phase 2 (30–90 days post-launch)
 - **Scheduled report delivery** — weekly/monthly compliance PDF by email (Resend + APScheduler already in place)

@@ -51,13 +51,22 @@ export default function MarketingNav() {
             Sign In
           </Link>
           <Link
-            to="/auth/signup"
+            to="/contact"
             className="text-sm font-bold text-white rounded-md px-5 py-2 transition-colors"
             style={{ background: '#F57C00' }}
             onMouseEnter={e => e.target.style.background = '#FFA000'}
             onMouseLeave={e => e.target.style.background = '#F57C00'}
           >
             Start Free Trial
+          </Link>
+          <Link
+            to="/auth/signup"
+            className="text-sm font-bold text-white rounded-md px-5 py-2 transition-colors"
+            style={{ background: '#16a34a' }}
+            onMouseEnter={e => e.target.style.background = '#15803d'}
+            onMouseLeave={e => e.target.style.background = '#16a34a'}
+          >
+            Sign Up
           </Link>
         </nav>
 
@@ -97,12 +106,20 @@ export default function MarketingNav() {
             Sign In
           </Link>
           <Link
-            to="/auth/signup"
+            to="/contact"
             onClick={() => setMenuOpen(false)}
             className="block mt-3 py-3 text-sm font-bold text-white text-center rounded-md"
             style={{ background: '#F57C00' }}
           >
             Start Free Trial
+          </Link>
+          <Link
+            to="/auth/signup"
+            onClick={() => setMenuOpen(false)}
+            className="block mt-2 py-3 text-sm font-bold text-white text-center rounded-md"
+            style={{ background: '#16a34a' }}
+          >
+            Sign Up
           </Link>
         </div>
       )}

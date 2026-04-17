@@ -42,6 +42,7 @@ from routes.queue        import router as queue_router                    # noqa
 from routes.documents    import router as documents_router                # noqa: E402
 from routes.contact      import router as contact_router
 from routes.billing      import router as billing_router                  # noqa: E402
+from routes.admin        import router as admin_router                    # noqa: E402
 
 app.include_router(auth_router)
 app.include_router(instruments_router)
@@ -53,6 +54,7 @@ app.include_router(queue_router)
 app.include_router(documents_router)
 app.include_router(contact_router)
 app.include_router(billing_router)
+app.include_router(admin_router)
 
 
 # ---------------------------------------------------------------------------

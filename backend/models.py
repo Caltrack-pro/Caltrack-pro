@@ -332,3 +332,28 @@ class DocumentInstrument(Base):
         ForeignKey("instruments.id", ondelete="CASCADE"),
         nullable=False, index=True
     )
+
+
+class PilotRequest(Base):
+    """
+    Inbound pilot/free-trial requests from the marketing site contact form.
+    Each row has a unique token used for one-click approve/deny links in the
+    notification email sent to the CalCheq team.
+    """
+    __tablename__ = "pilot_requests"
+
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    created_at  = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    first_name  = Column(String(100), nullable=False)
+    last_name   = Column(String(100), nullable=False)
+    company     = Column(String(255), nullable=False)
+    location    = Column(String(255), nullable=False)
+    role        = Column(String(100), nullable=False)
+    email       = Column(String(255), nullable=False)
+    phone       = Column(String(100), nullable=False)
+    num_instruments = Column(String(50),  nullable=False)
+    current_system  = Column(String(100), nullable=False)
+    message     = Column(Text, nullable=False, server_default=text("''"))
+    status      = Column(String(50),  nullable=False, server_default=text("'pending'"))   # pending / approved / denied
+    token       = Column(UUID(as_uuid=True), nullable=False, unique=True, server_default=text("gen_random_uuid()"))
+    actioned_at = Column(DateTime(timezone=True))

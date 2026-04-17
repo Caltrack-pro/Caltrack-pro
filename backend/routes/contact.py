@@ -6,8 +6,11 @@ from __future__ import annotations
 
 import logging
 import os
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, EmailStr
+from sqlalchemy.orm import Session
+
+from database import get_db
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -30,15 +33,35 @@ class ContactRequest(BaseModel):
 
 
 @router.post("/api/contact", status_code=200)
-def submit_contact(data: ContactRequest):
+def submit_contact(data: ContactRequest, db: Session = Depends(get_db)):
     """
-    Receives the marketing site pilot-request form and sends a notification email
-    to the CalCheq team via Resend.  Always returns 200 so the frontend can show
-    a success message even if the email provider is down.
+    Receives the marketing site pilot-request form.
+    1. Saves the request to pilot_requests table (generates a unique approval token).
+    2. Sends a notification email to the CalCheq team with Approve / Deny links.
+    3. Sends a confirmation email to the person who submitted the form.
+    Always returns 200 so the frontend shows a success message even if email fails.
     """
-    sent = _send_lead_notification(data)
+    from models import PilotRequest
+
+    # Persist the request so we have it even if email fails
+    pilot = PilotRequest(
+        first_name      = data.firstName,
+        last_name       = data.lastName,
+        company         = data.company,
+        location        = data.location,
+        role            = data.role,
+        email           = data.email.lower(),
+        phone           = data.phone,
+        num_instruments = data.numInstruments,
+        current_system  = data.currentSystem,
+        message         = data.message,
+    )
+    db.add(pilot)
+    db.commit()
+    db.refresh(pilot)
+
+    sent = _send_lead_notification(data, str(pilot.token))
     if not sent:
-        # Log loudly so Railway shows this in logs even though we return 200
         logger.error(
             "CONTACT FORM: email NOT sent for %s <%s> from %s — check RESEND_API_KEY and CONTACT_NOTIFY_EMAIL",
             f"{data.firstName} {data.lastName}", data.email, data.company
@@ -49,7 +72,7 @@ def submit_contact(data: ContactRequest):
 
 # ---------------------------------------------------------------------------
 
-def _send_lead_notification(data: ContactRequest) -> bool:
+def _send_lead_notification(data: ContactRequest, token: str) -> bool:
     from notifications import _send  # reuse shared Resend helper
 
     role_labels = {
@@ -79,8 +102,11 @@ def _send_lead_notification(data: ContactRequest) -> bool:
     instr   = inst_labels.get(data.numInstruments, data.numInstruments)
     msg_row = f"<tr><td style='padding:4px 12px 4px 0;color:#64748b'>Message:</td><td>{data.message}</td></tr>" if data.message else ""
 
+    approve_url = f"{APP_URL}/api/admin/pilot/approve?token={token}"
+    deny_url    = f"{APP_URL}/api/admin/pilot/deny?token={token}"
+
     html = f"""
-<div style="font-family:sans-serif;font-size:14px;color:#1e293b;max-width:520px">
+<div style="font-family:sans-serif;font-size:14px;color:#1e293b;max-width:560px">
   <h2 style="color:#0B1F3A;margin-bottom:4px">🚀 New Pilot Request</h2>
   <p style="color:#64748b;margin-top:0">Someone submitted the CalCheq free-trial form.</p>
 
@@ -104,12 +130,23 @@ def _send_lead_notification(data: ContactRequest) -> bool:
     {msg_row}
   </table>
 
-  <p style="margin-top:24px">
-    <a href="mailto:{data.email}?subject=Your CalCheq pilot is ready&body=Hi {data.firstName},"
-       style="background:#F57C00;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-size:14px">
-      Reply to {data.firstName} →
-    </a>
-  </p>
+  <div style="margin-top:28px;padding:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px">
+    <p style="margin:0 0 16px;font-weight:600;color:#0B1F3A">Action this pilot request:</p>
+    <div style="display:flex;gap:12px">
+      <a href="{approve_url}"
+         style="background:#16a34a;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;display:inline-block">
+        ✅ Approve Pilot
+      </a>
+      <a href="{deny_url}"
+         style="background:#dc2626;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;display:inline-block;margin-left:12px">
+        ❌ Deny Pilot
+      </a>
+    </div>
+    <p style="margin:12px 0 0;font-size:12px;color:#94a3b8">
+      Approving will create a Supabase account for {data.email}, spin up their site, and send them login credentials.
+      The 30-day pilot clock starts on approval.
+    </p>
+  </div>
 </div>
 """
 
@@ -160,6 +197,6 @@ def _send_confirmation_to_lead(data: ContactRequest) -> None:
 
     _send(
         to=data.email,
-        subject=f"Your CalCheq pilot request — we'll be in touch shortly",
+        subject="Your CalCheq pilot request — we'll be in touch shortly",
         html=html,
     )
