@@ -96,7 +96,7 @@ export default function TrendCharts({ instrument, history }) {
     if (!history?.length) return []
 
     const approved = history
-      .filter(r => r.record_status === 'approved' && r.calibration_date)
+      .filter(r => (r.record_status === 'approved' || r.record_status === 'submitted') && r.calibration_date)
       .filter(r => {
         if (!range.days) return true
         return r.calibration_date >= subDays(todayISO, range.days)
@@ -154,7 +154,7 @@ export default function TrendCharts({ instrument, history }) {
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
         </svg>
         <p className="font-medium text-slate-600 mb-1">Not enough data</p>
-        <p className="text-sm">At least 2 approved calibration records are needed to show trends.</p>
+        <p className="text-sm">At least 2 approved or submitted calibration records are needed to show trends.</p>
       </div>
     )
   }

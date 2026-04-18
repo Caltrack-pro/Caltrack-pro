@@ -6,6 +6,10 @@ import { fmtDate, fmtPct, fmtNum, humanise } from '../utils/formatting'
 import TrendCharts from '../components/TrendCharts'
 import { getUser, canApprove, canEdit, canCalibrate } from '../utils/userContext'
 import { generateSingleCalibrationCert, generateMultiCalibrationReport } from '../utils/reportGenerator'
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine,
+  ResponsiveContainer, Dot,
+} from 'recharts'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared
@@ -280,14 +284,59 @@ function SlidePanel({ recordId, instrument, onClose, onRefresh }) {
 // Tabs
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TABS = ['Overview', 'Calibration History', 'Trends', 'Drift Analysis', 'Audit Trail', 'Technical Data']
+const TABS = ['Overview', 'Calibration History', 'Trends', 'Smart Analytics', 'Audit Trail', 'Technical Data']
 
-// ── Tab 1: Overview ───────────────────────────────────────────────────────
+// ── Smart Analytics (formerly Drift Analysis) ────────────────────────────────
 
-function DriftAnalysis({ instrumentId }) {
-  const [data, setData]     = useState(null)
+const STATUS_CFG = {
+  critical:          { bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-700',    dot: '#EF4444', label: '🔴 Critical — Projected to Fail Soon',       icon: '⚠️' },
+  warning:           { bg: 'bg-amber-50',  border: 'border-amber-200',  text: 'text-amber-700',  dot: '#F59E0B', label: '🟡 Warning — Drift Trend Detected',          icon: '📈' },
+  watch:             { bg: 'bg-blue-50',   border: 'border-blue-200',   text: 'text-blue-700',   dot: '#3B82F6', label: '🔵 Watch — Slow Drift Detected',             icon: '👁' },
+  stable:            { bg: 'bg-green-50',  border: 'border-green-200',  text: 'text-green-700',  dot: '#22C55E', label: '✅ Stable — No Significant Drift',           icon: '✅' },
+  exceeded:          { bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-700',    dot: '#EF4444', label: '🔴 Exceeded — Currently Out of Tolerance',    icon: '🛑' },
+  insufficient_data: { bg: 'bg-slate-50',  border: 'border-slate-200',  text: 'text-slate-600',  dot: '#94A3B8', label: 'Insufficient Data',                          icon: '📊' },
+}
+
+function _driftRecommendations(data) {
+  if (!data?.sufficient_data) return []
+  const recs = []
+  const { drift_status, drift_rate_per_year, current_error_pct, tolerance_pct, projected_fail_date, record_count } = data
+
+  if (drift_status === 'exceeded') {
+    recs.push({ level: 'critical', title: 'Out of Tolerance — Immediate Action Required', body: `The instrument is currently reading ${current_error_pct?.toFixed(2)}% error, exceeding the ${tolerance_pct?.toFixed(2)}% tolerance limit. Remove from service or recalibrate immediately.` })
+  } else if (drift_status === 'critical') {
+    recs.push({ level: 'critical', title: 'Projected Failure Imminent', body: `At the current drift rate of +${drift_rate_per_year?.toFixed(2)}%/year, this instrument is projected to exceed tolerance by ${projected_fail_date}. Schedule an out-of-cycle calibration now.` })
+  } else if (drift_status === 'warning') {
+    recs.push({ level: 'advisory', title: 'Drift Trend — Shorten Calibration Interval', body: `Drift rate of +${drift_rate_per_year?.toFixed(2)}%/year detected. Consider reducing the calibration interval to catch this before it goes out of tolerance (projected: ${projected_fail_date}).` })
+  } else if (drift_status === 'watch') {
+    recs.push({ level: 'optimisation', title: 'Slow Drift — Monitor Closely', body: `A slow drift of +${drift_rate_per_year?.toFixed(2)}%/year is present. No immediate action needed, but continue monitoring. Projected to exceed tolerance ${projected_fail_date ? `around ${projected_fail_date}` : 'well beyond the next service interval'}.` })
+  } else if (drift_status === 'stable') {
+    recs.push({ level: 'optimisation', title: 'Instrument Performing Well', body: `No significant drift detected across ${record_count} calibration records. Current error is ${current_error_pct?.toFixed(2)}% vs ${tolerance_pct?.toFixed(2)}% tolerance. Consider extending the calibration interval if historical data consistently shows stable performance.` })
+  }
+
+  if (drift_rate_per_year < 0) {
+    recs.push({ level: 'optimisation', title: 'Improving Trend Detected', body: 'As-found error is actually decreasing over time, which may indicate a previous adjustment is settling. Continue monitoring.' })
+  }
+
+  if (record_count >= 5 && drift_status === 'stable') {
+    recs.push({ level: 'optimisation', title: 'Candidate for Extended Interval', body: `With ${record_count} consecutive stable calibrations, this instrument meets the criteria for an extended calibration interval review. Verify against your site's interval extension procedure.` })
+  }
+
+  return recs
+}
+
+function _dotColour(errorPct, tolPct) {
+  if (errorPct == null || tolPct == null) return '#94A3B8'
+  const ratio = errorPct / tolPct
+  if (ratio >= 1.0) return '#EF4444'
+  if (ratio >= 0.8) return '#F59E0B'
+  return '#22C55E'
+}
+
+function SmartAnalytics({ instrumentId }) {
+  const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError]   = useState(null)
+  const [error, setError]     = useState(null)
 
   useEffect(() => {
     if (!instrumentId) return
@@ -303,36 +352,53 @@ function DriftAnalysis({ instrumentId }) {
     </div>
   )
   if (error) return (
-    <div className="bg-red-50 border border-red-200 rounded-lg px-5 py-4 text-sm text-red-700">{error}</div>
+    <div className="bg-red-50 border border-red-200 rounded-lg px-5 py-4 text-sm text-red-700">
+      Analysis error: {error}
+    </div>
   )
   if (!data) return null
 
   if (!data.sufficient_data) return (
-    <div className="bg-slate-50 border border-slate-200 rounded-xl px-6 py-8 text-center">
-      <svg className="w-10 h-10 mx-auto mb-3 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-      </svg>
-      <p className="text-sm font-semibold text-slate-600 mb-1">Insufficient Data</p>
-      <p className="text-sm text-slate-500">{data.message}</p>
-      <p className="text-xs text-slate-400 mt-2">{data.record_count} of 3 required records available</p>
+    <div className="space-y-5 pt-6">
+      <div className="bg-slate-50 border border-slate-200 rounded-xl px-6 py-8 text-center">
+        <svg className="w-10 h-10 mx-auto mb-3 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        <p className="text-sm font-semibold text-slate-600 mb-1">Insufficient Data for Drift Analysis</p>
+        <p className="text-sm text-slate-500">{data.message}</p>
+        <p className="text-xs text-slate-400 mt-2">{data.record_count} of 3 required calibration records available</p>
+      </div>
     </div>
   )
 
-  const statusConfig = {
-    critical:   { bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-700',    label: 'Critical — Projected to Fail Soon' },
-    warning:    { bg: 'bg-amber-50',  border: 'border-amber-200',  text: 'text-amber-700',  label: 'Warning — Drift Trend Detected' },
-    watch:      { bg: 'bg-blue-50',   border: 'border-blue-200',   text: 'text-blue-700',   label: 'Watch — Slow Drift Detected' },
-    stable:     { bg: 'bg-green-50',  border: 'border-green-200',  text: 'text-green-700',  label: 'Stable — No Significant Drift' },
-    exceeded:   { bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-700',    label: 'Exceeded — Currently Out of Tolerance' },
-    insufficient_data: { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-600', label: 'Insufficient Data' },
+  const cfg = STATUS_CFG[data.drift_status] || STATUS_CFG.stable
+  const recommendations = _driftRecommendations(data)
+
+  // Prepare chart data — annotate each point with a colour
+  const chartPoints = (data.data_points || []).map(pt => ({
+    ...pt,
+    label: pt.date,
+    dotColour: _dotColour(pt.error_pct, data.tolerance_pct),
+  }))
+
+  // Y-axis max = at least 120% of tolerance so bands are visible
+  const yMax = Math.max(
+    (data.tolerance_pct || 1) * 1.3,
+    ...(data.data_points || []).map(p => p.error_pct || 0),
+  ) * 1.1
+
+  const recLevelCfg = {
+    critical:     { bg: 'bg-red-50',   border: 'border-red-200',   text: 'text-red-700',   badge: 'bg-red-100 text-red-700',   icon: '🛑' },
+    advisory:     { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800', badge: 'bg-amber-100 text-amber-700', icon: '⚠️' },
+    optimisation: { bg: 'bg-blue-50',  border: 'border-blue-200',  text: 'text-blue-800',  badge: 'bg-blue-100 text-blue-700',  icon: '💡' },
   }
-  const cfg = statusConfig[data.drift_status] || statusConfig.stable
 
   return (
     <div className="space-y-5 pt-6">
+
       {/* Status banner */}
       <div className={`${cfg.bg} ${cfg.border} border rounded-xl px-5 py-4 flex items-center gap-4`}>
-        <div className={`text-sm font-semibold ${cfg.text}`}>{cfg.label}</div>
+        <div className={`text-sm font-bold ${cfg.text}`}>{cfg.label}</div>
         <div className="flex-1" />
         {data.projected_fail_date && (
           <div className="text-right">
@@ -345,10 +411,12 @@ function DriftAnalysis({ instrumentId }) {
       {/* KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Records Analysed',    value: data.record_count },
-          { label: 'Current Error',       value: `${data.current_error_pct?.toFixed(2) ?? '—'}%` },
-          { label: 'Drift Rate / Year',   value: data.drift_rate_per_year > 0 ? `+${data.drift_rate_per_year?.toFixed(2)}%` : `${data.drift_rate_per_year?.toFixed(2)}%` },
-          { label: 'Tolerance',           value: `${data.tolerance_pct?.toFixed(2) ?? '—'}%` },
+          { label: 'Records Analysed', value: data.record_count },
+          { label: 'Current Error',    value: `${data.current_error_pct?.toFixed(2) ?? '—'}%` },
+          { label: 'Drift Rate / Year', value: data.drift_rate_per_year > 0
+              ? `+${data.drift_rate_per_year?.toFixed(2)}%`
+              : `${data.drift_rate_per_year?.toFixed(2)}%` },
+          { label: 'Tolerance Limit',  value: `${data.tolerance_pct?.toFixed(2) ?? '—'}%` },
         ].map(({ label, value }) => (
           <div key={label} className="bg-white border border-slate-200 rounded-xl p-4">
             <p className="text-xs text-slate-500 font-medium mb-1">{label}</p>
@@ -357,49 +425,108 @@ function DriftAnalysis({ instrumentId }) {
         ))}
       </div>
 
-      {/* Error trend chart (simple visual) */}
-      {data.data_points?.length > 0 && (
+      {/* Drift chart */}
+      {chartPoints.length >= 2 && (
         <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-4">Max As-Found Error Over Time</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-left pb-2 text-slate-500 font-medium">Date</th>
-                  <th className="text-left pb-2 text-slate-500 font-medium pl-4">Max Error %</th>
-                  <th className="text-left pb-2 text-slate-500 font-medium pl-4">vs Tolerance</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {data.data_points.map((pt, i) => {
-                  const pct = pt.error_pct / data.tolerance_pct * 100
+          <h3 className="text-sm font-semibold text-slate-700 mb-1">As-Found Error Drift Over Time</h3>
+          <p className="text-xs text-slate-400 mb-4">Max as-found error per calibration. Green zone = within tolerance, amber = approaching limit (80%), red = out of tolerance.</p>
+          <ResponsiveContainer width="100%" height={240}>
+            <AreaChart data={chartPoints} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="driftGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="#1FCAD8" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#1FCAD8" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: '#94A3B8' }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                tickFormatter={v => `${v.toFixed(1)}%`}
+                tick={{ fontSize: 11, fill: '#94A3B8' }}
+                tickLine={false}
+                axisLine={false}
+                domain={[0, yMax]}
+              />
+              <Tooltip
+                formatter={(value) => [`${value?.toFixed(3)}%`, 'Max Error']}
+                labelFormatter={(label) => `Date: ${label}`}
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #E2E8F0' }}
+              />
+              {/* Tolerance limit */}
+              {data.tolerance_pct != null && (
+                <ReferenceLine
+                  y={data.tolerance_pct}
+                  stroke="#EF4444"
+                  strokeDasharray="5 3"
+                  strokeWidth={1.5}
+                  label={{ value: `Tolerance ${data.tolerance_pct?.toFixed(1)}%`, position: 'insideTopRight', fontSize: 10, fill: '#EF4444' }}
+                />
+              )}
+              {/* Marginal threshold (80% of tolerance) */}
+              {data.tolerance_pct != null && (
+                <ReferenceLine
+                  y={data.tolerance_pct * 0.8}
+                  stroke="#F59E0B"
+                  strokeDasharray="3 3"
+                  strokeWidth={1}
+                  label={{ value: `Marginal ${(data.tolerance_pct * 0.8)?.toFixed(1)}%`, position: 'insideTopRight', fontSize: 10, fill: '#F59E0B' }}
+                />
+              )}
+              <Area
+                type="monotone"
+                dataKey="error_pct"
+                stroke="#1FCAD8"
+                strokeWidth={2.5}
+                fill="url(#driftGrad)"
+                dot={(props) => {
+                  const { cx, cy, payload } = props
                   return (
-                    <tr key={i}>
-                      <td className="py-2 text-slate-600 font-mono">{pt.date}</td>
-                      <td className="py-2 pl-4 font-mono font-semibold text-slate-800">{pt.error_pct.toFixed(3)}%</td>
-                      <td className="py-2 pl-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-32 bg-slate-100 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full ${pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-400' : 'bg-green-400'}`}
-                              style={{ width: `${Math.min(pct, 100)}%` }}
-                            />
-                          </div>
-                          <span className={`text-xs font-semibold ${pct >= 100 ? 'text-red-600' : pct >= 80 ? 'text-amber-600' : 'text-slate-500'}`}>
-                            {pct.toFixed(0)}%
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
+                    <Dot
+                      key={payload.date}
+                      cx={cx} cy={cy} r={5}
+                      fill={payload.dotColour}
+                      stroke="#fff"
+                      strokeWidth={1.5}
+                    />
                   )
-                })}
-              </tbody>
-            </table>
-          </div>
+                }}
+                activeDot={{ r: 7, stroke: '#fff', strokeWidth: 2 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       )}
 
-      <p className="text-xs text-slate-400">Drift calculated using linear regression on as-found error % across approved calibration records. Projected failure date is an estimate based on current trend.</p>
+      {/* Recommendations */}
+      {recommendations.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-slate-700">Recommendations</h3>
+          {recommendations.map((rec, idx) => {
+            const rc = recLevelCfg[rec.level] || recLevelCfg.optimisation
+            return (
+              <div key={idx} className={`${rc.bg} ${rc.border} border rounded-xl px-5 py-4`}>
+                <div className="flex items-start gap-3">
+                  <span className="text-base mt-0.5">{rc.icon}</span>
+                  <div>
+                    <p className={`text-sm font-semibold ${rc.text} mb-1`}>{rec.title}</p>
+                    <p className={`text-sm ${rc.text} opacity-80`}>{rec.body}</p>
+                  </div>
+                  <span className={`ml-auto text-xs font-bold uppercase px-2 py-0.5 rounded-full ${rc.badge} shrink-0`}>
+                    {rec.level}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <p className="text-xs text-slate-400">Drift calculated using linear regression on as-found error % across approved and submitted calibration records. Projected failure date is an estimate based on current trend.</p>
     </div>
   )
 }
@@ -911,7 +1038,7 @@ export default function InstrumentDetail() {
       {activeTab === 0 && <TabOverview instrument={i} history={history} />}
       {activeTab === 1 && <TabHistory  history={history} onView={setSlideId} onCert={handleSingleCert} />}
       {activeTab === 2 && <TrendCharts instrument={i} history={history?.results ?? []} />}
-      {activeTab === 3 && <DriftAnalysis instrumentId={i.id} />}
+      {activeTab === 3 && <SmartAnalytics instrumentId={i.id} />}
       {activeTab === 4 && <TabAuditTrail instrumentId={i.id} />}
       {activeTab === 5 && <TabTechnical instrument={i} userCanEdit={userCanEdit} />}
 

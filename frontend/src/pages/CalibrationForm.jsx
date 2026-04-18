@@ -278,8 +278,9 @@ export default function CalibrationForm() {
     try {
       const record = await calApi.create(buildPayload())
       if (!asDraft) {
-        await calApi.submit(record.id)
-        showToast('Calibration submitted for approval', 'success')
+        const submitted = await calApi.submit(record.id)
+        const autoApproved = submitted?.record_status === 'approved'
+        showToast(autoApproved ? 'Calibration approved — certificate will be emailed shortly' : 'Calibration submitted for approval', 'success')
       } else {
         showToast('Draft saved — remember to submit when complete', 'info')
       }

@@ -373,15 +373,12 @@ def get_drift_analysis(
         raise HTTPException(status_code=404, detail="Instrument not found")
 
     # Fetch approved/submitted records with test points, ordered by date
-    # Use enum members directly (not .value) for SAEnum column comparisons
+    # Use string values for the enum comparison — more reliable with PgBouncer/pooled connections
     records = (
         db.query(CalibrationRecord)
         .filter(
             CalibrationRecord.instrument_id == instrument_id,
-            CalibrationRecord.record_status.in_([
-                RecordStatus.APPROVED,
-                RecordStatus.SUBMITTED,
-            ]),
+            CalibrationRecord.record_status.in_(["approved", "submitted"]),
             CalibrationRecord.as_found_result.isnot(None),
         )
         .order_by(CalibrationRecord.calibration_date.asc())

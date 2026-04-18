@@ -482,25 +482,74 @@ def submit_calibration(
             ),
         )
 
-    rec.record_status = RecordStatus.SUBMITTED
-    _write_audit(db, current_user, rec.id, "submit",
-                 {"instrument_id": str(rec.instrument_id)})
+    # Admins and supervisors self-approve — no separate approval step needed
+    is_self_approver = current_user.role in ("admin", "supervisor")
+
+    if is_self_approver:
+        from datetime import datetime, timezone
+        rec.record_status = RecordStatus.APPROVED
+        rec.approved_by   = current_user.display_name or current_user.email
+        rec.approved_at   = datetime.now(timezone.utc)
+        _update_instrument_on_approve(rec, db)
+        _write_audit(db, current_user, rec.id, "submit_and_approve",
+                     {"instrument_id": str(rec.instrument_id), "auto_approved": True})
+    else:
+        rec.record_status = RecordStatus.SUBMITTED
+        _write_audit(db, current_user, rec.id, "submit",
+                     {"instrument_id": str(rec.instrument_id)})
+
     db.commit()
     db.refresh(rec)
 
-    # Notify supervisors — fire-and-forget after commit
-    try:
-        supervisor_emails = _supervisor_emails(current_user, db)
-        if supervisor_emails:
-            notif.notify_submission(
-                instrument_tag=instr.tag_number,
-                instrument_desc=instr.description,
-                technician_name=current_user.display_name or current_user.email,
-                record_id=str(rec.id),
-                supervisor_emails=supervisor_emails,
-            )
-    except Exception:
-        pass  # Never fail a submit due to email issues
+    import logging as _cal_log_submit
+    _log_submit = _cal_log_submit.getLogger(__name__)
+
+    if is_self_approver:
+        # Send PDF cert immediately — same logic as approve endpoint
+        try:
+            tech_email  = current_user.email
+            test_points = _fetch_test_points(rec.id, db)
+            from pdf_generator import generate_calibration_cert, cert_filename
+            site_name   = current_user.site_name or ""
+            pdf_bytes   = generate_calibration_cert(rec, instr, test_points, site_name=site_name)
+            pdf_name    = cert_filename(instr.tag_number, rec.calibration_date)
+
+            cert_recipients = [tech_email] if tech_email else []
+            for sup_email in _supervisor_emails(current_user, db):
+                if sup_email not in cert_recipients:
+                    cert_recipients.append(sup_email)
+            if not cert_recipients and current_user.email:
+                cert_recipients.append(current_user.email)
+
+            result_val  = rec.as_left_result or rec.as_found_result
+            result_str  = (result_val.value if hasattr(result_val, "value") else result_val) or "approved"
+
+            if cert_recipients:
+                notif.send_calibration_cert(
+                    instrument_tag=instr.tag_number,
+                    instrument_desc=instr.description,
+                    cal_date=rec.calibration_date.isoformat() if rec.calibration_date else "—",
+                    result=result_str,
+                    pdf_bytes=pdf_bytes,
+                    pdf_filename=pdf_name,
+                    recipient_emails=cert_recipients,
+                )
+        except Exception as exc:
+            _log_submit.error("Auto-approve cert send failed for record %s: %s", rec.id, exc, exc_info=True)
+    else:
+        # Notify supervisors that a record is pending approval
+        try:
+            supervisor_emails = _supervisor_emails(current_user, db)
+            if supervisor_emails:
+                notif.notify_submission(
+                    instrument_tag=instr.tag_number,
+                    instrument_desc=instr.description,
+                    technician_name=current_user.display_name or current_user.email,
+                    record_id=str(rec.id),
+                    supervisor_emails=supervisor_emails,
+                )
+        except Exception:
+            pass  # Never fail a submit due to email issues
 
     return _to_record_response(rec, db)
 
