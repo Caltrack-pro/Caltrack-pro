@@ -7,7 +7,7 @@ from datetime import date, datetime
 from typing import List, Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from models import (
     AsFoundResult,
@@ -65,6 +65,14 @@ class InstrumentCreate(BaseModel):
     last_calibration_result: CalibrationResultStatus           = CalibrationResultStatus.NOT_CALIBRATED
     calibration_due_date:    Optional[date]                    = None
     created_by:              Optional[str]                     = Field(None, max_length=100)
+
+    @field_validator("last_calibration_result", mode="before")
+    @classmethod
+    def _default_cal_result(cls, v):
+        # Frontend "Not specified" option sends null/empty — treat as not_calibrated.
+        if v in (None, ""):
+            return CalibrationResultStatus.NOT_CALIBRATED
+        return v
 
     @model_validator(mode="after")
     def check_range(self) -> "InstrumentCreate":

@@ -76,10 +76,9 @@ def _instrument_summary(instr: Instrument) -> QueueInstrumentSummary:
 
 @router.get("", response_model=QueueListResponse)
 def list_queue(
-    current_user: UserContext = Depends(get_current_user),
+    site: str = Depends(resolve_site),
     db: Session = Depends(get_db),
 ) -> QueueListResponse:
-    site = resolve_site(current_user)
 
     # Load all queue items for this site, joined with their instruments
     items = (
@@ -132,10 +131,10 @@ def list_queue(
 def add_to_queue(
     payload: QueueAddPayload,
     current_user: UserContext = Depends(get_current_user),
+    site: str = Depends(resolve_site),
     db: Session = Depends(get_db),
 ) -> QueueItemResponse:
     assert_writable_site(current_user)
-    site = resolve_site(current_user)
 
     # Verify instrument belongs to this site
     instr = db.query(Instrument).filter(
@@ -192,10 +191,10 @@ def add_to_queue(
 def remove_from_queue(
     instrument_id: UUID,
     current_user: UserContext = Depends(get_current_user),
+    site: str = Depends(resolve_site),
     db: Session = Depends(get_db),
 ) -> None:
     assert_writable_site(current_user)
-    site = resolve_site(current_user)
 
     deleted = (
         db.query(CalibrationQueue)
@@ -219,10 +218,10 @@ def update_priority(
     instrument_id: UUID,
     payload: QueuePriorityPayload,
     current_user: UserContext = Depends(get_current_user),
+    site: str = Depends(resolve_site),
     db: Session = Depends(get_db),
 ) -> QueueItemResponse:
     assert_writable_site(current_user)
-    site = resolve_site(current_user)
 
     entry = db.query(CalibrationQueue).filter(
         CalibrationQueue.site_name == site,

@@ -185,15 +185,16 @@ def get_stats(
     calibrated_this_week = week_q.count()
 
     # --- compliance rate ---
-    # Denominator: instruments calibrated in the last 12 months (have a recent last_calibration_date)
+    # Denominator: every active instrument that has ever been calibrated (i.e., is on a calibration schedule).
+    # Previously this excluded instruments whose last calibration was >12 months ago, which hid the worst
+    # offenders — overdue instruments routinely haven't been recalibrated in over a year, so removing them
+    # from the denominator inflated the rate (e.g. 1 in-date + 1 severely-overdue → 100%, not 50%).
     scheduled = base.filter(
-        Instrument.last_calibration_date >= one_year_ago,
         Instrument.last_calibration_result != CalibrationResultStatus.NOT_CALIBRATED,
     ).count()
 
     # Numerator: of those, currently in-date AND not failed
     compliant = base.filter(
-        Instrument.last_calibration_date >= one_year_ago,
         Instrument.last_calibration_result.in_([
             CalibrationResultStatus.PASS.value,
             CalibrationResultStatus.MARGINAL.value,

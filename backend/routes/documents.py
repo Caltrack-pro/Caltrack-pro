@@ -56,10 +56,9 @@ def _document_response(doc: Document, db: Session) -> DocumentResponse:
 
 @router.get("", response_model=DocumentListResponse)
 def list_documents(
-    current_user: UserContext = Depends(get_current_user),
+    site: str = Depends(resolve_site),
     db: Session = Depends(get_db),
 ) -> DocumentListResponse:
-    site = resolve_site(current_user)
 
     docs = (
         db.query(Document)
@@ -80,10 +79,10 @@ def list_documents(
 def create_document(
     payload: DocumentCreate,
     current_user: UserContext = Depends(get_current_user),
+    site: str = Depends(resolve_site),
     db: Session = Depends(get_db),
 ) -> DocumentResponse:
     assert_writable_site(current_user)
-    site = resolve_site(current_user)
 
     # Verify all instrument IDs belong to this site (if provided)
     if payload.instrument_ids:
@@ -134,10 +133,10 @@ def update_document(
     doc_id: UUID,
     payload: DocumentUpdate,
     current_user: UserContext = Depends(get_current_user),
+    site: str = Depends(resolve_site),
     db: Session = Depends(get_db),
 ) -> DocumentResponse:
     assert_writable_site(current_user)
-    site = resolve_site(current_user)
 
     doc = db.query(Document).filter(
         Document.id == doc_id,
@@ -199,10 +198,10 @@ def update_document(
 def delete_document(
     doc_id: UUID,
     current_user: UserContext = Depends(get_current_user),
+    site: str = Depends(resolve_site),
     db: Session = Depends(get_db),
 ) -> None:
     assert_writable_site(current_user)
-    site = resolve_site(current_user)
 
     doc = db.query(Document).filter(
         Document.id == doc_id,
@@ -223,10 +222,9 @@ def delete_document(
 @router.get("/by-instrument/{instrument_id}", response_model=DocumentListResponse)
 def list_documents_by_instrument(
     instrument_id: UUID,
-    current_user: UserContext = Depends(get_current_user),
+    site: str = Depends(resolve_site),
     db: Session = Depends(get_db),
 ) -> DocumentListResponse:
-    site = resolve_site(current_user)
 
     # Verify instrument belongs to this site
     instr = db.query(Instrument).filter(

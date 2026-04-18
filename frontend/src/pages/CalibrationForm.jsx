@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { instruments as instrApi, calibrations as calApi } from '../utils/api'
 import { CalStatusBadge } from '../components/Badges'
@@ -150,6 +150,8 @@ export default function CalibrationForm() {
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState(null)
   const [saving,     setSaving]     = useState(false)
+  const [saved,      setSaved]      = useState(false)  // latches true after successful save — prevents duplicate submissions
+  const savingRef = useRef(false)     // synchronous guard against double-click before React re-renders
   const [errors,     setErrors]     = useState({})
 
   // Section 2 — Calibration details
@@ -271,9 +273,11 @@ export default function CalibrationForm() {
   }
 
   async function handleSave(asDraft) {
+    if (savingRef.current || saved) return
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
     setErrors({})
+    savingRef.current = true
     setSaving(true)
     try {
       const record = await calApi.create(buildPayload())
@@ -284,9 +288,11 @@ export default function CalibrationForm() {
       } else {
         showToast('Draft saved — remember to submit when complete', 'info')
       }
-      setTimeout(() => navigate(`/app/instruments/${instrumentId}`), 1200)
+      setSaved(true)  // latch — buttons stay disabled until unmount
+      setTimeout(() => navigate(`/app/instruments/${instrumentId}`, { replace: true }), 1200)
     } catch (err) {
       setError(err.message)
+      savingRef.current = false
       setSaving(false)
     }
   }
@@ -601,17 +607,17 @@ export default function CalibrationForm() {
             <div className="flex gap-3">
               <button
                 onClick={() => handleSave(true)}
-                disabled={saving}
+                disabled={saving || saved}
                 className="px-4 py-2.5 text-sm font-medium border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
               >
-                {saving ? 'Saving…' : 'Save Draft'}
+                {saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save Draft'}
               </button>
               <button
                 onClick={() => handleSave(false)}
-                disabled={saving}
+                disabled={saving || saved}
                 className="px-5 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
-                {saving ? 'Saving…' : 'Submit for Approval'}
+                {saved ? 'Submitted ✓' : saving ? 'Saving…' : 'Submit for Approval'}
               </button>
             </div>
           </div>

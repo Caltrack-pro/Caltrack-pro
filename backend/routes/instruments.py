@@ -356,7 +356,7 @@ def get_calibration_status(
 @router.get("/{instrument_id}/drift")
 def get_drift_analysis(
     instrument_id: UUID,
-    current_user=Depends(get_current_user),
+    site: str = Depends(resolve_site),
     db: Session = Depends(get_db),
 ):
     """
@@ -364,7 +364,6 @@ def get_drift_analysis(
     Requires 3+ approved/submitted calibration records.
     Returns per-test-point drift trends and an overall projected failure date.
     """
-    site = resolve_site(current_user)
     instrument = db.query(Instrument).filter(
         Instrument.id == instrument_id,
         Instrument.created_by == site,
