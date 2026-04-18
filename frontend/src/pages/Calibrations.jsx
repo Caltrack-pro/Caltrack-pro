@@ -183,7 +183,7 @@ function addDays(iso, n) {
 
 function ActivityTab() {
   const today = todayISO()
-  const [dateFrom, setDateFrom] = useState(addDays(today, -90))
+  const [dateFrom, setDateFrom] = useState(addDays(today, -365))
   const [dateTo,   setDateTo]   = useState(today)
   const [result,   setResult]   = useState('')
   const [status,   setStatus]   = useState('')
@@ -336,7 +336,7 @@ function ActivityTab() {
                           e.stopPropagation()
                           try {
                             const instr = await instrApi.get(rec.instrument_id)
-                            generateSingleCalibrationCert(instr, rec, getUser()?.siteName ?? '')
+                            await generateSingleCalibrationCert(instr, rec, getUser()?.siteName ?? '')
                           } catch (err) {
                             console.error('PDF generation failed', err)
                           }

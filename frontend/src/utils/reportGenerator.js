@@ -23,19 +23,57 @@ const PAGE_H    = 297   // A4 height (mm)
 const MARGIN    = 14
 const CONTENT_W = PAGE_W - MARGIN * 2
 
-// ─── Colour palette (RGB arrays) ─────────────────────────────────────────────
+// ─── Colour palette (RGB arrays) — CalCheq brand ─────────────────────────────
 
-const NAVY    = [22,  55,  99]
-const GOLD    = [251, 191,  36]
-const WHITE   = [255, 255, 255]
-const SLATE   = [71,  85, 105]
-const LIGHT   = [248, 250, 252]
-const BORDER  = [226, 232, 240]
-const DARK    = [30,  41,  59]
+const NAVY       = [11,  31,  58]    // #0B1F3A
+const TEAL       = [31, 202, 216]    // #1FCAD8
+const TEAL_DARK  = [11, 158, 170]    // #0B9EAA
+const TEAL_LIGHT = [236, 250, 252]   // very light teal
+const BLUE_GREY  = [74, 122, 168]    // #4A7AA8
+const WHITE      = [255, 255, 255]
+const SLATE      = [71,  85, 105]
+const LIGHT      = [248, 250, 252]
+const BORDER     = [226, 232, 240]
+const DARK       = [30,  41,  59]
 
 const PASS_C  = [22,  163,  74]
 const MARG_C  = [217, 119,   6]
 const FAIL_C  = [220,  38,  38]
+
+// ─── Logo loader (async, cached) ─────────────────────────────────────────────
+
+let _logoPromise = null
+
+/**
+ * Load the CalCheq SVG logo as a base64 PNG data URL via canvas.
+ * Renders the dark (white/teal on navy) version for use in the navy header.
+ * Result is cached after first load.
+ */
+function _getLogoDataUrl() {
+  if (_logoPromise) return _logoPromise
+  _logoPromise = new Promise((resolve) => {
+    try {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas')
+          canvas.width  = 400
+          canvas.height = 80
+          const ctx = canvas.getContext('2d')
+          // Fill navy background (logo has white/teal text — needs dark bg)
+          ctx.fillStyle = '#0B1F3A'
+          ctx.fillRect(0, 0, 400, 80)
+          ctx.drawImage(img, 0, 0, 400, 80)
+          resolve(canvas.toDataURL('image/png'))
+        } catch { resolve(null) }
+      }
+      img.onerror = () => resolve(null)
+      img.src = '/assets/calcheq-logo-horizontal-lockup.svg'
+    } catch { resolve(null) }
+  })
+  return _logoPromise
+}
 
 // ─── Utility helpers ──────────────────────────────────────────────────────────
 
@@ -76,51 +114,79 @@ function certNumber(id, date) {
 
 // ─── Drawing primitives ───────────────────────────────────────────────────────
 
-/** Draws the navy header bar. Returns y position after header. */
-function drawPageHeader(doc, title, refNum, issueDate, siteName = '') {
+const HEADER_H = 44   // header height mm
+
+/** Draws the CalCheq branded header bar. Returns y position after header. */
+function drawPageHeader(doc, title, refNum, issueDate, siteName = '', logoDataUrl = null) {
   // Navy background
   doc.setFillColor(...NAVY)
-  doc.rect(0, 0, PAGE_W, 30, 'F')
+  doc.rect(0, 0, PAGE_W, HEADER_H, 'F')
 
-  // Gold accent strip
-  doc.setFillColor(...GOLD)
-  doc.rect(0, 30, PAGE_W, 1.5, 'F')
+  // Teal accent strip at bottom
+  doc.setFillColor(...TEAL)
+  doc.rect(0, HEADER_H, PAGE_W, 1.5, 'F')
 
-  // Left — brand
-  doc.setTextColor(...WHITE)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(15)
-  doc.text('CalCheq', MARGIN, 11)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7.5)
-  doc.text('Industrial Calibration Management', MARGIN, 17)
-  if (siteName) {
+  if (logoDataUrl) {
+    // Embed actual SVG logo (rendered to canvas PNG with navy bg)
+    // Logo SVG is 400×80 — scale to fit in 80mm × 16mm in the header
+    const logoW = 85
+    const logoH = logoW * (80 / 400)   // = 17mm
+    const logoY = (HEADER_H - logoH) / 2 - 2
+    doc.addImage(logoDataUrl, 'PNG', MARGIN - 2, logoY, logoW, logoH)
+  } else {
+    // Fallback: draw text-based logo when SVG failed to load
+    doc.setTextColor(...WHITE)
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8)
-    doc.text(siteName, MARGIN, 24)
+    doc.setFontSize(18)
+    const calW = doc.getStringWidth('Cal')
+    doc.text('Cal', MARGIN, 16)
+    doc.setTextColor(...TEAL)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Cheq', MARGIN + calW, 16)
+    doc.setFontSize(6)
+    doc.setTextColor(...BLUE_GREY)
+    doc.text('CALIBRATION  ·  INTELLIGENCE  ·  RELIABILITY', MARGIN, 23)
   }
 
-  // Right — document title + reference
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
-  doc.text(title, PAGE_W - MARGIN, 10, { align: 'right' })
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7.5)
-  doc.text(`Ref: ${refNum}`, PAGE_W - MARGIN, 16.5, { align: 'right' })
-  doc.text(`Issued: ${issueDate}`, PAGE_W - MARGIN, 22, { align: 'right' })
+  // Right side — site name (large, white)
+  if (siteName) {
+    doc.setTextColor(...WHITE)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(12)
+    doc.text(siteName, PAGE_W - MARGIN, 11, { align: 'right' })
+  }
 
-  return 36  // y after header
+  // Document title (teal)
+  doc.setTextColor(...TEAL)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8.5)
+  doc.text(title, PAGE_W - MARGIN, siteName ? 21 : 14, { align: 'right' })
+
+  // Ref + issued (blue-grey)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7)
+  doc.setTextColor(...BLUE_GREY)
+  const refY = siteName ? 28 : 21
+  doc.text(`Ref: ${refNum}`, PAGE_W - MARGIN, refY, { align: 'right' })
+  doc.text(`Issued: ${issueDate}`, PAGE_W - MARGIN, refY + 5, { align: 'right' })
+
+  doc.setTextColor(0, 0, 0)
+  return HEADER_H + 5  // y after header + gap
 }
 
 /** Draws a coloured section title bar. Returns y after the bar. */
 function sectionTitle(doc, text, y) {
-  doc.setFillColor(235, 240, 250)
-  doc.setDrawColor(...BORDER)
-  doc.rect(MARGIN, y, CONTENT_W, 6.5, 'FD')
+  // Left teal accent bar
+  doc.setFillColor(...TEAL)
+  doc.rect(MARGIN, y, 2.5, 6.5, 'F')
+  // Light teal background
+  doc.setFillColor(...TEAL_LIGHT)
+  doc.setDrawColor(...TEAL_LIGHT)
+  doc.rect(MARGIN + 2.5, y, CONTENT_W - 2.5, 6.5, 'F')
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(7.5)
-  doc.setTextColor(...NAVY)
-  doc.text(text.toUpperCase(), MARGIN + 3, y + 4.3)
+  doc.setTextColor(...TEAL_DARK)
+  doc.text(text.toUpperCase(), MARGIN + 6, y + 4.3)
   return y + 9
 }
 
@@ -307,12 +373,15 @@ function drawTrendChart(doc, records, instrument, startY) {
 
 // ─── 1. Single Calibration Certificate ───────────────────────────────────────
 
-export function generateSingleCalibrationCert(instrument, record, siteName = '') {
-  const doc      = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
-  const certNum  = certNumber(record.id, record.calibration_date)
+export async function generateSingleCalibrationCert(instrument, record, siteName = '') {
+  const [doc, logoDataUrl] = [
+    new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' }),
+    await _getLogoDataUrl(),
+  ]
+  const certNum   = certNumber(record.id, record.calibration_date)
   const issueDate = fmtDate(new Date().toISOString())
 
-  let y = drawPageHeader(doc, 'CALIBRATION CERTIFICATE', certNum, issueDate, siteName)
+  let y = drawPageHeader(doc, 'CALIBRATION CERTIFICATE', certNum, issueDate, siteName, logoDataUrl)
 
   const col1 = MARGIN + 2
   const col2 = MARGIN + CONTENT_W / 2 + 2
@@ -575,6 +644,7 @@ export function generateSingleCalibrationCert(instrument, record, siteName = '')
 // ─── 2. Multi-Calibration History Report ─────────────────────────────────────
 
 export async function generateMultiCalibrationReport(instrument, records, siteName = '') {
+  const logoDataUrl = await _getLogoDataUrl()
   const doc      = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
   const rptNum   = `RPT-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${instrument.tag_number}`
   const issueDate = fmtDate(new Date().toISOString())
@@ -585,7 +655,7 @@ export async function generateMultiCalibrationReport(instrument, records, siteNa
   const LW   = 40
 
   // ── PAGE 1: Summary ───────────────────────────────────────────────────────
-  let y = drawPageHeader(doc, 'CALIBRATION HISTORY REPORT', rptNum, issueDate, siteName)
+  let y = drawPageHeader(doc, 'CALIBRATION HISTORY REPORT', rptNum, issueDate, siteName, logoDataUrl)
 
   y = sectionTitle(doc, 'Instrument Summary', y)
   let ya = y + 2, yb = y + 2
@@ -685,7 +755,7 @@ export async function generateMultiCalibrationReport(instrument, records, siteNa
   sorted.forEach((record, idx) => {
     doc.addPage()
     const cn = certNumber(record.id, record.calibration_date)
-    let ry = drawPageHeader(doc, `CALIBRATION RECORD ${idx + 1} OF ${sorted.length}`, cn, issueDate, siteName)
+    let ry = drawPageHeader(doc, `CALIBRATION RECORD ${idx + 1} OF ${sorted.length}`, cn, issueDate, siteName, logoDataUrl)
 
     ry = sectionTitle(doc, 'Instrument & Calibration Details', ry)
     let ra = ry + 2, rb = ry + 2
