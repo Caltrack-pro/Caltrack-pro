@@ -204,7 +204,7 @@ export function canEdit(user) {
 
 export function canCalibrate(user) {
   if (!user) return false
-  return user.role === 'admin' || user.role === 'supervisor' || user.role === 'technician'
+  return user.role === 'admin' || user.role === 'supervisor' || user.role === 'technician' || user.role === 'planner'
 }
 
 export function isReadOnly(user) {

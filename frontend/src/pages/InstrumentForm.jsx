@@ -43,13 +43,21 @@ const CRITICALITY_OPTS = [
     bg: '#F1F5F9',
     text: '#64748B',
   },
+  {
+    value: 'not_applicable',
+    label: 'N/A',
+    sublabel: 'Not yet determined',
+    dot: '#CBD5E1',
+    bg: '#F8FAFC',
+    text: '#64748B',
+  },
 ]
 const TOLERANCE_TYPES  = [
   { value: 'percent_span',    label: '% Span' },
   { value: 'percent_reading', label: '% Reading' },
   { value: 'absolute',        label: 'Absolute' },
 ]
-const TEST_POINT_OPTS = [3, 5, 7, 9, 11]
+const TEST_POINT_OPTS = [1, 2, 3, 5, 7, 9, 11]
 const LAST_RESULTS = ['pass','fail','marginal']
 
 // Fallback areas shown before API data loads
@@ -59,8 +67,8 @@ const DEFAULT_AREAS = []
 
 function SectionCard({ title, hint, children }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-3 bg-slate-50 border-b border-slate-200">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+      <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 rounded-t-xl overflow-hidden">
         <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{title}</h2>
         {hint && <p className="text-xs text-slate-400 mt-0.5">{hint}</p>}
       </div>

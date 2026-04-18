@@ -534,27 +534,37 @@ def approve_calibration(
     db.refresh(rec)
 
     # Notify technician + send PDF certificate — fire-and-forget after commit
+    import logging as _logging
+    _cal_log = _logging.getLogger(__name__)
+
     try:
-        tech_email = _technician_email(rec.technician_id, db)
-        instr = _get_instrument_or_404(rec.instrument_id, db)
+        tech_email  = _technician_email(rec.technician_id, db)
+        instr       = _get_instrument_or_404(rec.instrument_id, db)
         test_points = _fetch_test_points(rec.id, db)
 
-        # Approval notification (existing)
-        notif.notify_approved(
-            instrument_tag=instr.tag_number,
-            instrument_desc=instr.description,
-            approved_by=approved_by,
-            record_id=str(rec.id),
-            technician_email=tech_email,
-        )
+        # Approval notification
+        try:
+            notif.notify_approved(
+                instrument_tag=instr.tag_number,
+                instrument_desc=instr.description,
+                approved_by=approved_by,
+                record_id=str(rec.id),
+                technician_email=tech_email,
+            )
+        except Exception as notify_exc:
+            _cal_log.warning("notify_approved failed for record %s: %s", rec.id, notify_exc)
 
-        # Generate PDF certificate and email to technician + all site admins
+        # Generate PDF certificate and email to technician + all site admins/supervisors
         try:
             from pdf_generator import generate_calibration_cert, cert_filename
-            pdf_bytes = generate_calibration_cert(rec, instr, test_points)
+
+            # Resolve site name for the certificate header
+            site_name = current_user.site_name or ""
+
+            pdf_bytes = generate_calibration_cert(rec, instr, test_points, site_name=site_name)
             pdf_name  = cert_filename(instr.tag_number, rec.calibration_date)
 
-            # Collect recipients: technician + supervisors/admins
+            # Collect recipients: technician + all admins/supervisors at this site
             cert_recipients = []
             if tech_email:
                 cert_recipients.append(tech_email)
@@ -562,9 +572,17 @@ def approve_calibration(
                 if sup_email not in cert_recipients:
                     cert_recipients.append(sup_email)
 
+            # Fallback: if we still have no recipients, email the approver directly
+            if not cert_recipients and current_user.email:
+                cert_recipients.append(current_user.email)
+
             result_val = rec.as_left_result or rec.as_found_result
             result_str = (result_val.value if hasattr(result_val, "value") else result_val) or "approved"
 
+            _cal_log.info(
+                "Sending cert for record %s to %d recipient(s): %s",
+                rec.id, len(cert_recipients), cert_recipients,
+            )
             if cert_recipients:
                 notif.send_calibration_cert(
                     instrument_tag=instr.tag_number,
@@ -575,13 +593,15 @@ def approve_calibration(
                     pdf_filename=pdf_name,
                     recipient_emails=cert_recipients,
                 )
+            else:
+                _cal_log.warning("No cert recipients found for record %s — cert not emailed", rec.id)
+
         except Exception as pdf_exc:
-            import logging
-            logging.getLogger(__name__).warning(
-                "PDF cert generation/send failed for record %s: %s", rec.id, pdf_exc
+            _cal_log.error(
+                "PDF cert generation/send failed for record %s: %s", rec.id, pdf_exc, exc_info=True,
             )
-    except Exception:
-        pass
+    except Exception as outer_exc:
+        _cal_log.error("Post-approval notifications failed for record %s: %s", rec.id, outer_exc, exc_info=True)
 
     return _to_record_response(rec, db)
 

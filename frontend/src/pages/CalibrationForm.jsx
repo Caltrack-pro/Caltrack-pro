@@ -252,6 +252,7 @@ export default function CalibrationForm() {
       calibration_date:                calDate,
       calibration_type:                calType,
       technician_name:                 technician,
+      technician_id:                   getUser()?.userId ?? null,
       work_order_reference:            workOrder || null,
       procedure_used:                  procedureUsed || null,
       reference_standard_description:  refDesc || null,

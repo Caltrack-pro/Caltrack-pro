@@ -52,7 +52,7 @@ def _result_colour(result: Optional[str]):
     return GREY
 
 
-def generate_calibration_cert(record, instrument, test_points: list) -> bytes:
+def generate_calibration_cert(record, instrument, test_points: list, site_name: str = "") -> bytes:
     """
     Generate a calibration certificate PDF and return it as bytes.
 
@@ -85,6 +85,15 @@ def generate_calibration_cert(record, instrument, test_points: list) -> bytes:
     pdf.set_font("Helvetica", "", 9)
     pdf.set_xy(15, 16)
     pdf.cell(0, 5, "calcheq.com", ln=False)
+
+    # Site / company name — right-aligned in header
+    if site_name:
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_xy(0, 7)
+        pdf.cell(195, 8, site_name, align="R", ln=False)
+        pdf.set_font("Helvetica", "", 8)
+        pdf.set_xy(0, 16)
+        pdf.cell(195, 5, "Site / Company", align="R", ln=False)
 
     pdf.set_text_color(*BLACK)
     pdf.set_y(33)

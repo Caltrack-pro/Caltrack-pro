@@ -43,10 +43,10 @@ export default function MarketingNav() {
           ))}
           <Link
             to="/auth/signin"
-            className="text-sm font-medium transition-colors"
-            style={{ color: 'rgba(255,255,255,0.7)' }}
-            onMouseEnter={e => e.target.style.color = '#fff'}
-            onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.7)'}
+            className="text-sm font-bold rounded-md px-4 py-2 border-2 transition-all"
+            style={{ color: '#00BCD4', borderColor: '#00BCD4', background: 'transparent' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#00BCD4'; e.currentTarget.style.color = '#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#00BCD4' }}
           >
             Sign In
           </Link>
@@ -100,8 +100,8 @@ export default function MarketingNav() {
           <Link
             to="/auth/signin"
             onClick={() => setMenuOpen(false)}
-            className="block py-3 text-sm font-medium"
-            style={{ color: 'rgba(255,255,255,0.6)' }}
+            className="block mt-2 py-3 text-sm font-bold text-center rounded-md border-2"
+            style={{ color: '#00BCD4', borderColor: '#00BCD4' }}
           >
             Sign In
           </Link>

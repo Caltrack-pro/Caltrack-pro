@@ -36,6 +36,7 @@ class Criticality(str, enum.Enum):
     PROCESS_CRITICAL = "process_critical"
     STANDARD         = "standard"
     NON_CRITICAL     = "non_critical"
+    NOT_APPLICABLE   = "not_applicable"
 
 
 class InstrumentStatus(str, enum.Enum):

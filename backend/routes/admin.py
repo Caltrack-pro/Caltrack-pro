@@ -45,6 +45,9 @@ def _create_supabase_user(email: str, password: str, display_name: str, site_nam
     Creates a Supabase auth user via the Admin API (service role).
     Returns the new user's UUID, or None on failure.
     email_confirm=True so they can sign in immediately without clicking a confirmation link.
+
+    If the user already exists (422), fetches and returns their existing UUID so
+    the approval flow can proceed (e.g. adding them to a new site).
     """
     if not SUPABASE_SERVICE_ROLE_KEY or not SUPABASE_URL:
         logger.error("SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL not configured — cannot create user")
@@ -68,10 +71,37 @@ def _create_supabase_user(email: str, password: str, display_name: str, site_nam
             return data.get("id")
     except urllib.error.HTTPError as exc:
         body = exc.read().decode(errors="replace")
+        if exc.code == 422:
+            # User already exists — look up and return their existing ID
+            logger.info("User %s already exists in Supabase (422), fetching existing ID", email)
+            return _get_existing_supabase_user_id(email)
         logger.error("Supabase admin user create failed %s: %s", exc.code, body)
         return None
     except Exception as exc:
         logger.error("Supabase admin user create error: %s", exc)
+        return None
+
+
+def _get_existing_supabase_user_id(email: str) -> str | None:
+    """
+    Searches for an existing Supabase user by email via the Admin API.
+    Returns their UUID, or None if not found.
+    """
+    import urllib.parse
+    search_url = f"{SUPABASE_URL}/auth/v1/admin/users?page=1&per_page=1000&search={urllib.parse.quote(email)}"
+    req = urllib.request.Request(search_url, headers=_supabase_admin_headers(), method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+            # Response shape: {"users": [...]} or just a list
+            users = data.get("users", data) if isinstance(data, dict) else data
+            for user in users:
+                if user.get("email", "").lower() == email.lower():
+                    return user.get("id")
+        logger.error("User %s not found in Supabase search results", email)
+        return None
+    except Exception as exc:
+        logger.error("Supabase user search error for %s: %s", email, exc)
         return None
 
 
@@ -317,15 +347,25 @@ def approve_pilot(token: str, db: Session = Depends(get_db)):
     db.add(site)
     db.flush()  # get site.id before committing
 
-    # Create site member (admin role — first user on the site)
-    member = SiteMember(
-        site_id      = site.id,
-        user_id      = user_id,
-        role         = "admin",
-        display_name = display_name,
-        email        = pilot.email.lower(),
-    )
-    db.add(member)
+    # Create site member (admin role — first user on the site).
+    # Guard against the unique constraint on user_id (e.g. when approving
+    # a request from someone who already has an account on another site).
+    existing_member = db.query(SiteMember).filter(SiteMember.user_id == user_id).first()
+    if existing_member:
+        # Move the user to the new pilot site
+        existing_member.site_id      = site.id
+        existing_member.role         = "admin"
+        existing_member.display_name = display_name
+        existing_member.email        = pilot.email.lower()
+    else:
+        member = SiteMember(
+            site_id      = site.id,
+            user_id      = user_id,
+            role         = "admin",
+            display_name = display_name,
+            email        = pilot.email.lower(),
+        )
+        db.add(member)
 
     # Mark pilot approved
     pilot.status      = "approved"

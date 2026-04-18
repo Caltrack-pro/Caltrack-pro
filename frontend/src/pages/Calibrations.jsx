@@ -336,7 +336,7 @@ function ActivityTab() {
                           e.stopPropagation()
                           try {
                             const instr = await instrApi.get(rec.instrument_id)
-                            generateSingleCalibrationCert(instr, rec)
+                            generateSingleCalibrationCert(instr, rec, getUser()?.siteName ?? '')
                           } catch (err) {
                             console.error('PDF generation failed', err)
                           }

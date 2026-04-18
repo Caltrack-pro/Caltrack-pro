@@ -46,7 +46,7 @@ function SlidePanel({ recordId, instrument, onClose, onRefresh }) {
     if (!rec || !instrument) return
     setGenPdf(true)
     try {
-      await generateSingleCalibrationCert(instrument, rec)
+      await generateSingleCalibrationCert(instrument, rec, getUser()?.siteName ?? '')
     } finally {
       setGenPdf(false)
     }
@@ -772,7 +772,7 @@ export default function InstrumentDetail() {
       const fullRecords = await Promise.all(
         history.results.map(r => calApi.get(r.id))
       )
-      await generateMultiCalibrationReport(instrument, fullRecords)
+      await generateMultiCalibrationReport(instrument, fullRecords, getUser()?.siteName ?? '')
     } finally {
       setGenReport(false)
     }
@@ -782,7 +782,7 @@ export default function InstrumentDetail() {
     if (!instrument) return
     try {
       const fullRecord = await calApi.get(recordId)
-      await generateSingleCalibrationCert(instrument, fullRecord)
+      await generateSingleCalibrationCert(instrument, fullRecord, getUser()?.siteName ?? '')
     } catch (e) {
       console.error('Certificate generation failed:', e)
     }
