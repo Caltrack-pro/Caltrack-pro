@@ -46,6 +46,41 @@ function FaqItem({ question, answer, defaultOpen = false }) {
   )
 }
 
+// ── Tutorial card (collapsible) ───────────────────────────────────────────────
+
+function TutorialCard({ tutorial }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className={`border rounded-xl transition-all overflow-hidden ${open ? 'border-blue-300 bg-blue-50/30 shadow-sm sm:col-span-2' : 'border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm'}`}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full text-left p-4 flex items-start gap-3 focus:outline-none group"
+      >
+        <span className="text-2xl flex-shrink-0 leading-none mt-0.5">{tutorial.emoji}</span>
+        <div className="min-w-0 flex-1">
+          <p className={`text-sm font-semibold leading-snug transition-colors ${open ? 'text-blue-800' : 'text-slate-800 group-hover:text-blue-700'}`}>
+            {tutorial.title}
+          </p>
+          <p className="text-xs text-slate-500 mt-1 leading-snug">{tutorial.blurb}</p>
+        </div>
+        <span className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-sm font-bold transition-all ${
+          open ? 'bg-blue-600 text-white rotate-45' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600'
+        }`}>
+          +
+        </span>
+      </button>
+      {open && (
+        <div className="px-5 pb-5 pt-1">
+          <div className="h-px bg-blue-100 mb-4" />
+          <div className="text-sm text-slate-600 leading-relaxed space-y-2">
+            {tutorial.body}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── FAQ sections ──────────────────────────────────────────────────────────────
 
 const FAQ_SECTIONS = [
@@ -205,15 +240,150 @@ const FAQ_SECTIONS = [
   },
 ]
 
-// ── Tutorial placeholder cards ────────────────────────────────────────────────
+// ── Tutorial content ──────────────────────────────────────────────────────────
 
 const TUTORIALS = [
-  { emoji: '📥', title: 'Importing your instrument register',   status: 'coming-soon' },
-  { emoji: '🔧', title: 'Recording your first calibration',     status: 'coming-soon' },
-  { emoji: '✅', title: 'Approving calibration records',        status: 'coming-soon' },
-  { emoji: '📊', title: 'Reading the dashboard',               status: 'coming-soon' },
-  { emoji: '🗂️', title: 'Importing from Beamex / Fluke',       status: 'coming-soon' },
-  { emoji: '👥', title: 'Setting up your team',                status: 'coming-soon' },
+  {
+    emoji: '📥',
+    title: 'Importing your instrument register',
+    blurb: 'Bulk-load your whole register from a CSV in 3 steps.',
+    body: (
+      <>
+        <p>This is the fastest way to get started when you have more than a handful of instruments.</p>
+        <ol className="list-decimal list-outside ml-5 space-y-2 mt-2">
+          <li><strong>Open the importer.</strong> In the sidebar click <strong>🔧 Instruments</strong>, then the <strong>Import</strong> button (top-right), or go directly to <code className="px-1 py-0.5 bg-slate-100 rounded">/app/import</code>.</li>
+          <li><strong>Download the template.</strong> Click <strong>Download CSV template</strong>. The file <code className="px-1 py-0.5 bg-slate-100 rounded">caltrack_import_TEMPLATE.csv</code> includes every field with example rows.</li>
+          <li><strong>Fill it in.</strong> Required columns: <em>tag_number, description, instrument_type, measurement_lrv, measurement_urv, engineering_units, tolerance_type, tolerance_value, calibration_interval_days</em>. Recommended extras: <em>area, criticality, manufacturer, model, serial_number, last_calibration_date, last_calibration_result</em>.</li>
+          <li><strong>Upload.</strong> Drag the file onto the upload zone. CalCheq validates every row before importing — you'll see a green/red summary showing how many rows will be created, skipped, or updated.</li>
+          <li><strong>Confirm.</strong> Review any warnings (duplicates, missing ranges, bad tolerance types). Click <strong>Import</strong> to write the records.</li>
+        </ol>
+        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+          <strong>Tips:</strong> <em>tag_number</em> must be unique within your site — existing tags are skipped, not overwritten. Dates use <code>YYYY-MM-DD</code>. <em>instrument_type</em> must be one of: pressure, temperature, flow, level, analyser, switch, valve, other. If you omit <em>last_calibration_date</em>, instruments start as Not Calibrated and won't appear in overdue counts until their first calibration is approved.
+        </div>
+      </>
+    ),
+  },
+  {
+    emoji: '🔧',
+    title: 'Recording your first calibration',
+    blurb: 'From opening the form to submitting for approval.',
+    body: (
+      <>
+        <ol className="list-decimal list-outside ml-5 space-y-2">
+          <li><strong>Find the instrument.</strong> Go to <strong>🔧 Instruments</strong> and search or filter by tag, area, or status. You can also open the <strong>📅 Schedule</strong> page and pick a due/overdue instrument from the Technician Queue.</li>
+          <li><strong>Open the calibration form.</strong> Click the instrument to open its detail page, then click <strong>📋 Record Calibration</strong>. The form pre-fills the tag, range, tolerance, and test points from the instrument record.</li>
+          <li><strong>Enter the calibration header.</strong> Set the calibration date (defaults to today), calibration type (Routine / Corrective / Post-Repair / Initial), and technician name. Fill the <strong>reference standard</strong>: description, serial number, certificate number, and expiry — these are required for traceability.</li>
+          <li><strong>Enter as-found readings.</strong> For each test point, type the actual reading you measured at that nominal input. Error %, pass/fail, and marginal flags calculate automatically as you type.</li>
+          <li><strong>Decide on adjustment.</strong> If any point failed or was marginal and you adjusted the instrument, toggle <strong>Adjustment made</strong> to Yes, then enter the as-left readings. If no adjustment was needed, leave as-left blank — it will copy from as-found.</li>
+          <li><strong>Add notes and return-to-service.</strong> Record defects, replaced parts, or observations. Tick <strong>Return to Service</strong> if the instrument is back in operation.</li>
+          <li><strong>Submit.</strong> Click <strong>Submit for Approval</strong>. The record moves to the Pending Approvals queue. Admins auto-approve their own records — technicians and supervisors must wait for a supervisor or admin review.</li>
+        </ol>
+        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900">
+          <strong>Remember:</strong> The calibration due date doesn't update until the record is approved. Check the Calibrations → Pending Approvals tab if an instrument is still flagged as overdue right after you entered data.
+        </div>
+      </>
+    ),
+  },
+  {
+    emoji: '✅',
+    title: 'Approving calibration records',
+    blurb: 'For supervisors and admins — the review & approve workflow.',
+    body: (
+      <>
+        <ol className="list-decimal list-outside ml-5 space-y-2">
+          <li><strong>Watch the sidebar badge.</strong> The red number on <strong>📋 Calibrations</strong> shows how many records are waiting for approval. Supervisors and admins landing on this page are auto-switched to the Pending Approvals tab when items exist.</li>
+          <li><strong>Open a record.</strong> Click the row to expand the full calibration — you'll see every test point with as-found and as-left readings, error %, and pass/fail per point, plus the reference standard details and technician notes.</li>
+          <li><strong>Review the essentials.</strong> Check that: (a) the reference standard has a valid, unexpired certificate, (b) the results look correct against the tolerance, (c) the technician's notes explain any adjustments or defects, and (d) the calibration date and type are right.</li>
+          <li><strong>Approve or reject.</strong>
+            <ul className="list-disc list-outside ml-5 mt-1 space-y-1">
+              <li><strong>Approve</strong> — the record becomes permanent, the instrument's last-calibration fields update, and a new due date is calculated (cal date + interval days).</li>
+              <li><strong>Reject</strong> — you'll be asked for a reason. The technician gets an email with your note so they can correct and re-submit.</li>
+            </ul>
+          </li>
+          <li><strong>Audit trail.</strong> Every approve/reject is timestamped with your name and appears on the instrument's Audit Log tab.</li>
+        </ol>
+        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+          <strong>Cannot edit:</strong> Once submitted, records cannot be edited by anyone — only rejected back for correction. This protects the calibration trail for audit purposes.
+        </div>
+      </>
+    ),
+  },
+  {
+    emoji: '📊',
+    title: 'Reading the dashboard',
+    blurb: 'A guided tour of every widget on the home screen.',
+    body: (
+      <>
+        <p>The Dashboard is your daily health check. Top to bottom:</p>
+        <ul className="list-disc list-outside ml-5 space-y-2 mt-2">
+          <li><strong>Quick Actions bar</strong> — one-click shortcuts to Add Instrument, Record Calibration, Import CSV, and Run Report.</li>
+          <li><strong>4 KPI cards</strong> — <em>Overdue</em> (calibration past due), <em>Due Soon</em> (due in the next 14 days), <em>Total Active Instruments</em>, and <em>Compliance %</em>. Click any card to jump to the filtered list.</li>
+          <li><strong>Instrument Health donut</strong> — at-a-glance breakdown: green (current), amber (due soon), red (overdue), and yellow (est. out-of-tolerance based on drift). Hover a segment for the count.</li>
+          <li><strong>3 Attention cards</strong> — curated lists of the items that need action today: recent Overdue, recent Failures, and Consecutive Failures (same instrument failed twice in a row). Click a row to open the instrument.</li>
+          <li><strong>Compliance by Area</strong> — horizontal bars sorted worst first. Quickly spot which plant areas are falling behind.</li>
+          <li><strong>Upcoming (next 7 days)</strong> — a rolling to-do list of calibrations coming due this week.</li>
+        </ul>
+        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900">
+          <strong>Empty dashboard?</strong> Brand-new sites with 0 instruments see a welcome banner instead. Click <strong>Get Started</strong> to open the onboarding wizard or go directly to Import.
+        </div>
+      </>
+    ),
+  },
+  {
+    emoji: '🗂️',
+    title: 'Importing from Beamex / Fluke',
+    blurb: 'Turn a calibrator CSV export into approved records.',
+    body: (
+      <>
+        <p>Supported calibrators: <strong>Beamex MC6 / MC4 / MC2</strong> and <strong>Fluke 754 / 729 / 726</strong>. If yours isn't listed, email us with a sample CSV — new parsers take ~a day to add.</p>
+        <ol className="list-decimal list-outside ml-5 space-y-2 mt-2">
+          <li><strong>Export the CSV from your calibrator software.</strong> Beamex CMX: Reports → Export → CSV. Fluke DPCTrack/Track-It: Export → Calibration Results (CSV). Keep all default columns.</li>
+          <li><strong>Open the importer.</strong> From the sidebar go to <strong>📋 Calibrations</strong> and click <strong>Import from Calibrator CSV</strong>, or go directly to <code className="px-1 py-0.5 bg-slate-100 rounded">/app/calibrations/import-csv</code>.</li>
+          <li><strong>Step 1 — Upload.</strong> Drag the CSV onto the drop zone. CalCheq auto-detects the calibrator brand from the file structure and parses every record.</li>
+          <li><strong>Step 2 — Review.</strong> You'll see a table of parsed calibrations with tag match status:
+            <ul className="list-disc list-outside ml-5 mt-1 space-y-1">
+              <li><span className="text-green-700 font-semibold">✓ Matched</span> — tag exists in your register</li>
+              <li><span className="text-red-700 font-semibold">✗ Unknown</span> — no matching tag; row will be skipped</li>
+              <li><span className="text-amber-700 font-semibold">⚠ Tolerance mismatch</span> — calibrator's tolerance differs from CalCheq; review which is correct</li>
+            </ul>
+            Click any row to see the raw test-point data.
+          </li>
+          <li><strong>Step 3 — Confirm.</strong> Choose whether to submit records as Draft or Submitted. Click <strong>Import</strong>. Records go into the approval queue in exactly the same state as manually entered calibrations.</li>
+        </ol>
+        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+          <strong>Before you import:</strong> Make sure the tag numbers in your calibrator match the tag numbers in CalCheq exactly (case-sensitive). Mismatched tags are the #1 cause of skipped rows.
+        </div>
+      </>
+    ),
+  },
+  {
+    emoji: '👥',
+    title: 'Setting up your team',
+    blurb: 'Invite members, assign roles, and manage access.',
+    body: (
+      <>
+        <p><strong>Admin access required.</strong> Only admins can invite or remove team members.</p>
+        <ol className="list-decimal list-outside ml-5 space-y-2 mt-2">
+          <li><strong>Open Team Members.</strong> Sidebar → <strong>⚙️ Settings</strong> → scroll to <strong>Team Members</strong>.</li>
+          <li><strong>Invite a new member.</strong> Click <strong>Invite Member</strong>. Enter their email, a display name, and choose a role. Click Send. They receive an email with a link that lets them set a password and sign in — their account is tied to your site automatically.</li>
+          <li><strong>Pick the right role.</strong>
+            <ul className="list-disc list-outside ml-5 mt-1 space-y-1">
+              <li><strong>Admin</strong> — everything: team, billing, approvals, imports, instrument CRUD.</li>
+              <li><strong>Supervisor</strong> — same as Admin minus team and billing; can approve calibrations.</li>
+              <li><strong>Technician</strong> — enter calibrations and edit instruments. Cannot approve. Sidebar is simplified (no Reports, no Smart Diagnostics).</li>
+              <li><strong>Planner</strong> — read access plus the ability to edit scheduling fields (intervals, due dates). Cannot enter calibrations. Defaults to the Planner tab in Schedule.</li>
+              <li><strong>Read Only</strong> — viewing access to everything, no writes.</li>
+            </ul>
+          </li>
+          <li><strong>Change or remove a role.</strong> In the Team Members table, click the role dropdown to update or click the red <strong>Remove</strong> button. Removed members lose access immediately.</li>
+          <li><strong>Password resets.</strong> Each member manages their own password via <strong>Forgot Password</strong> on the sign-in page. Admins cannot see or reset passwords directly — Supabase handles all password storage.</li>
+        </ol>
+        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900">
+          <strong>Seat count:</strong> Your subscription plan determines how many active members you can have. The Settings → Billing section shows your current usage vs limit.
+        </div>
+      </>
+    ),
+  },
 ]
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -230,21 +400,11 @@ export default function Support() {
 
       {/* ── Section 1: How-to tutorials ──────────────────────────────────────── */}
       <section>
-        <h2 className="text-lg font-bold text-slate-800 mb-1">📹 How-to tutorials</h2>
-        <p className="text-sm text-slate-500 mb-4">Step-by-step video guides for common tasks. Coming soon.</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <h2 className="text-lg font-bold text-slate-800 mb-1">📘 How-to tutorials</h2>
+        <p className="text-sm text-slate-500 mb-4">Step-by-step walkthroughs for the most common tasks. Click a card to expand.</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {TUTORIALS.map(t => (
-            <div key={t.title}
-              className="relative bg-white border border-slate-200 rounded-xl p-4 flex items-start gap-3 opacity-75 cursor-not-allowed"
-            >
-              <span className="text-2xl flex-shrink-0">{t.emoji}</span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-700 leading-snug">{t.title}</p>
-                <span className="inline-block mt-1.5 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">
-                  Coming soon
-                </span>
-              </div>
-            </div>
+            <TutorialCard key={t.title} tutorial={t} />
           ))}
         </div>
       </section>
