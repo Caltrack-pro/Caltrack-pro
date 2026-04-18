@@ -57,7 +57,7 @@ const TOLERANCE_TYPES  = [
   { value: 'percent_reading', label: '% Reading' },
   { value: 'absolute',        label: 'Absolute' },
 ]
-const TEST_POINT_OPTS = [1, 2, 3, 5, 7, 9, 11]
+const TEST_POINT_OPTS = Array.from({ length: 20 }, (_, i) => i + 1)
 const LAST_RESULTS = ['pass','fail','marginal']
 
 // Fallback areas shown before API data loads

@@ -103,11 +103,12 @@ export default function Header({ onMenuClick }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Alert badge count — refresh every 5 minutes
+  // Alert badge count — refresh every 5 minutes. Only refetch when site
+  // actually changes (avoids a duplicate call on every auth event).
+  const site = currentUser?.siteName ?? null
   useEffect(() => {
+    if (!site) return
     function fetchCount() {
-      const site = getUser()?.siteName ?? null
-      if (!site) return
       dashApi.alerts(site)
         .then(data => {
           const alerts = Array.isArray(data) ? data : (data.results ?? [])
@@ -122,7 +123,7 @@ export default function Header({ onMenuClick }) {
     fetchCount()
     const id = setInterval(fetchCount, REFRESH_MS)
     return () => clearInterval(id)
-  }, [currentUser])
+  }, [site])
 
   async function handleSignOut() {
     setShowDropdown(false)

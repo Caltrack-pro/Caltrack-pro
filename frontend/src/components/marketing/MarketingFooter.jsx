@@ -7,7 +7,6 @@ export default function MarketingFooter() {
     { to: '/',            label: 'Home'        },
     { to: '/how-it-works',label: 'How It Works'},
     { to: '/pricing',     label: 'Pricing'     },
-    { to: '/blog',        label: 'Blog'        },
     { to: '/resources',   label: 'Resources'   },
     { to: '/faq',         label: 'FAQ'         },
     { to: '/contact',     label: 'Contact'     },

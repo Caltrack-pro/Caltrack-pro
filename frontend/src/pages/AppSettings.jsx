@@ -94,7 +94,11 @@ function ProfileSection({ user }) {
             <p className="text-slate-800 font-medium">{user.siteName || '—'}</p>
           </div>
         </div>
-        <p className="text-xs text-slate-400">To update your display name or role, contact your site administrator.</p>
+        <p className="text-xs text-slate-400">
+          {user.role === 'admin'
+            ? 'As an admin, you can manage team members and roles in the Team Members section below.'
+            : 'To update your display name or role, contact your site administrator.'}
+        </p>
       </div>
     </Card>
   )

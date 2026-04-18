@@ -95,7 +95,7 @@ function DashboardSkeleton() {
       </div>
 
       {/* 4 KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
         {[1,2,3,4].map(i => (
           <div key={i} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', borderLeft: '4px solid #e2e8f0', padding: '18px 20px' }}>
             <Skel style={{ height: 32, width: 60, marginBottom: 8 }} />
@@ -111,7 +111,7 @@ function DashboardSkeleton() {
       </div>
 
       {/* 3 Attention Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
         {[1,2,3].map(i => (
           <div key={i} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '24px 20px', height: 120 }}>
             <Skel style={{ height: 16, width: 80, marginBottom: 12 }} />
@@ -122,7 +122,7 @@ function DashboardSkeleton() {
       </div>
 
       {/* Area Bars + Upcoming */}
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '24px 20px', height: 300 }}>
           <Skel style={{ height: '100%' }} />
         </div>
@@ -470,6 +470,7 @@ function QuickActionsBar() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-around',
+      flexWrap: 'wrap',
       gap: 16,
       boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
     }}>
@@ -622,7 +623,7 @@ export default function Dashboard() {
       <QuickActionsBar />
 
       {/* ── 4 KPI Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
         <StatCard
           label="Overdue"
           value={stats.overdue_count}
@@ -659,7 +660,7 @@ export default function Dashboard() {
       </Card>
 
       {/* ── 3 Attention Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
         <AttentionCard
           emoji="🔴"
           label="Overdue"
@@ -693,7 +694,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Area Bars + Upcoming (2 columns) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
         <Card
           title="Compliance by Area"
           subtitle="Sorted worst first"

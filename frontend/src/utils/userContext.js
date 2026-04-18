@@ -32,9 +32,26 @@ export const DEMO_SITE = 'Demo'
 // Module-level state — synchronous reads for backward compat
 // ---------------------------------------------------------------------------
 
-let _currentUser   = null   // { userId, email, userName, siteName, role }
-let _isDemoMode    = false   // true when logged-in user is viewing the Demo site
-let _initialised   = false   // true once the first session check has completed
+const DEMO_MODE_KEY = 'caltrack-demo-mode'
+
+function _readPersistedDemoMode() {
+  try {
+    return sessionStorage.getItem(DEMO_MODE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function _writePersistedDemoMode(enabled) {
+  try {
+    if (enabled) sessionStorage.setItem(DEMO_MODE_KEY, '1')
+    else sessionStorage.removeItem(DEMO_MODE_KEY)
+  } catch { /* sessionStorage unavailable */ }
+}
+
+let _currentUser   = null                        // { userId, email, userName, siteName, role }
+let _isDemoMode    = _readPersistedDemoMode()    // true when logged-in user is viewing the Demo site
+let _initialised   = false                       // true once the first session check has completed
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -90,28 +107,29 @@ function _dispatch(user) {
 }
 
 // ---------------------------------------------------------------------------
-// Bootstrap: restore session on page load, before any component renders
+// Reactive: keep module cache in sync with Supabase auth state changes.
+// onAuthStateChange fires INITIAL_SESSION on subscribe (so no separate bootstrap
+// needed). We skip TOKEN_REFRESHED / USER_UPDATED refetches since the user
+// record doesn't change on token refresh — avoids extra /api/auth/me calls.
 // ---------------------------------------------------------------------------
 
-supabase.auth.getSession().then(async ({ data: { session } }) => {
-  if (session) {
-    _currentUser = await _fetchUserContext(session)
-  }
-  _initialised = true
-  _dispatch(getUser())
-})
-
-// ---------------------------------------------------------------------------
-// Reactive: keep module cache in sync with Supabase auth state changes
-// ---------------------------------------------------------------------------
+let _lastUserId = null
 
 supabase.auth.onAuthStateChange(async (event, session) => {
   if (session) {
-    _currentUser = await _fetchUserContext(session)
+    const sameUser = session.user?.id === _lastUserId
+    const skipRefetch = sameUser && (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED')
+    if (!skipRefetch) {
+      _currentUser = await _fetchUserContext(session)
+      _lastUserId  = session.user?.id ?? null
+    }
   } else {
     _currentUser = null
+    _lastUserId  = null
     _isDemoMode  = false
+    _writePersistedDemoMode(false)
   }
+  _initialised = true
   _dispatch(getUser())
 })
 
@@ -153,12 +171,14 @@ export function waitForInit() {
  */
 export function setDemoMode(enabled) {
   _isDemoMode = !!enabled
+  _writePersistedDemoMode(_isDemoMode)
   _dispatch(getUser())
 }
 
 /** Signs out of Supabase Auth. */
 export function signOut() {
   _isDemoMode = false
+  _writePersistedDemoMode(false)
   return supabase.auth.signOut()
 }
 
