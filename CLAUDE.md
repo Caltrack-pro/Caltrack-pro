@@ -38,7 +38,8 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 
 ### Frontend — src/pages/auth/
 - SignIn.jsx             — 2-step: company name → email + password (Supabase Auth)
-- SignUp.jsx             — self-serve registration: creates Supabase user + calls /api/auth/register
+- SignUp.jsx             — self-serve registration: step 1 = plan selection (stored in user_metadata), creates Supabase user + calls /api/auth/register
+- AuthCallback.jsx       — handles email-confirm redirect → Stripe checkout
 - ForgotPassword.jsx     — sends Supabase password reset email
 - ResetPassword.jsx      — handles reset link, sets new password
 
@@ -59,18 +60,18 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - Support.jsx            — FAQ accordion (5 sections, 20 Q&As), tutorial placeholders, contact email; route: /app/support
 - Onboarding.jsx         — 3-step welcome wizard (site setup → add instruments → invite team); route: /app/onboarding; no sidebar, full-page
 
-### Legacy pages (files still exist but routes now redirect to above)
-- Alerts.jsx → /app/schedule | PendingApprovals.jsx → /app/calibrations | BadActors.jsx → /app/schedule | Profile.jsx → /app/settings
+### Legacy routes
+Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboard, /instruments, /alerts, /reports, /approvals) redirect in App.jsx — see "Legacy redirects" table below. Legacy page files were removed April 2026.
 
 ### Frontend — src/pages/marketing/
 - Landing.jsx            — homepage: Australian-focused, pain-point cards, features, AUD pricing preview, compliance badge strip, FAQ strip, CTA
 - Pricing.jsx            — 3-tier pricing (Starter / Professional / Enterprise), monthly/annual toggle (AUD), feature comparison table
 - HowItWorks.jsx         — "Up and running in 48 hours" — 4-step setup, 6 feature deep-dive cards, 4 role cards
 - Resources.jsx          — resource library: 10 cards, tag filter, newsletter subscribe
-- Blog.jsx               — article index with tag filters
-- BlogPost.jsx           — individual article, content keyed by slug (6 articles, static in component)
+- BlogPost.jsx           — individual article, content keyed by slug (6 articles, static in component); served at /resources/:slug and /blog/:slug
 - FAQ.jsx                — accordion FAQ: 23 Q&As across 5 sections
 - Contact.jsx            — enquiry form: role select, instrument count select, 3-step process
+- DemoPage.jsx           — interactive demo preview at /demo
 
 ### Frontend — src/components/
 - Layout.jsx             — app shell: fetches pendingCount for sidebar badge on mount, passes to Sidebar; renders Header + <Outlet> + DemoBlockModal
@@ -112,11 +113,19 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - routes/audit.py       — GET /api/instruments/{id}/audit-log, GET /api/audit (admin only)
 - routes/billing.py     — POST /api/billing/create-checkout-session, POST /api/billing/create-portal-session, GET /api/billing/subscription, POST /api/billing/webhook (Stripe)
 
-### Root-level scripts
-- seed_instruments.py              — 30 demo instruments for "Demo" site
-- seed_riverdale_demo.sql          — 130-instrument Riverdale Water Treatment Plant demo dataset
-- import_instruments.py            — CSV bulk import script
-- caltrack_import_TEMPLATE.csv     — template CSV for bulk instrument import
+### Operational scripts — scripts/
+- scripts/seed_instruments.py              — 30 demo instruments for "Demo" site (Python, hits local API)
+- scripts/seed_riverdale_demo.sql          — 130-instrument Riverdale Water Treatment Plant demo dataset (run via Supabase)
+- scripts/import_instruments.py            — CSV bulk import script
+- scripts/caltrack_import_TEMPLATE.csv     — template CSV for bulk instrument import
+
+### Project folders (non-code)
+- docs/business/     — Business Plan, Pilot Offer, Sales One-Pager, MEX migration guide
+- docs/specs/        — Compliance/criticality spec, Import wizard spec, Mobile field access report
+- docs/marketing/    — SEO Audit Report
+- assets/branding/   — Calcheq logo SVG
+- assets/screenshots/ — Real website screenshots for reference + marketing
+- assets/calibration-pdfs/ — IXOM upload plan and related calibration PDFs
 
 ---
 
@@ -128,6 +137,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 | /auth/signin            | SignIn         |
 | /auth/sign-in           | → /auth/signin |
 | /auth/signup            | SignUp         |
+| /auth/callback          | AuthCallback   |
 | /auth/forgot-password   | ForgotPassword |
 | /auth/reset-password    | ResetPassword  |
 
@@ -138,10 +148,12 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 | /pricing        | Pricing     |
 | /how-it-works   | HowItWorks  |
 | /resources      | Resources   |
-| /blog           | Blog        |
+| /resources/:slug| BlogPost    |
+| /blog           | → /resources |
 | /blog/:slug     | BlogPost    |
 | /faq            | FAQ         |
 | /contact        | Contact     |
+| /demo           | DemoPage    |
 
 ### App routes (AuthGuard + Layout)
 | Path                                | Component           | Notes                           |

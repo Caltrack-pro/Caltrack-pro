@@ -1,6 +1,6 @@
 # CalCheq — Forward Roadmap
 
-*Last updated: 17 April 2026*
+*Last updated: 19 April 2026*
 
 ---
 
@@ -25,11 +25,37 @@ Auth (Supabase ES256 JWT), custom domain (calcheq.com), immutable audit trail, C
 - Audit Trail empty state: improved message explains why seeded instruments show no entries
 - PDF certificate auto-email on approval: `fpdf2` added to requirements.txt, `pdf_generator.py` created, `notifications.send_calibration_cert()` added, approve endpoint emails PDF to technician + supervisors/admins as `{tag_number}_{date}.pdf` attachment
 
+**Completed 18 April 2026:**
+- Smart Analytics 500 error fixed (`record_status.in_()` now uses string values `["approved", "submitted"]` not enum members)
+- Trends tab "not enough data" bug fixed — TrendCharts now includes `submitted` records, not just `approved`
+- Admin/supervisor submit → auto-approve + PDF cert emailed immediately (previously required separate approve click)
+- "Drift Analysis" tab renamed to "Smart Analytics"
+- Smart Analytics tab upgraded: Recharts AreaChart + tolerance bands + recommendation cards (was table only)
+- Activity Log default date range extended from 90 days → 365 days (historical CSV-imported records were falling outside the 90-day window)
+- Follow-up: 4 PT-9300 calibrations (IXOM pilot) still sitting in "submitted" — approve via Pending Approvals once deployed so Smart Analytics has data
+
+**Completed 19 April 2026:**
+- Project folder cleanup: removed 4 orphaned legacy page .jsx files (Alerts, PendingApprovals, BadActors, Profile); removed superseded `seed_demo_data.sql`; removed duplicate `Sales One-Pager.html` at root; removed redundant `CalCheq Chat Instructions.md` + `CalCheq Opening Prompt.md`; reorganised into `scripts/`, `docs/business/`, `docs/specs/`, `docs/marketing/`, `assets/branding/`, `assets/screenshots/`, `assets/calibration-pdfs/`
+- CLAUDE.md corrections: removed dead "Legacy pages" paragraph, added `/demo` route + `AuthCallback.jsx`, updated Root-level scripts paths to `scripts/`, added Project folders section
+
 ---
 
 ## Next Steps
 
-### 1. Demo Environment — Make It Sell the Product
+> **Status as of 18 April 2026:**
+> ✅ 1. Demo Environment (1.1–1.4) — COMPLETE
+> ✅ 2. Stripe Payment Integration (2.1–2.5) — COMPLETE
+> ✅ 3. Website & Marketing Overhaul (3.1–3.5) — COMPLETE
+> ✅ 4. Logo — COMPLETE (SVG assets in frontend/public/assets/)
+> ✅ 5. Onboarding Experience (5.1–5.2) — COMPLETE
+> ✅ 6. Role-Based Views (6.1–6.3) — COMPLETE
+> ✅ 8. Header Updates — COMPLETE
+> ⏳ 7. Scheduled Report Delivery — PENDING
+> ⏳ 10. Phase 3+ — PENDING (post-launch, customer signal required)
+
+---
+
+### 1. Demo Environment — Make It Sell the Product ✅ COMPLETE
 
 The demo is the most important sales tool. Right now it blocks all writes with a generic 403 and doesn't feel like a real site. Fix this.
 

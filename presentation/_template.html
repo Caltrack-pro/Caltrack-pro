@@ -1,0 +1,1174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>CalCheq — A Proposal for IXOM Laverton</title>
+<style>
+  :root {
+    --bg:        #050B1C;
+    --bg-2:      #0B1F3A;
+    --bg-3:      #0E2648;
+    --border:    #1A2D50;
+    --accent:    #2E8ED8;
+    --accent-2:  #1FCAD8;
+    --accent-3:  #3FF2DC;
+    --green:     #22C55E;
+    --red:       #EF4444;
+    --amber:     #F59E0B;
+    --white:     #FFFFFF;
+    --muted:     rgba(255,255,255,0.6);
+    --muted-2:   rgba(255,255,255,0.35);
+    --font:      -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    --grad:      linear-gradient(135deg, #2E8ED8 0%, #3FF2DC 100%);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--white);
+    font-family: var(--font);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    cursor: default;
+  }
+
+  .progress {
+    position: fixed; top: 0; left: 0; height: 3px;
+    width: 0%; background: var(--grad);
+    z-index: 1000; transition: width .45s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 0 14px rgba(63,242,220,.6);
+  }
+
+  .counter {
+    position: fixed; bottom: 22px; right: 32px; z-index: 900;
+    font-size: 12px; letter-spacing: 3px; font-weight: 600;
+    color: var(--muted-2); font-variant-numeric: tabular-nums;
+  }
+  .counter b { color: var(--white); font-weight: 700; }
+
+  .header-logo {
+    position: fixed; top: 24px; left: 32px; z-index: 900;
+    width: 160px; opacity: 0; transform: translateY(-8px);
+    transition: opacity .5s .15s ease, transform .5s .15s ease;
+    pointer-events: none;
+  }
+  .header-logo.visible { opacity: .9; transform: translateY(0); }
+
+  .deck { position: relative; width: 100vw; height: 100vh; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 80px 70px 70px;
+    opacity: 0; visibility: hidden;
+    transform: translateY(14px);
+    transition: opacity .45s ease, transform .45s ease, visibility .45s;
+    overflow: hidden;
+  }
+  .slide.active {
+    opacity: 1; visibility: visible;
+    transform: translateY(0);
+  }
+  .slide-inner {
+    width: 100%; max-width: 1200px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+  }
+
+  .eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--accent-2);
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: 56px; line-height: 1.06; font-weight: 700;
+    letter-spacing: -1.5px; margin-bottom: 20px;
+  }
+  h2 {
+    font-size: 46px; line-height: 1.08; font-weight: 700;
+    letter-spacing: -1.2px; margin-bottom: 24px;
+  }
+  h3 {
+    font-size: 20px; line-height: 1.3; font-weight: 600;
+    letter-spacing: -.2px;
+  }
+  p.lead {
+    font-size: 20px; line-height: 1.6; font-weight: 400;
+    color: var(--muted); max-width: 860px;
+  }
+  .grad-text {
+    background: var(--grad);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+
+  .slide .stagger > * {
+    opacity: 0; transform: translateY(14px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+  .slide.active .stagger > * { opacity: 1; transform: translateY(0); }
+  .slide.active .stagger > *:nth-child(1) { transition-delay: .05s; }
+  .slide.active .stagger > *:nth-child(2) { transition-delay: .15s; }
+  .slide.active .stagger > *:nth-child(3) { transition-delay: .25s; }
+  .slide.active .stagger > *:nth-child(4) { transition-delay: .35s; }
+  .slide.active .stagger > *:nth-child(5) { transition-delay: .45s; }
+  .slide.active .stagger > *:nth-child(6) { transition-delay: .55s; }
+  .slide.active .stagger > *:nth-child(7) { transition-delay: .65s; }
+  .slide.active .stagger > *:nth-child(8) { transition-delay: .75s; }
+
+  /* ============== SLIDE 1 — COVER ============== */
+  #s1 {
+    background:
+      radial-gradient(1200px 600px at 20% 10%, rgba(46,142,216,.18), transparent 60%),
+      radial-gradient(900px 500px at 85% 90%, rgba(31,202,216,.14), transparent 60%),
+      var(--bg);
+    overflow: hidden;
+  }
+  #s1::before {
+    content:""; position: absolute; inset: -50%;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(63,242,220,.06), transparent 40%),
+      radial-gradient(circle at 70% 70%, rgba(46,142,216,.08), transparent 40%);
+    animation: drift 22s ease-in-out infinite alternate;
+  }
+  @keyframes drift {
+    0%   { transform: translate(0,0) rotate(0deg); }
+    100% { transform: translate(3%, -2%) rotate(8deg); }
+  }
+  #s1 .cover-logo { width: 340px; margin-bottom: 56px; }
+  #s1 h1 {
+    font-size: 68px; letter-spacing: -2px; font-weight: 700;
+    margin-bottom: 18px; line-height: 1.05;
+  }
+  #s1 .sub {
+    font-size: 20px; color: var(--muted); letter-spacing: .3px;
+    margin-top: 12px;
+  }
+  #s1 .divider {
+    width: 64px; height: 2px; background: var(--grad);
+    margin: 40px auto; border-radius: 2px;
+  }
+  #s1 .date-stamp {
+    font-size: 12px; letter-spacing: 4px; text-transform: uppercase;
+    color: var(--muted-2); font-weight: 600;
+  }
+
+  /* ============== SLIDE 2 — OVERVIEW ============== */
+  #s2 .overview-logo { width: 300px; margin-bottom: 40px; }
+  #s2 .headline {
+    font-size: 44px; font-weight: 700; letter-spacing: -1.5px;
+    line-height: 1.1; max-width: 1000px;
+    margin-bottom: 28px;
+  }
+  #s2 .subline {
+    font-size: 22px; line-height: 1.6; color: var(--muted);
+    max-width: 860px; font-weight: 400; margin-bottom: 32px;
+  }
+  #s2 .subline b { color: #fff; font-weight: 500; }
+  #s2 .cred-row {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    justify-content: center; margin-top: 10px;
+  }
+  #s2 .cred {
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 100px; padding: 9px 18px; font-size: 13px;
+    color: #fff; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  #s2 .cred i {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); display: inline-block;
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  /* ============== SLIDE 3 — CHALLENGES ============== */
+  #s3 .challenges-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 16px; margin-top: 32px; width: 100%;
+  }
+  .challenge-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red);
+    border-radius: 10px;
+    padding: 20px 22px;
+    text-align: left;
+    min-height: 140px;
+  }
+  .challenge-card .n {
+    font-size: 11px; letter-spacing: 2px; font-weight: 700;
+    color: var(--red); margin-bottom: 8px;
+  }
+  .challenge-card h4 {
+    font-size: 17px; font-weight: 600; line-height: 1.3;
+    margin-bottom: 6px; color: #fff;
+  }
+  .challenge-card p {
+    font-size: 13px; color: var(--muted); line-height: 1.5;
+  }
+
+  /* ============== SLIDE 4 — SOLUTIONS ============== */
+  #s4 .solutions-table {
+    width: 100%; margin-top: 24px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-2);
+  }
+  .sol-row {
+    display: grid; grid-template-columns: 1fr 40px 1.1fr;
+    align-items: stretch;
+    border-bottom: 1px solid var(--border);
+  }
+  .sol-row:last-child { border-bottom: none; }
+  .sol-row .pain {
+    padding: 14px 20px; text-align: left;
+    display: flex; flex-direction: column; justify-content: center;
+    font-size: 14px; color: rgba(255,255,255,.75);
+    background: rgba(239,68,68,.04);
+  }
+  .sol-row .pain b { color: var(--red); font-weight: 600; letter-spacing: .2px; display: block; font-size: 11px; letter-spacing: 2px; margin-bottom: 3px; text-transform: uppercase; }
+  .sol-row .arr {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent-2); font-size: 18px; font-weight: 300;
+    background: rgba(31,202,216,.04);
+  }
+  .sol-row .fix {
+    padding: 14px 20px; text-align: left;
+    display: flex; flex-direction: column; justify-content: center;
+    font-size: 14px; color: #fff;
+    background: rgba(31,202,216,.04);
+  }
+  .sol-row .fix b { color: var(--accent-3); font-weight: 600; display: block; font-size: 11px; letter-spacing: 2px; margin-bottom: 3px; text-transform: uppercase; }
+  #s4 h2 { margin-bottom: 10px; }
+  #s4 .sub-h {
+    font-size: 15px; color: var(--muted); margin-bottom: 18px;
+  }
+
+  /* ============== SLIDE 5 — WHY IT MATTERS ============== */
+  #s5 .why-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 18px; margin-top: 36px; width: 100%;
+  }
+  .why-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px 22px;
+    text-align: left;
+    min-height: 280px;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+  }
+  .why-card::before {
+    content: ""; position: absolute;
+    top: 0; left: 0; width: 100%; height: 2px;
+    background: var(--grad);
+  }
+  .why-card .why-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: rgba(31,202,216,.1);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+    font-size: 22px;
+  }
+  .why-card h3 {
+    font-size: 19px; font-weight: 700; margin-bottom: 10px;
+    color: #fff;
+  }
+  .why-card p {
+    font-size: 13px; color: var(--muted); line-height: 1.55;
+    flex-grow: 1;
+  }
+  .why-card .anchor {
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px dashed var(--border);
+    font-size: 12px; color: var(--accent-3);
+    font-weight: 500; line-height: 1.5;
+    font-style: italic;
+  }
+
+  /* ============== SLIDE 6 — LIVE TOUR TRANSITION ============== */
+  #s6 {
+    background:
+      radial-gradient(900px 500px at 50% 40%, rgba(31,202,216,.10), transparent 60%),
+      var(--bg);
+  }
+  #s6 h1 {
+    font-size: 72px; letter-spacing: -2.2px;
+    margin-bottom: 0;
+  }
+  #s6 .eyebrow { margin-bottom: 28px; font-size: 13px; }
+  #s6 .s6-divider {
+    width: 80px; height: 2px; background: var(--grad);
+    margin: 36px auto 34px; border-radius: 2px;
+  }
+  #s6 .s6-link {
+    display: inline-flex; align-items: center; gap: 12px;
+    background: var(--grad);
+    color: #06253F;
+    padding: 16px 32px;
+    border-radius: 100px;
+    font-size: 15px; font-weight: 700;
+    letter-spacing: .5px;
+    text-decoration: none;
+    box-shadow: 0 10px 40px rgba(31,202,216,.35);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  #s6 .s6-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 50px rgba(31,202,216,.5);
+  }
+  #s6 .s6-link .arrow {
+    font-size: 18px; font-weight: 700;
+    transition: transform .2s ease;
+  }
+  #s6 .s6-link:hover .arrow { transform: translate(3px, -3px); }
+  #s6 .s6-url {
+    margin-top: 18px;
+    font-size: 13px; color: var(--muted-2);
+    letter-spacing: 2px; text-transform: uppercase;
+    font-weight: 600;
+  }
+  #s6 .s6-url b { color: var(--muted); font-weight: 600; letter-spacing: .3px; text-transform: none; }
+
+  /* ============== SLIDE 7 — SMART ANALYTICS ============== */
+  #s7 .an-wrap {
+    display: flex; flex-direction: column;
+    gap: 20px; width: 100%; max-width: 1280px;
+    margin-top: 8px;
+  }
+  #s7 .tabs {
+    display: flex; gap: 8px; justify-content: center;
+    flex-wrap: wrap;
+  }
+  #s7 .tab {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 11px 22px;
+    border-radius: 100px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; user-select: none;
+    transition: all .2s ease;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  #s7 .tab:hover { color: #fff; border-color: var(--accent); }
+  #s7 .tab.active {
+    background: var(--grad);
+    color: #06253F;
+    border-color: transparent;
+    box-shadow: 0 6px 24px rgba(31,202,216,.3);
+  }
+  #s7 .tab .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: currentColor; opacity: .5;
+  }
+  #s7 .tab.active .dot { opacity: 1; }
+
+  #s7 .an-stage {
+    position: relative;
+    width: 100%;
+    min-height: 460px;
+  }
+  #s7 .an-panel {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+    text-align: left;
+    animation: fadeIn .35s ease;
+  }
+  #s7 .an-panel.visible { display: grid; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #s7 .an-text .an-label {
+    font-size: 11px; letter-spacing: 3px; font-weight: 700;
+    text-transform: uppercase; color: var(--accent-3);
+    margin-bottom: 10px;
+  }
+  #s7 .an-text h3 {
+    font-size: 26px; line-height: 1.25; font-weight: 700;
+    letter-spacing: -.5px;
+    margin-bottom: 14px; color: #fff;
+  }
+  #s7 .an-text p {
+    font-size: 15px; line-height: 1.6;
+    color: var(--muted); margin-bottom: 16px;
+  }
+  #s7 .an-ex {
+    list-style: none;
+    padding: 16px 18px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  #s7 .an-ex li {
+    padding: 6px 0 6px 18px;
+    position: relative;
+    font-size: 13px;
+    color: rgba(255,255,255,.8);
+    line-height: 1.45;
+  }
+  #s7 .an-ex li::before {
+    content: "›"; position: absolute; left: 0; top: 4px;
+    color: var(--accent-2); font-weight: 700; font-size: 15px;
+  }
+  #s7 .an-ex li b {
+    color: var(--accent-3); font-weight: 600;
+  }
+
+  #s7 .an-imgs {
+    display: flex; flex-direction: column;
+    gap: 16px;
+  }
+  #s7 .an-imgs img {
+    width: 100%; height: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: 0 16px 40px rgba(0,0,0,.4);
+    display: block;
+  }
+
+  /* Drift panel — full width: text on top, screenshots side-by-side below */
+  #s7 .an-panel.wide {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  #s7 .an-panel.wide .an-text { max-width: 1000px; margin: 0 auto; text-align: center; }
+  #s7 .an-panel.wide .an-text .an-ex { text-align: left; }
+  #s7 .an-panel.wide .an-imgs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    width: 100%;
+  }
+  #s7 .an-panel.wide .an-imgs img {
+    max-height: 420px;
+    object-fit: contain;
+    object-position: top;
+    background: var(--bg-2);
+  }
+  #s7 h2 { margin-bottom: 6px; }
+  #s7 .sub-h {
+    font-size: 13px; color: var(--muted-2);
+    letter-spacing: 1.5px; text-transform: uppercase;
+    font-weight: 600; margin-bottom: 16px;
+  }
+
+  /* ============== SLIDE 8 — REPORTING ============== */
+  #s8 .rp-switch {
+    display: inline-flex; background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 100px; padding: 4px;
+    margin-bottom: 20px;
+  }
+  #s8 .rp-btn {
+    padding: 10px 22px; border-radius: 100px;
+    font-size: 13px; font-weight: 600;
+    color: var(--muted); cursor: pointer;
+    transition: all .2s ease;
+    user-select: none;
+    border: none; background: transparent;
+    font-family: inherit;
+  }
+  #s8 .rp-btn.active {
+    background: var(--grad); color: #06253F;
+    box-shadow: 0 4px 16px rgba(31,202,216,.25);
+  }
+  #s8 .rp-stage-new {
+    width: 100%; max-width: 1280px;
+    position: relative;
+  }
+  #s8 .rp-panel {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: center;
+    text-align: left;
+    animation: fadeIn .35s ease;
+  }
+  #s8 .rp-panel.visible { display: grid; }
+  #s8 .rp-text .rp-label {
+    font-size: 11px; letter-spacing: 3px; font-weight: 700;
+    text-transform: uppercase; color: var(--accent-3);
+    margin-bottom: 10px;
+  }
+  #s8 .rp-text h3 {
+    font-size: 28px; line-height: 1.2; font-weight: 700;
+    letter-spacing: -.5px;
+    margin-bottom: 16px; color: #fff;
+  }
+  #s8 .rp-text p {
+    font-size: 15px; line-height: 1.6;
+    color: var(--muted); margin-bottom: 16px;
+  }
+  #s8 .rp-text p b { color: #fff; font-weight: 500; }
+  #s8 .rp-ex {
+    list-style: none;
+    padding: 16px 18px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  #s8 .rp-ex li {
+    padding: 6px 0 6px 18px;
+    position: relative;
+    font-size: 13px;
+    color: rgba(255,255,255,.8);
+    line-height: 1.45;
+  }
+  #s8 .rp-ex li::before {
+    content: "›"; position: absolute; left: 0; top: 4px;
+    color: var(--accent-2); font-weight: 700; font-size: 15px;
+  }
+  #s8 .rp-ex li b { color: var(--accent-3); font-weight: 600; }
+  #s8 .rp-ex li code {
+    background: rgba(63,242,220,.08);
+    color: #fff; padding: 1px 6px;
+    border-radius: 4px; font-size: 12px;
+    font-family: 'Consolas', 'Menlo', monospace;
+  }
+  #s8 .rp-imgs img {
+    width: 100%; height: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    display: block;
+  }
+  #s8 h2 { margin-bottom: 6px; }
+  #s8 .sub-h {
+    font-size: 13px; color: var(--muted-2);
+    letter-spacing: 1.5px; text-transform: uppercase;
+    font-weight: 600; margin-bottom: 16px;
+  }
+  #s8 .flow-line {
+    margin-top: 22px; font-size: 13px; color: var(--muted);
+    text-align: center;
+  }
+  #s8 .flow-line b { color: var(--accent-3); font-weight: 600; }
+
+  /* ============== SLIDE 9 — IMPLEMENTATION TIMELINE ============== */
+  #s9 .timeline {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 16px; margin-top: 36px; width: 100%;
+    position: relative;
+  }
+  #s9 .timeline::before {
+    content: ""; position: absolute;
+    top: 40px; left: 12%; right: 12%; height: 2px;
+    background: linear-gradient(90deg,
+      var(--accent) 0%, var(--accent-2) 50%, var(--accent-3) 100%);
+    z-index: 0;
+    opacity: .35;
+  }
+  .phase {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 22px;
+    text-align: left;
+    position: relative;
+    z-index: 1;
+    min-height: 320px;
+  }
+  .phase .ph-num {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--accent-2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800;
+    color: var(--accent-3);
+    margin: -60px auto 18px;
+    box-shadow: 0 0 32px rgba(31,202,216,.25);
+  }
+  .phase .ph-when {
+    font-size: 10px; letter-spacing: 2.5px; font-weight: 700;
+    color: var(--accent-2); text-transform: uppercase;
+    text-align: center; margin-bottom: 6px;
+  }
+  .phase h3 {
+    font-size: 20px; text-align: center; margin-bottom: 14px;
+    font-weight: 700;
+  }
+  .phase ul {
+    list-style: none; font-size: 13px; color: var(--muted);
+    line-height: 1.55;
+  }
+  .phase ul li {
+    padding: 6px 0 6px 20px;
+    position: relative;
+  }
+  .phase ul li::before {
+    content: "✓"; position: absolute;
+    left: 0; top: 6px;
+    color: var(--accent-3); font-weight: 700;
+    font-size: 12px;
+  }
+
+  /* ============== SLIDE 10 — OFFER ============== */
+  #s10 {
+    background:
+      radial-gradient(800px 400px at 50% 30%, rgba(31,202,216,.12), transparent 60%),
+      var(--bg);
+  }
+  #s10 .pill {
+    display: inline-block; padding: 6px 14px;
+    background: rgba(31,202,216,.12);
+    border: 1px solid rgba(31,202,216,.3);
+    border-radius: 100px;
+    font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--accent-3); font-weight: 700;
+    margin-bottom: 20px;
+  }
+  #s10 h2 {
+    font-size: 68px; letter-spacing: -2.5px;
+    margin-bottom: 18px;
+  }
+  #s10 .offer-copy {
+    font-size: 20px; color: var(--muted); line-height: 1.65;
+    max-width: 760px; margin: 0 auto 26px;
+  }
+  #s10 .offer-points {
+    display: flex; gap: 10px; justify-content: center;
+    flex-wrap: wrap; margin-bottom: 26px;
+  }
+  #s10 .op {
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 9px 18px; font-size: 13px;
+    color: #fff; font-weight: 500;
+  }
+  #s10 .op b { color: var(--accent-3); font-weight: 700; }
+  #s10 .quote {
+    font-size: 19px; font-weight: 400; color: #fff;
+    max-width: 760px; margin: 10px auto 28px;
+    line-height: 1.55; font-style: italic;
+    padding: 0 20px;
+    border-left: 2px solid var(--accent-2);
+    text-align: left;
+  }
+  #s10 .cta-row {
+    display: flex; align-items: center; gap: 38px;
+    justify-content: center; margin-top: 22px;
+  }
+  #s10 .qr {
+    background: #fff; padding: 10px; border-radius: 10px;
+    box-shadow: 0 0 40px rgba(63,242,220,.25);
+  }
+  #s10 .url { text-align: left; }
+  #s10 .url .label {
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted-2); font-weight: 600;
+  }
+  #s10 .url .web {
+    font-size: 32px; font-weight: 700; margin-top: 4px;
+    background: var(--grad);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Responsive guard */
+  @media (max-width: 1200px) {
+    h1 { font-size: 44px; }
+    h2 { font-size: 36px; }
+    #s1 h1 { font-size: 52px; }
+    #s3 .challenges-grid { grid-template-columns: repeat(2, 1fr); }
+    #s5 .why-grid { grid-template-columns: repeat(2, 1fr); }
+    #s6 .tour-wrap { grid-template-columns: 180px 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="counter"><b id="cur">01</b> / 10</div>
+
+<div class="header-logo" id="headerLogo">
+  {{LOGO_SVG}}
+</div>
+
+<div class="deck" id="deck">
+
+<!-- ============================================================ SLIDE 1 — COVER ============================================================ -->
+<section class="slide active" id="s1">
+  <div class="slide-inner stagger">
+    <div class="cover-logo">{{LOGO_SVG}}</div>
+    <h1>Calibration Intelligence.<br/><span class="grad-text">Built for the Field.</span></h1>
+    <div class="divider"></div>
+    <div class="sub">A proposal for IXOM Laverton</div>
+    <div class="date-stamp" id="coverDate">—</div>
+  </div>
+</section>
+
+<!-- ============================================================ SLIDE 2 — OVERVIEW ============================================================ -->
+<section class="slide" id="s2">
+  <div class="slide-inner stagger">
+    <div class="overview-logo">{{LOGO_SVG}}</div>
+    <div class="headline">
+      A purpose-built calibration and <span class="grad-text">predictive maintenance platform</span>
+      for industrial sites like this one.
+    </div>
+    <p class="subline">
+      CalCheq is a <b>streamlined, centralised hub</b> for historical calibrations, instrument health, and analytical recommendations.
+      It is <b>live</b>, <b>registered as an Australian business</b>, and going to market.
+      Before it does — I'd like the opportunity to implement it here first.
+    </p>
+    <div class="cred-row">
+      <div class="cred"><i></i>Live product</div>
+      <div class="cred"><i></i>Registered Australian business</div>
+      <div class="cred"><i></i>Purpose-built for industrial sites</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SLIDE 3 — CHALLENGES ============================================================ -->
+<section class="slide" id="s3">
+  <div class="slide-inner">
+    <div class="eyebrow">The Current System</div>
+    <h2>Where calibration breaks down today.</h2>
+
+    <div class="challenges-grid">
+      <div class="challenge-card">
+        <div class="n">01 · FRAGMENTATION</div>
+        <h4>Records scattered across systems</h4>
+        <p>MEX work orders, L: drive folders, technician inboxes — no centralised source of instrument information.</p>
+      </div>
+      <div class="challenge-card">
+        <div class="n">02 · FIELD BLINDNESS</div>
+        <h4>No tolerance visibility in the plant</h4>
+        <p>Readings handwritten on paper. Pass or fail can't be determined until the technician is back at a desk.</p>
+      </div>
+      <div class="challenge-card">
+        <div class="n">03 · NO TRENDING</div>
+        <h4>No drift analysis or early warning</h4>
+        <p>Instruments are caught when they fail, not predicted to fail. No way to know if an instrument is degrading or out of tolerance until it's out.</p>
+      </div>
+      <div class="challenge-card">
+        <div class="n">04 · CONTRACTOR GAPS</div>
+        <h4>External reports lost in email</h4>
+        <p>Contractor calibrations don't often reach MEX or the L: drive, leaving gaps in the record.</p>
+      </div>
+      <div class="challenge-card">
+        <div class="n">05 · MHF VERIFICATION</div>
+        <h4>Trip-test history hard to confirm</h4>
+        <p>Confirming whether an instrument is within calibration during an MHF trip test requires a trip back to the office to search.</p>
+      </div>
+      <div class="challenge-card">
+        <div class="n">06 · DOUBLE-ENTRY</div>
+        <h4>Transcription errors and wasted time</h4>
+        <p>Print Excel template → fill out in field → calculate error → scan through to emails → save to MEX and L: drive.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SLIDE 4 — SOLUTIONS ============================================================ -->
+<section class="slide" id="s4">
+  <div class="slide-inner stagger">
+    <div class="eyebrow">The Fix</div>
+    <h2>How CalCheq <span class="grad-text">solves every one</span> of them.</h2>
+    <div class="sub-h">One system. One workflow. Every challenge addressed directly.</div>
+
+    <div class="solutions-table">
+      <div class="sol-row">
+        <div class="pain"><b>01 · Fragmentation</b>Records scattered across MEX, L: drive, and contractor email chains.</div>
+        <div class="arr">→</div>
+        <div class="fix"><b>Centralised register</b>Every instrument, every calibration, every certificate in one searchable system.</div>
+      </div>
+      <div class="sol-row">
+        <div class="pain"><b>02 · Field blindness</b>Tolerance unknown until back at a desk.</div>
+        <div class="arr">→</div>
+        <div class="fix"><b>Real-time pass / fail</b>Pass/fail computed live on your phone against tolerance as readings are entered.</div>
+      </div>
+      <div class="sol-row">
+        <div class="pain"><b>03 · No trending</b>No predictive insight — instruments caught failing, not before.</div>
+        <div class="arr">→</div>
+        <div class="fix"><b>Drift analytics</b>Linear regression on error trend. Projected failure date for every instrument.</div>
+      </div>
+      <div class="sol-row">
+        <div class="pain"><b>04 · Contractor gaps</b>External reports lost in email.</div>
+        <div class="arr">→</div>
+        <div class="fix"><b>One workflow for all</b>Contractor calibration results saved to CalCheq. Same platform, nothing slips.</div>
+      </div>
+      <div class="sol-row">
+        <div class="pain"><b>05 · MHF verification</b>Trip-test history means a walk back to the office.</div>
+        <div class="arr">→</div>
+        <div class="fix"><b>Instant lookup</b>Last cal date and result on any phone, in one tap, anywhere in the plant.</div>
+      </div>
+      <div class="sol-row">
+        <div class="pain"><b>06 · Double-entry</b>Paper → scan → Excel → MEX → L: drive.</div>
+        <div class="arr">→</div>
+        <div class="fix"><b>One submission</b>PDF cert auto-generated, emailed, and archived. Zero re-keying.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SLIDE 5 — WHY IT MATTERS ============================================================ -->
+<section class="slide" id="s5">
+  <div class="slide-inner stagger">
+    <div class="eyebrow">Why It Matters</div>
+    <h2>Four reasons this is <span class="grad-text">worth doing</span>.</h2>
+
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="why-icon" style="color:#EF4444;background:rgba(239,68,68,.1)">🛡</div>
+        <h3>Safety</h3>
+        <p>SIS and safety-critical instrument integrity becomes auditable and visible in real time — not buried in a scanned PDF on a shared drive.</p>
+        <div class="anchor">Drift is caught weeks before tolerance is breached — before a SIS trip risks people or plant.</div>
+      </div>
+      <div class="why-card">
+        <div class="why-icon" style="color:#3FF2DC;background:rgba(63,242,220,.1)">✓</div>
+        <h3>Compliance</h3>
+        <p>ISO/IEC 17025, IEC 61511-1 and AS ISO 9001 traceability are built into every record. Audit-ready by default — not as a scramble.</p>
+        <div class="anchor">Full calibration history on-screen in seconds during any audit or MHF verification.</div>
+      </div>
+      <div class="why-card">
+        <div class="why-icon" style="color:#F59E0B;background:rgba(245,158,11,.1)">$</div>
+        <h3>Cost</h3>
+        <p>Eliminates double-entry, wasted return trips to the desk, and the after-hours call-ins caused by failed or out-of-tolerance instruments.</p>
+        <div class="anchor">Minutes saved per calibration × hundreds of instruments per year = measurable labour return.</div>
+      </div>
+      <div class="why-card">
+        <div class="why-icon" style="color:#1FCAD8;background:rgba(31,202,216,.1)">⚙</div>
+        <h3>Plant Integrity</h3>
+        <p>Catch instrument drift before it causes a trip. Schedule preventative work proactively based on instrument health, process criticality, and predictive analysis.</p>
+        <div class="anchor">Planned work replaces reactive work. Fewer unplanned shutdowns. Higher availability.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SLIDE 6 — LIVE TOUR TRANSITION ============================================================ -->
+<section class="slide" id="s6">
+  <div class="slide-inner stagger">
+    <div class="eyebrow">The Platform</div>
+    <h1>A guided <span class="grad-text">live tour</span>.</h1>
+    <div class="s6-divider"></div>
+    <a class="s6-link" href="https://calcheq.com" target="_blank" rel="noopener">
+      Open the live platform <span class="arrow">↗</span>
+    </a>
+    <div class="s6-url"><b>calcheq.com</b></div>
+  </div>
+</section>
+
+<!-- ============================================================ SLIDE 7 — SMART ANALYTICS ============================================================ -->
+<section class="slide" id="s7">
+  <div class="slide-inner">
+    <div class="eyebrow">Smart Analytics</div>
+    <h2>Know <span class="grad-text">before it fails</span>.</h2>
+    <div class="sub-h">Three lenses on instrument health — click a tab to explore</div>
+
+    <div class="an-wrap">
+      <div class="tabs" id="anTabs">
+        <div class="tab active" data-target="recs"><span class="dot"></span>Recommendations</div>
+        <div class="tab"        data-target="drift"><span class="dot"></span>Drift Alerts</div>
+        <div class="tab"        data-target="repeat"><span class="dot"></span>Repeat Failures</div>
+      </div>
+
+      <div class="an-stage">
+
+        <!-- Recommendations -->
+        <div class="an-panel visible" data-panel="recs">
+          <div class="an-text">
+            <div class="an-label">Recommendations</div>
+            <h3>Rule-based insights, surfaced automatically.</h3>
+            <p>CalCheq analyses every instrument's calibration history and surfaces actionable recommendations — before they become problems.</p>
+            <ul class="an-ex">
+              <li><b>Extend interval</b> — instruments consistently well inside tolerance can have their interval extended to save labour.</li>
+              <li><b>Shorten interval</b> — instruments drifting fast need more frequent checks.</li>
+              <li><b>Flag for replacement</b> — repeat failures or unrecoverable drift → candidate for replacement.</li>
+              <li><b>Procedure review</b> — outlier results may indicate a flawed procedure.</li>
+            </ul>
+          </div>
+          <div class="an-imgs">
+            <img src="{{IMG_RECS}}" alt="Recommendations"/>
+          </div>
+        </div>
+
+        <!-- Drift Alerts -->
+        <div class="an-panel wide" data-panel="drift">
+          <div class="an-text">
+            <div class="an-label">Drift Alerts</div>
+            <h3>Linear regression on every instrument's error trend.</h3>
+            <p>CalCheq plots as-found error over time, calculates drift rate, and projects the date each instrument is expected to exceed tolerance. Act before it fails — not after.</p>
+            <ul class="an-ex">
+              <li><b>Sparkline trend</b> for every instrument at a glance · <b>Projected failure date</b> from historical drift.</li>
+              <li><b>Sorted worst-first</b> so the riskiest assets surface to the top · <b>Full drift chart</b> with tolerance band and projection on any instrument detail page.</li>
+            </ul>
+          </div>
+          <div class="an-imgs">
+            <img src="{{IMG_DRIFT}}" alt="Drift alerts list"/>
+            <img src="{{IMG_DRIFT2}}" alt="Drift alert detail"/>
+          </div>
+        </div>
+
+        <!-- Repeat Failures -->
+        <div class="an-panel" data-panel="repeat">
+          <div class="an-text">
+            <div class="an-label">Repeat Failures</div>
+            <h3>Bad actors surfaced automatically.</h3>
+            <p>Instruments that fail repeatedly get captured and filtered into one view — so you can see your problem assets at a glance and deal with them structurally, not one work-order at a time.</p>
+            <ul class="an-ex">
+              <li><b>Ranked by failure count</b> — worst offenders first.</li>
+              <li><b>Filtered by area or criticality</b> — focus where it matters.</li>
+              <li><b>Direct link to history</b> — full audit trail in one click.</li>
+              <li><b>Trigger replacement decisions</b> with evidence, not guesswork.</li>
+            </ul>
+          </div>
+          <div class="an-imgs">
+            <img src="{{IMG_REPEAT}}" alt="Repeat Failures"/>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SLIDE 8 — REPORTING ============================================================ -->
+<section class="slide" id="s8">
+  <div class="slide-inner">
+    <div class="eyebrow">Reporting</div>
+    <h2>Done. Certified. <span class="grad-text">Sent.</span></h2>
+    <div class="sub-h">Generated and emailed automatically on completion</div>
+
+    <div class="rp-switch" role="tablist">
+      <button class="rp-btn active" data-rp="cert">Calibration Certificate</button>
+      <button class="rp-btn" data-rp="hist">Historical Certificate</button>
+    </div>
+
+    <div class="rp-stage-new">
+
+      <!-- Single Certificate panel -->
+      <div class="rp-panel visible" data-rp="cert">
+        <div class="rp-text">
+          <div class="rp-label">Single Calibration Certificate</div>
+          <h3>One submission. <span class="grad-text">Certified. Emailed. Archived.</span></h3>
+          <p>PDF calibration certificates are <b>automatically generated and emailed</b> to the technician and supervisors the moment a calibration is submitted and approved — no scanning, no re-typing, no attaching to MEX manually.</p>
+          <ul class="rp-ex">
+            <li><b>Auto-named</b> <code>{tag}_{date}.pdf</code> for instant filing.</li>
+            <li><b>Full traceability</b> — ISO/IEC 17025, IEC 61511, AS ISO 9001 references baked in.</li>
+            <li><b>Pass / fail calculated</b> and printed — never ambiguous.</li>
+            <li><b>Single source of truth</b> — the same PDF everyone receives.</li>
+          </ul>
+        </div>
+        <div class="rp-imgs">
+          <img src="{{IMG_CAL_CERT}}" alt="Calibration Certificate"/>
+        </div>
+      </div>
+
+      <!-- Historical Certificate panel -->
+      <div class="rp-panel" data-rp="hist">
+        <div class="rp-text">
+          <div class="rp-label">Historical Calibration Certificate</div>
+          <h3>The full story. <span class="grad-text">On demand.</span></h3>
+          <p>Multi-page historical PDF calibration reports can be <b>generated automatically</b> for any instrument — outlining the entire calibration history, performance summary, and as-found error trends over time.</p>
+          <ul class="rp-ex">
+            <li><b>Performance summary</b> — pass rate, marginal and fail counts at a glance.</li>
+            <li><b>Error trend chart</b> — as-found drift plotted across every historical calibration.</li>
+            <li><b>Full record table</b> — every calibration with cert ref, technician, and result.</li>
+            <li><b>One click · MHF-ready</b> — hand to an auditor without reformatting.</li>
+          </ul>
+        </div>
+        <div class="rp-imgs">
+          <img src="{{IMG_CAL_HIST}}" alt="Historical Calibration Certificate"/>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="flow-line">
+      Technician submits → Pass/fail calculated → <b>PDF auto-generated, emailed, archived</b> → Audit trail recorded.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SLIDE 9 — IMPLEMENTATION ============================================================ -->
+<section class="slide" id="s9">
+  <div class="slide-inner stagger">
+    <div class="eyebrow">Implementation</div>
+    <h2>A <span class="grad-text">clear, low-risk</span> path to day-one value.</h2>
+    <p class="lead">Three phases. No big-bang migration. No disruption to MEX.</p>
+
+    <div class="timeline">
+      <div class="phase">
+        <div class="ph-num">1</div>
+        <div class="ph-when">Week 1</div>
+        <h3>Setup &amp; Historical Import</h3>
+        <ul>
+          <li>IT data-governance approval</li>
+          <li>255 historical calibration PDFs converted &amp; imported</li>
+          <li>Instrument register populated from the L: drive</li>
+          <li>Dashboard populated from day one</li>
+          <li>Drift trends live for every instrument with history</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="ph-num">2</div>
+        <div class="ph-when">Months 1 – 6</div>
+        <h3>Live Use &amp; Monitoring</h3>
+        <ul>
+          <li>All new calibrations recorded in CalCheq</li>
+          <li>I personally support setup &amp; onboarding</li>
+          <li>Daily real-world validation on your floor</li>
+          <li>Team feedback continuously folded in</li>
+          <li>No change to MEX — runs alongside</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="ph-num">3</div>
+        <div class="ph-when">End of Trial</div>
+        <h3>Review &amp; Decision</h3>
+        <ul>
+          <li>Ease of use — did it help the team?</li>
+          <li>Information quality — better than today?</li>
+          <li>Suitability — does it fit IXOM's workflow?</li>
+          <li>Consider subscription &amp; rollout to other sites</li>
+          <li>If it doesn't fit, nothing lost</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SLIDE 10 — OFFER ============================================================ -->
+<section class="slide" id="s10">
+  <div class="slide-inner stagger">
+    <div class="pill">The Offer</div>
+    <h2>Six months. <span class="grad-text">Free.</span></h2>
+    <p class="offer-copy">
+      A <b style="color:#fff">six-month free trial</b> of CalCheq at IXOM Laverton.
+      Full access, all features, zero commitment. I'll support the setup personally.
+    </p>
+
+    <div class="offer-points">
+      <div class="op"><b>✓</b> Full platform access · all users</div>
+      <div class="op"><b>✓</b> Historical import included</div>
+      <div class="op"><b>✓</b> Personal setup &amp; support</div>
+      <div class="op"><b>✓</b> No lock-in · no commitment</div>
+    </div>
+
+    <div class="quote">
+      "If it works — consider a subscription, and make this the use case for other IXOM sites.<br/>
+      If it doesn't — nothing lost. This platform is yet to go to market.
+      I'd love the opportunity to implement it here first."
+    </div>
+
+    <div class="cta-row">
+      <div class="qr">{{QR_SVG}}</div>
+      <div class="url">
+        <div class="label">Scan or visit</div>
+        <div class="web">calcheq.com</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var idx = 0;
+  var progress = document.getElementById('progress');
+  var counter  = document.getElementById('cur');
+  var headerLogo = document.getElementById('headerLogo');
+
+  try {
+    var d = new Date();
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var stamp = d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    var el = document.getElementById('coverDate');
+    if (el) el.textContent = stamp.toUpperCase();
+  } catch(e){}
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function goto(n) {
+    if (n < 0) n = 0;
+    if (n > total - 1) n = total - 1;
+    slides[idx].classList.remove('active');
+    idx = n;
+    slides[idx].classList.add('active');
+    counter.textContent = pad(idx + 1);
+    progress.style.width = ((idx + 1) / total * 100) + '%';
+    if (idx === 0) headerLogo.classList.remove('visible');
+    else headerLogo.classList.add('visible');
+  }
+  function next() { goto(idx + 1); }
+  function prev() { goto(idx - 1); }
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+    else if (e.key === 'Escape' || e.key === 'Home') { e.preventDefault(); goto(0); }
+    else if (e.key === 'End') { e.preventDefault(); goto(total - 1); }
+  });
+
+  // Click to advance — but ignore clicks on interactive items
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (t.closest && (t.closest('a') || t.closest('button') || t.closest('.tn-item') || t.closest('.tab') || t.closest('.rp-btn'))) return;
+    next();
+  });
+
+  // Swipe
+  var sx=null, sy=null;
+  document.addEventListener('touchstart', function(e){
+    if (!e.touches || !e.touches[0]) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, { passive:true });
+  document.addEventListener('touchend', function(e){
+    if (sx===null) return;
+    var t = e.changedTouches && e.changedTouches[0];
+    if (!t) return;
+    var dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { if (dx < 0) next(); else prev(); }
+    sx = sy = null;
+  }, { passive:true });
+
+
+  // ------ SLIDE 7: analytics tabs ------
+  var anTabs = document.getElementById('anTabs');
+  if (anTabs) {
+    anTabs.addEventListener('click', function(e){
+      var tab = e.target.closest('.tab');
+      if (!tab) return;
+      e.stopPropagation();
+      var target = tab.getAttribute('data-target');
+      anTabs.querySelectorAll('.tab').forEach(function(el){ el.classList.toggle('active', el === tab); });
+      document.querySelectorAll('#s7 .an-panel').forEach(function(p){
+        p.classList.toggle('visible', p.getAttribute('data-panel') === target);
+      });
+    });
+  }
+
+  // ------ SLIDE 8: report switch ------
+  document.querySelectorAll('#s8 .rp-btn').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var target = btn.getAttribute('data-rp');
+      document.querySelectorAll('#s8 .rp-btn').forEach(function(b){ b.classList.toggle('active', b === btn); });
+      document.querySelectorAll('#s8 .rp-panel').forEach(function(p){
+        p.classList.toggle('visible', p.getAttribute('data-rp') === target);
+      });
+    });
+  });
+
+  progress.style.width = (1 / total * 100) + '%';
+  counter.textContent = pad(1);
+})();
+</script>
+
+</body>
+</html>

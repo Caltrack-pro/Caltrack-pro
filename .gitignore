@@ -25,6 +25,10 @@ node_modules/
 frontend/dist/
 frontend/.vite/
 
+# Private notes / credentials — NEVER commit
+Calcheq notepad.md
+"Calcheq notepad.md"
+
 # OS
 .DS_Store
 Thumbs.db
