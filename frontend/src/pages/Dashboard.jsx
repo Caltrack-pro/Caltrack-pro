@@ -553,9 +553,10 @@ export default function Dashboard() {
 
   // Compliance rate colour
   const compRate   = stats.compliance_rate
-  const compBorder = compRate >= 90 ? '#22C55E' : compRate >= 70 ? '#F59E0B' : '#EF4444'
-  const compValue  = compRate >= 90 ? '#16A34A' : compRate >= 70 ? '#D97706' : '#DC2626'
-  const compSub    = compRate >= 95 ? '↑ Meets 95% target' : `↓ Below 95% target`
+  const noInstrs   = stats.total_instruments === 0
+  const compBorder = noInstrs ? BORDER : compRate >= 90 ? '#22C55E' : compRate >= 70 ? '#F59E0B' : '#EF4444'
+  const compValue  = noInstrs ? MUTED  : compRate >= 90 ? '#16A34A' : compRate >= 70 ? '#D97706' : '#DC2626'
+  const compSub    = noInstrs ? 'Add instruments to track compliance' : compRate >= 95 ? '↑ Meets 95% target' : `↓ Below 95% target`
 
   const today   = new Date()
   const dateStr = today.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -651,7 +652,7 @@ export default function Dashboard() {
         />
         <StatCard
           label="Compliance Rate"
-          value={`${compRate.toFixed(1)}%`}
+          value={noInstrs ? '—' : `${compRate.toFixed(1)}%`}
           borderColor={compBorder}
           valueColor={compValue}
           sub={compSub}

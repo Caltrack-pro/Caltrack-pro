@@ -10,7 +10,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Calcheq API",
+    title="CalCheq API",
     description="Industrial instrument calibration management backend",
     version="0.1.0",
 )

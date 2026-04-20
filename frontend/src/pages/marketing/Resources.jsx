@@ -79,7 +79,7 @@ const RESOURCES = [
     tag: 'Guide',
     tagColor: 'bg-amber-100 text-amber-700',
     emoji: '🔧',
-    title: 'A Day in the Life: How Field Technicians Use Calcheq',
+    title: 'A Day in the Life: How Field Technicians Use CalCheq',
     description: 'From the morning schedule check to the end-of-shift handover, this walkthrough shows exactly how the technician workflow looks — from the instrument list to submitting calibration records for approval.',
     readTime: '5 min read',
     type: 'Guide',
@@ -94,7 +94,7 @@ export default function Resources() {
   const [subscribed, setSubscribed] = useState(false)
 
   useEffect(() => {
-    document.title = 'Resources — Calcheq Instrument Calibration Management'
+    document.title = 'Resources — CalCheq Instrument Calibration Management'
     const desc = document.querySelector('meta[name="description"]')
     const content = 'Guides, case studies, compliance resources, and industry insights to help you build a world-class calibration program. For instrumentation and maintenance teams.'
     if (desc) desc.setAttribute('content', content)

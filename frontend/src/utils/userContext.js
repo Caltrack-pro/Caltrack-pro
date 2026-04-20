@@ -1,5 +1,5 @@
 /**
- * Calcheq — User context and auth utilities.
+ * CalCheq — User context and auth utilities.
  *
  * Auth is now handled by Supabase Auth (email + password).
  * After sign-in, the backend /api/auth/me endpoint is called to fetch the

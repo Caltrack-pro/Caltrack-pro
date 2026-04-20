@@ -12,7 +12,7 @@ const SECTIONS = [
         a: 'Your 30-day trial starts the day you sign up and gives you full access to the Professional plan — all features, up to 500 instruments, unlimited users. No credit card required. After 30 days, you can choose to start a paid subscription, downgrade to Starter, or cancel without any fees or penalties.',
       },
       {
-        q: 'How fast can I set up Calcheq?',
+        q: 'How fast can I set up CalCheq?',
         a: 'Most customers are operational within 48 hours. Our onboarding includes: data import from your existing system (Excel, MEX, SAP), instrument configuration with templates, team member setup, and your first calibration recorded. We guide you through each step. For larger deployments (500+ instruments), we recommend 3–5 days, with on-site support available for Enterprise customers.',
       },
       {
@@ -24,7 +24,7 @@ const SECTIONS = [
         a: 'No. As long as you have a current equipment list, we can import it in bulk. You\'ll need: instrument tag/ID, description, model, calibration interval, and location. We handle the rest. Bulk import typically takes 30–60 minutes for most sites.',
       },
       {
-        q: 'What if I want to see Calcheq before committing?',
+        q: 'What if I want to see CalCheq before committing?',
         a: 'Visit our live demo or request a personalised walkthrough from our team. In a demo call, we\'ll show you how calibration recording, certificate generation, and compliance reporting work using realistic instrument data. No pressure — you can trial the full product free for 30 days after.',
       },
     ],
@@ -34,7 +34,7 @@ const SECTIONS = [
     faqs: [
       {
         q: 'How does the compliance certificate generation work?',
-        a: 'After a calibration is recorded, Calcheq auto-generates AS/NZS ISO 17025–aligned certificates with one click. Include as-found readings, as-left readings, measurement uncertainty, technician sign-off, traceability information, and calibration date. Export as PDF, email to your customer, or archive in Calcheq for audit retrieval.',
+        a: 'After a calibration is recorded, CalCheq auto-generates AS/NZS ISO 17025–aligned certificates with one click. Include as-found readings, as-left readings, measurement uncertainty, technician sign-off, traceability information, and calibration date. Export as PDF, email to your customer, or archive in CalCheq for audit retrieval.',
       },
       {
         q: 'Can technicians record calibrations on mobile?',
@@ -46,7 +46,7 @@ const SECTIONS = [
       },
       {
         q: 'How do predictive degradation alerts work?',
-        a: 'Calcheq learns from your historical calibration data over time. If an instrument shows a trend toward exceeding tolerance (e.g., accuracy drifting over multiple calibrations), we flag it with an alert before it fails. This reduces emergency repairs and process downtime. Red (safety-critical) instruments get the highest alert priority. Available on Professional and Enterprise plans.',
+        a: 'CalCheq learns from your historical calibration data over time. If an instrument shows a trend toward exceeding tolerance (e.g., accuracy drifting over multiple calibrations), we flag it with an alert before it fails. This reduces emergency repairs and process downtime. Red (safety-critical) instruments get the highest alert priority. Available on Professional and Enterprise plans.',
       },
       {
         q: 'Can I manage multiple sites in one account?',
@@ -58,19 +58,19 @@ const SECTIONS = [
     section: 'Compliance & Standards',
     faqs: [
       {
-        q: 'Is Calcheq AS/NZS ISO 17025 compliant?',
-        a: 'Calcheq helps you comply with AS/NZS ISO 17025 by automating calibration scheduling, recording, traceability, and certificate generation. Our certificates include all required elements: as-found/as-left readings, measurement uncertainty, technician identification, date, and scope. We\'re not an accrediting body, but our workflows are designed to meet the standard.',
+        q: 'Is CalCheq AS/NZS ISO 17025 compliant?',
+        a: 'CalCheq helps you comply with AS/NZS ISO 17025 by automating calibration scheduling, recording, traceability, and certificate generation. Our certificates include all required elements: as-found/as-left readings, measurement uncertainty, technician identification, date, and scope. We\'re not an accrediting body, but our workflows are designed to meet the standard.',
       },
       {
-        q: 'Can Calcheq help with NATA accreditation?',
-        a: 'NATA accreditation requires strict calibration controls, traceability, and documented procedures. Calcheq supports these by providing audit-ready records, automated scheduling, and certificate generation aligned with ISO 17025. You\'ll still need to document your QMS and quality procedures, but Calcheq eliminates the manual tracking that typically causes audit failures.',
+        q: 'Can CalCheq help with NATA accreditation?',
+        a: 'NATA accreditation requires strict calibration controls, traceability, and documented procedures. CalCheq supports these by providing audit-ready records, automated scheduling, and certificate generation aligned with ISO 17025. You\'ll still need to document your QMS and quality procedures, but CalCheq eliminates the manual tracking that typically causes audit failures.',
       },
       {
         q: 'What\'s the connection to IEC 61511 (Safety Instrumented Systems)?',
-        a: 'IEC 61511 requires rigorous proof that SIS instruments (pressure transmitters, shut-off valves, emergency stop buttons) are calibrated and functioning within tolerance. Criticality ranking in Calcheq automates Red (SIS-critical) instrument identification, predicts degradation, and generates compliance certificates proving when each device was last calibrated. Critical for major hazard facilities.',
+        a: 'IEC 61511 requires rigorous proof that SIS instruments (pressure transmitters, shut-off valves, emergency stop buttons) are calibrated and functioning within tolerance. Criticality ranking in CalCheq automates Red (SIS-critical) instrument identification, predicts degradation, and generates compliance certificates proving when each device was last calibrated. Critical for major hazard facilities.',
       },
       {
-        q: 'What audit documentation does Calcheq produce?',
+        q: 'What audit documentation does CalCheq produce?',
         a: 'Audit-ready reports include: calibration history (all as-found/as-left readings), compliance status (overdue instruments, missed intervals), technician sign-offs, certificate archive, multi-site rollup, and criticality status by instrument. All timestamped with full traceability. Export as PDF or keep online.',
       },
     ],
@@ -80,7 +80,7 @@ const SECTIONS = [
     faqs: [
       {
         q: 'Where is my data hosted?',
-        a: 'Calcheq data is hosted on secure cloud infrastructure with redundant backups. All data is encrypted in transit (TLS 1.3) and at rest (AES-256). If you have specific data residency or security requirements, Enterprise customers can discuss custom hosting arrangements.',
+        a: 'CalCheq data is hosted on secure cloud infrastructure with redundant backups. All data is encrypted in transit (TLS 1.3) and at rest (AES-256). If you have specific data residency or security requirements, Enterprise customers can discuss custom hosting arrangements.',
       },
       {
         q: 'How often is my data backed up?',
@@ -88,7 +88,7 @@ const SECTIONS = [
       },
       {
         q: 'Who owns my data?',
-        a: 'You do. Calcheq is your data processor, not your data owner. You can export all your data at any time as CSV or PDF. If you cancel, we\'ll provide a full data export and then delete your account after 90 days. We never sell, share, or use your calibration data for any other purpose.',
+        a: 'You do. CalCheq is your data processor, not your data owner. You can export all your data at any time as CSV or PDF. If you cancel, we\'ll provide a full data export and then delete your account after 90 days. We never sell, share, or use your calibration data for any other purpose.',
       },
     ],
   },
@@ -140,9 +140,9 @@ function AccordionItem({ q, a }) {
 
 export default function FAQ() {
   useEffect(() => {
-    document.title = 'FAQ — Calcheq Instrument Calibration Management'
+    document.title = 'FAQ — CalCheq Instrument Calibration Management'
     const desc = document.querySelector('meta[name="description"]')
-    const content = 'Frequently asked questions about Calcheq — instrument calibration management software for oil & gas, chemical, pharma, and mining industries.'
+    const content = 'Frequently asked questions about CalCheq — instrument calibration management software for oil & gas, chemical, pharma, and mining industries.'
     if (desc) desc.setAttribute('content', content)
     else { const m = document.createElement('meta'); m.name = 'description'; m.content = content; document.head.appendChild(m) }
   }, [])
@@ -158,7 +158,7 @@ export default function FAQ() {
             Frequently asked questions
           </h1>
           <p className="text-slate-500 text-lg">
-            Everything you need to know about Calcheq, implementation, and calibration management best practices.
+            Everything you need to know about CalCheq, implementation, and calibration management best practices.
           </p>
         </div>
       </section>

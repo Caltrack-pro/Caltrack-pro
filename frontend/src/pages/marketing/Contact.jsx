@@ -5,9 +5,9 @@ import MarketingFooter from '../../components/marketing/MarketingFooter'
 
 export default function Contact() {
   useEffect(() => {
-    document.title = 'Contact — Calcheq Instrument Calibration Management'
+    document.title = 'Contact — CalCheq Instrument Calibration Management'
     const desc = document.querySelector('meta[name="description"]')
-    const content = 'Start your 30-day free Calcheq pilot — no credit card required. Full Professional plan with personal onboarding and training.'
+    const content = 'Start your 30-day free CalCheq pilot — no credit card required. Full Professional plan with personal onboarding and training.'
     if (desc) desc.setAttribute('content', content)
     else { const m = document.createElement('meta'); m.name = 'description'; m.content = content; document.head.appendChild(m) }
   }, [])

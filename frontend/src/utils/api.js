@@ -1,5 +1,5 @@
 /**
- * Calcheq — API service layer
+ * CalCheq — API service layer
  * All communication with the FastAPI backend goes through here.
  * Base URL reads from the Vite proxy (dev) or an env variable (prod).
  */

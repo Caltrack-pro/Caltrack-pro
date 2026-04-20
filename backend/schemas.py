@@ -1,5 +1,5 @@
 """
-Pydantic v2 request / response schemas for Calcheq.
+Pydantic v2 request / response schemas for CalCheq.
 """
 from __future__ import annotations
 

@@ -52,9 +52,9 @@ export default function HowItWorks() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    document.title = 'How It Works — Calcheq Instrument Calibration Management'
+    document.title = 'How It Works — CalCheq Instrument Calibration Management'
     const desc = document.querySelector('meta[name="description"]')
-    const content = 'See how Calcheq transforms your instrument calibration management from spreadsheet chaos to compliance clarity — in 48 hours. 4-step setup process for Australian processing plants.'
+    const content = 'See how CalCheq transforms your instrument calibration management from spreadsheet chaos to compliance clarity — in 48 hours. 4-step setup process for Australian processing plants.'
     if (desc) desc.setAttribute('content', content)
     else { const m = document.createElement('meta'); m.name = 'description'; m.content = content; document.head.appendChild(m) }
   }, [])
@@ -79,7 +79,7 @@ export default function HowItWorks() {
             Up and running in 48 hours — not six months.
           </h1>
           <p className="text-slate-500 text-lg leading-relaxed max-w-2xl mx-auto">
-            See how Calcheq transforms your instrument management, compliance, and team workflows from day one.
+            See how CalCheq transforms your instrument management, compliance, and team workflows from day one.
           </p>
         </div>
       </section>
@@ -127,7 +127,7 @@ export default function HowItWorks() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-extrabold text-slate-900 mb-4">Feature Deep-Dive</h2>
-            <p className="text-slate-500 max-w-xl mx-auto">Six core capabilities that set Calcheq apart.</p>
+            <p className="text-slate-500 max-w-xl mx-auto">Six core capabilities that set CalCheq apart.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <FeatureCard
@@ -148,7 +148,7 @@ export default function HowItWorks() {
             <FeatureCard
               icon={<Icon d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />}
               title="Predictive Degradation Alerts"
-              body="Calcheq learns from your historical calibration data and flags instruments showing degradation trends before they exceed tolerance. Reduce emergency repairs and keep your process stable. Red instruments get highest alert priority."
+              body="CalCheq learns from your historical calibration data and flags instruments showing degradation trends before they exceed tolerance. Reduce emergency repairs and keep your process stable. Red instruments get highest alert priority."
             />
             <FeatureCard
               icon={<Icon d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />}
@@ -168,14 +168,14 @@ export default function HowItWorks() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-3xl font-extrabold text-slate-900 mb-4">Who Uses Calcheq</h2>
+            <h2 className="text-3xl font-extrabold text-slate-900 mb-4">Who Uses CalCheq</h2>
             <p className="text-slate-500 max-w-xl mx-auto">Designed for every role in your calibration team.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <RoleCard
               emoji="🎯"
               role="Instrumentation Supervisor"
-              body="Own the compliance program. Calcheq gives you audit-ready reports, predictive alerts on failing instruments, and centralised criticality tracking. Spend less time chasing spreadsheets, more time on strategy and risk."
+              body="Own the compliance program. CalCheq gives you audit-ready reports, predictive alerts on failing instruments, and centralised criticality tracking. Spend less time chasing spreadsheets, more time on strategy and risk."
             />
             <RoleCard
               emoji="📅"
@@ -200,7 +200,7 @@ export default function HowItWorks() {
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-indigo-700">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-4xl font-extrabold text-white mb-5 leading-tight">
-            Ready to see how Calcheq works?
+            Ready to see how CalCheq works?
           </h2>
           <p className="text-blue-200 text-lg mb-10">
             Start your free 30-day pilot. Full Professional plan. No credit card required.

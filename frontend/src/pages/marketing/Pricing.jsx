@@ -125,9 +125,9 @@ export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(true)
 
   useEffect(() => {
-    document.title = 'Pricing — Calcheq Instrument Calibration Management'
+    document.title = 'Pricing — CalCheq Instrument Calibration Management'
     const desc = document.querySelector('meta[name="description"]')
-    const content = 'Transparent pricing for Australian processing plants. Calcheq instrument calibration management — scale from 50 to unlimited instruments. No surprises. Cancel anytime.'
+    const content = 'Transparent pricing for Australian processing plants. CalCheq instrument calibration management — scale from 50 to unlimited instruments. No surprises. Cancel anytime.'
     if (desc) desc.setAttribute('content', content)
     else { const m = document.createElement('meta'); m.name = 'description'; m.content = content; document.head.appendChild(m) }
   }, [])

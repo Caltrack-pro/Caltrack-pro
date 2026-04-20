@@ -1,9 +1,9 @@
 /**
- * Calcheq — Calibrator CSV Parser
+ * CalCheq — Calibrator CSV Parser
  *
  * Parses CSV files exported from Beamex (MC6, MC4, MC2) and Fluke
  * (754, 729, 726) documenting calibrators into a structured object
- * that can be submitted as a Calcheq calibration record.
+ * that can be submitted as a CalCheq calibration record.
  *
  * Exports:
  *   parseCalibratorkCSV(text)  → { format, tag, date, technician,

@@ -1,5 +1,5 @@
 """
-Email notification helpers for Calcheq.
+Email notification helpers for CalCheq.
 Uses the Resend API (resend.com) for transactional email.
 
 If RESEND_API_KEY is not set, all send calls are no-ops (logged only).
@@ -13,7 +13,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 RESEND_API_KEY   = os.getenv("RESEND_API_KEY", "")
-FROM_EMAIL       = os.getenv("RESEND_FROM_EMAIL", "Calcheq <notifications@calcheq.com>")
+FROM_EMAIL       = os.getenv("RESEND_FROM_EMAIL", "CalCheq <notifications@calcheq.com>")
 APP_URL          = os.getenv("APP_URL", "https://calcheq.com")
 
 
@@ -71,7 +71,7 @@ def notify_submission(
 </table>
 <p style="margin-top:16px">
   <a href="{url}" style="background:#3b82f6;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-size:14px">
-    Review in Calcheq
+    Review in CalCheq
   </a>
 </p>
 """
@@ -106,7 +106,7 @@ def notify_approved(
 </table>
 <p style="margin-top:16px">
   <a href="{url}" style="background:#3b82f6;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-size:14px">
-    View in Calcheq
+    View in CalCheq
   </a>
 </p>
 """
@@ -143,7 +143,7 @@ def notify_rejected(
 </table>
 <p style="margin-top:16px">
   <a href="{url}" style="background:#3b82f6;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-size:14px">
-    View in Calcheq
+    View in CalCheq
   </a>
 </p>
 """
@@ -411,9 +411,9 @@ def send_member_invite(
     login_url = f"{APP_URL}/auth/sign-in"
     html = f"""
 <div style="font-family:sans-serif;max-width:520px;margin:0 auto">
-  <h2 style="color:#0B1F3A">You've been invited to Calcheq</h2>
+  <h2 style="color:#0B1F3A">You've been invited to CalCheq</h2>
   <p>Hi {display_name},</p>
-  <p><strong>{invited_by}</strong> has added you to the <strong>{site_name}</strong> site on Calcheq — instrument calibration management.</p>
+  <p><strong>{invited_by}</strong> has added you to the <strong>{site_name}</strong> site on CalCheq — instrument calibration management.</p>
 
   <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;margin:20px 0">
     <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Your login details</p>
@@ -437,7 +437,7 @@ def send_member_invite(
 
   <p style="margin-top:24px">
     <a href="{login_url}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600">
-      Sign in to Calcheq
+      Sign in to CalCheq
     </a>
   </p>
 
@@ -449,6 +449,6 @@ def send_member_invite(
 """
     _send(
         to=to_email,
-        subject=f"You've been invited to {site_name} on Calcheq",
+        subject=f"You've been invited to {site_name} on CalCheq",
         html=html,
     )

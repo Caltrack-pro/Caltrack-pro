@@ -1,5 +1,5 @@
 """
-Authentication helpers for Calcheq.
+Authentication helpers for CalCheq.
 Validates Supabase-issued JWTs and provides FastAPI dependency functions.
 
 Supabase now signs JWTs with an asymmetric ECC P-256 key (ES256).
