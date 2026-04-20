@@ -427,6 +427,7 @@ export default function InstrumentForm() {
       setTimeout(() => navigate(`/app/instruments/${inst.id}`), 600)
     } catch (err) {
       setSaveError(err.message)
+      showToast(err.message || 'Failed to save instrument', 'error')
       setSaving(false)
     }
   }

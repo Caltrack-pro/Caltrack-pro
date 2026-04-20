@@ -58,8 +58,8 @@ function Documents() {
           docsApi.list(),
           instrApi.list({ status: 'active', limit: 500 }),
         ])
-        setDocuments(docsRes.documents || [])
-        setInstruments(instrsRes.instruments || [])
+        setDocuments(docsRes.results || [])
+        setInstruments(instrsRes.results || [])
       } catch (err) {
         setError(err.message)
         setToast({ type: 'error', message: `Failed to load documents: ${err.message}` })
@@ -308,7 +308,7 @@ function Documents() {
                       {getInstrumentTags(doc.instrument_ids)}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">
-                      {doc.created_by || '—'}
+                      {doc.uploaded_by || '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">
                       {uploadedDate}
