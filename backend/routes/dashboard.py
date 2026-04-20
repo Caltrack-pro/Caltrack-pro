@@ -457,6 +457,7 @@ def bad_actors(
     rows = (
         bad_q
         .group_by(CalibrationRecord.instrument_id)
+        .having(func.count(CalibrationRecord.id) >= 2)
         .order_by(func.count(CalibrationRecord.id).desc())
         .limit(10)
         .all()

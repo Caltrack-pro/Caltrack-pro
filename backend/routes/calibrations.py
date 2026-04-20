@@ -251,13 +251,19 @@ def _save_test_points(
 def _update_instrument_on_approve(record: CalibrationRecord, db: Session) -> None:
     """
     After approval, propagate calibration outcome back to the parent instrument:
-      - last_calibration_date   = calibration_date
+      - last_calibration_date   = calibration_date (only if >= current value)
       - last_calibration_result = as_left_result (if adjusted) else as_found_result
       - calibration_due_date    = calibration_date + calibration_interval_days
+    Only updates when the record's calibration_date is >= the instrument's current
+    last_calibration_date, so approving an older record never overwrites a newer result.
     """
     instr = db.get(Instrument, record.instrument_id)
     if instr is None:
         return  # instrument was decommissioned between record creation and approval
+
+    # Guard: never allow an older record to overwrite a more recent calibration result
+    if instr.last_calibration_date and record.calibration_date < instr.last_calibration_date:
+        return
 
     instr.last_calibration_date = record.calibration_date
 

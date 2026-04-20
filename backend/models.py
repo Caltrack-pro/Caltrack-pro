@@ -1,7 +1,7 @@
 import enum
 from sqlalchemy import (
     Boolean, Column, Date, DateTime, Float, ForeignKey,
-    Integer, String, Text,
+    Integer, String, Text, UniqueConstraint,
 )
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -86,12 +86,15 @@ class RecordStatus(str, enum.Enum):
 
 class Instrument(Base):
     __tablename__ = "instruments"
+    __table_args__ = (
+        UniqueConstraint('tag_number', 'created_by', name='uq_instrument_tag_per_site'),
+    )
 
     id = Column(
         UUID(as_uuid=True), primary_key=True,
         server_default=text("gen_random_uuid()")
     )
-    tag_number    = Column(String(50),  nullable=False, unique=True, index=True)
+    tag_number    = Column(String(50),  nullable=False, index=True)
     description   = Column(String(255))
     area          = Column(String(100))
     unit          = Column(String(100))

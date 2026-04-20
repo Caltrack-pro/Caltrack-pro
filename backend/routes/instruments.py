@@ -162,7 +162,7 @@ def list_instruments(
         q = q.filter(Instrument.area == area)
     if type:
         q = q.filter(Instrument.instrument_type == type)
-    if status:
+    if status and status != 'all':
         q = q.filter(Instrument.status == status)
     if last_calibration_result:
         q = q.filter(Instrument.last_calibration_result == last_calibration_result)
@@ -297,9 +297,10 @@ def update_instrument(
         db.commit()
     except IntegrityError:
         db.rollback()
+        conflicting_tag = updates.get('tag_number') or instr.tag_number
         raise HTTPException(
             status_code=409,
-            detail=f"An instrument with tag_number '{updates.get('tag_number')}' already exists",
+            detail=f"An instrument with tag_number '{conflicting_tag}' already exists in your site",
         )
     db.refresh(instr)
     return _to_response(instr)
