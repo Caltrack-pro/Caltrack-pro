@@ -359,6 +359,7 @@ overall record: fail > marginal > pass (worst point wins)
 - ✅ MarketingNav — "Start Free Trial" → /contact (30-day managed pilot); green "Sign Up" button → /auth/signup (self-serve plan selection)
 - ✅ Brand casing unified — "CalCheq" now consistent across all 16 frontend + backend files (was "Calcheq" in many places)
 - ✅ Minor-1: Compliance Rate KPI card shows "—" on empty sites instead of red "0.0%"
+- ✅ Polish-3: Planner "+ Add" refreshes queue panel — confirmed `handleAdd` calls `await loadQueue()` after queueApi.add()
 - ✅ QA bug-fix sprint (20–21 Apr 2026) — 21 bugs resolved across 7 commits; DB migration applied via MCP:
   - CRITICAL-1: tag_number uniqueness → composite (tag_number, created_by) per site; DB constraint swapped live
   - CRITICAL-2: last_calibration_date uses calendar MAX not submission order; approval guard + DB recompute
@@ -382,7 +383,6 @@ overall record: fail > marginal > pass (worst point wins)
 ### Known open items (low priority / design decisions)
 - Minor-3: DELETE /api/instruments is a soft-delete (returns decommissioned status) — consider returning 200 with body or renaming to /decommission
 - Minor-4: No calibration void/correct workflow — admin has no path to remove a wrongly-entered record
-- Polish-3: Planner "+ Add" — queue panel right side; handleAdd calls loadQueue(), appears already refreshing
 - Polish-7: Trial length 14-day (self-serve) vs 30-day (pilot) inconsistency across marketing copy — decision needed
 - Major-12: Supabase JWT refresh blips — infra/CSP issue, no app-code fix; check Railway response headers for CSP
 
