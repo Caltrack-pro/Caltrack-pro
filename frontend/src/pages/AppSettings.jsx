@@ -496,7 +496,7 @@ function BillingSection({ isDemo }) {
                     Cancel
                   </button>
                 </div>
-                <p className="text-xs text-slate-400">30-day free trial included. No charge until the trial ends. Cancel anytime.</p>
+                <p className="text-xs text-slate-400">14-day free trial included. No charge until the trial ends. Cancel anytime.</p>
               </div>
             )}
           </>
