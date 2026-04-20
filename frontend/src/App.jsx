@@ -1,6 +1,26 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import Layout from './components/Layout'
 import AuthGuard from './components/AuthGuard'
+
+const SITE_BASE = 'https://calcheq.com'
+
+function CanonicalManager() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const url = `${SITE_BASE}${pathname}`
+    let link = document.querySelector("link[rel='canonical']")
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'canonical'
+      document.head.appendChild(link)
+    }
+    link.href = url
+    const ogUrl = document.querySelector("meta[property='og:url']")
+    if (ogUrl) ogUrl.setAttribute('content', url)
+  }, [pathname])
+  return null
+}
 
 // Auth pages
 import SignIn        from './pages/auth/SignIn'
@@ -39,6 +59,7 @@ import Onboarding          from './pages/Onboarding'
 export default function App() {
   return (
     <BrowserRouter>
+      <CanonicalManager />
       <Routes>
 
         {/* ── Auth pages (no app chrome) ──────────────────────────────── */}
