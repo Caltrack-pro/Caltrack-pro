@@ -436,8 +436,16 @@ function DriftAlertsTab() {
   const load = useCallback(() => {
     setLoading(true)
     setError(null)
-    instrApi.list({ last_calibration_result: 'marginal', status: 'active', limit: 500 })
-      .then(res => { setData(res.results ?? []); setLoading(false) })
+    Promise.all([
+      instrApi.list({ last_calibration_result: 'marginal', status: 'active', limit: 500 }),
+      instrApi.list({ last_calibration_result: 'fail',     status: 'active', limit: 500 }),
+    ])
+      .then(([marginalRes, failRes]) => {
+        const marginal = (marginalRes.results ?? []).map(i => ({ ...i, _driftStatus: 'marginal' }))
+        const exceeded = (failRes.results ?? []).map(i => ({ ...i, _driftStatus: 'exceeded' }))
+        setData([...exceeded, ...marginal])
+        setLoading(false)
+      })
       .catch(err => { setError(err.message); setLoading(false) })
   }, [])
 
@@ -545,7 +553,7 @@ function DriftAlertsTab() {
         <div className="flex-1" />
         {!loading && (
           <span className="text-sm text-slate-500">
-            <span className="font-bold text-purple-600">{sorted.length}</span> instrument{sorted.length !== 1 ? 's' : ''} with drift trend
+            <span className="font-bold text-purple-600">{sorted.length}</span> instrument{sorted.length !== 1 ? 's' : ''} with drift or tolerance issue
           </span>
         )}
         <button onClick={load} disabled={loading}
@@ -555,7 +563,7 @@ function DriftAlertsTab() {
       </div>
 
       {loading ? <Spinner /> : error ? <ErrorMsg message={error} onRetry={load} /> :
-        sorted.length === 0 ? <EmptyOk icon="✅" message="No instruments showing a marginal drift trend right now." /> : (
+        sorted.length === 0 ? <EmptyOk icon="✅" message="No instruments showing marginal or exceeded drift right now." /> : (
           <>
             <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
               <table className="w-full text-sm min-w-[1000px]">
@@ -579,7 +587,9 @@ function DriftAlertsTab() {
                     const currErr = trendPts
                       ? projectedCurrentError(inst, trendPts)
                       : (inst.max_as_found_error_pct ?? null)
-                    const failDate = trendPts ? projectedFailDate(inst, trendPts) : null
+                    const failDate = inst._driftStatus === 'exceeded'
+                      ? 'exceeded'
+                      : (trendPts ? projectedFailDate(inst, trendPts) : null)
                     const tol = inst.tolerance_value ?? null
                     const due = daysUntilDue(inst)
                     const errColor = currErr != null && tol ? currentErrColor(currErr, tol) : 'text-amber-600'
@@ -592,6 +602,9 @@ function DriftAlertsTab() {
                           <Link to={`/app/instruments/${inst.id}?tab=drift-analysis`} className="font-mono font-bold text-blue-600 hover:underline">
                             {inst.tag_number}
                           </Link>
+                          {inst._driftStatus === 'exceeded' && (
+                            <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs font-semibold">Exceeded</span>
+                          )}
                         </td>
                         <td className={`${TD} text-slate-600 max-w-[140px] truncate`}>{inst.description || '—'}</td>
                         <td className={`${TD} text-slate-500`}>{inst.area || '—'}</td>

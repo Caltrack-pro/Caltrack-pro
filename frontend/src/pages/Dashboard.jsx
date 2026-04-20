@@ -58,10 +58,11 @@ function useDashboard() {
       dashApi.upcoming(site),
       calsApi.list({ record_status: 'submitted', limit: 1 }),
       instrApi.list({ last_calibration_result: 'marginal', status: 'active', limit: 1 }),
+      instrApi.list({ last_calibration_result: 'fail',     status: 'active', limit: 1 }),
     ])
-      .then(([stats, alerts, areas, upcoming, pendingCals, marginalInstr]) => {
+      .then(([stats, alerts, areas, upcoming, pendingCals, marginalInstr, failInstr]) => {
         if (!cancelled) {
-          setData({ stats, alerts, areas, upcoming, pendingCount: pendingCals?.total ?? 0, driftCount: marginalInstr?.total ?? 0 })
+          setData({ stats, alerts, areas, upcoming, pendingCount: pendingCals?.total ?? 0, driftCount: (marginalInstr?.total ?? 0) + (failInstr?.total ?? 0) })
           setLoading(false)
         }
       })
