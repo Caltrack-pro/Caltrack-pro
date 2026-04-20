@@ -360,30 +360,31 @@ overall record: fail > marginal > pass (worst point wins)
 - ✅ Brand casing unified — "CalCheq" now consistent across all 16 frontend + backend files (was "Calcheq" in many places)
 - ✅ Minor-1: Compliance Rate KPI card shows "—" on empty sites instead of red "0.0%"
 - ✅ Polish-3: Planner "+ Add" refreshes queue panel — confirmed `handleAdd` calls `await loadQueue()` after queueApi.add()
+- ✅ Polish-7: Trial length unified to 14 days across all marketing copy (Landing, Pricing, FAQ, Contact, HowItWorks, DemoPage, SignUp)
 - ✅ QA bug-fix sprint (20–21 Apr 2026) — 21 bugs resolved across 7 commits; DB migration applied via MCP:
-  - CRITICAL-1: tag_number uniqueness → composite (tag_number, created_by) per site; DB constraint swapped live
-  - CRITICAL-2: last_calibration_date uses calendar MAX not submission order; approval guard + DB recompute
-  - CRITICAL-3: canonical URL + og:url now set per-route by CanonicalManager in App.jsx
-  - Major-1: SignIn cross-checks typed company name against /api/auth/me after auth; signs out + errors on mismatch
-  - Major-2: Dashboard useDashboard depends on siteName/isDemoMode (not tick); guards fetch when site is null
-  - Major-3/4: Dashboard drift card + DriftAlertsTab now include exceeded (fail) instruments, not just marginal
-  - Major-5: Recommendations engine fetches fail instruments and surfaces each as a critical recommendation
-  - Major-6: bad_actors query requires ≥ 2 failures (matches UI copy)
-  - Major-7: InstrumentForm save errors now show toast regardless of scroll position
-  - Major-8: CriticalityBadge renders amber "Unclassified" for null; form defaults null, shows placeholder
-  - Major-9: Documents.jsx reads `results` from API response (was `.documents` / `.instruments`)
-  - Major-11: Document delete now explicitly removes document_instruments rows first (FK constraint fix)
-  - Major-13: AppNotFound component + catch-all Route inside /app AuthGuard layout
-  - Major-14: Mobile drawer already fully implemented in Layout.jsx + Header.jsx (confirmed, not deferred)
-  - Minor-2: status=all no longer returns 500 — treated as no filter
-  - Polish-5: Documents "Uploaded By" column reads `uploaded_by` field
-  - Polish-6: Billing "30-day free trial" copy corrected to "14-day"
-  - Polish-9: Resources cards link to /resources/:slug (canonical), not /blog/:slug
+  - ✅ CRITICAL-1: tag_number uniqueness → composite (tag_number, created_by) per site; DB constraint swapped live
+  - ✅ CRITICAL-2: last_calibration_date uses calendar MAX not submission order; approval guard + DB recompute
+  - ✅ CRITICAL-3: canonical URL + og:url now set per-route by CanonicalManager in App.jsx
+  - ✅ Major-1: SignIn cross-checks typed company name against /api/auth/me after auth; signs out + errors on mismatch
+  - ✅ Major-2: Dashboard useDashboard depends on siteName/isDemoMode (not tick); guards fetch when site is null
+  - ✅ Major-3/4: Dashboard drift card + DriftAlertsTab now include exceeded (fail) instruments, not just marginal
+  - ✅ Major-5: Recommendations engine fetches fail instruments and surfaces each as a critical recommendation
+  - ✅ Major-6: bad_actors query requires ≥ 2 failures (matches UI copy)
+  - ✅ Major-7: InstrumentForm save errors now show toast regardless of scroll position
+  - ✅ Major-8: CriticalityBadge renders amber "Unclassified" for null; form defaults null, shows placeholder
+  - ✅ Major-9: Documents.jsx reads `results` from API response (was `.documents` / `.instruments`)
+  - ✅ Major-11: Document delete now explicitly removes document_instruments rows first (FK constraint fix)
+  - ✅ Major-13: AppNotFound component + catch-all Route inside /app AuthGuard layout
+  - ✅ Major-14: Mobile drawer already fully implemented in Layout.jsx + Header.jsx (confirmed, not deferred)
+  - ✅ Minor-2: status=all no longer returns 500 — treated as no filter
+  - ✅ Polish-5: Documents "Uploaded By" column reads `uploaded_by` field
+  - ✅ Polish-6: Billing "30-day free trial" copy corrected to "14-day"
+  - ✅ Polish-9: Resources cards link to /resources/:slug (canonical), not /blog/:slug
 
 ### Known open items (low priority / design decisions)
 - Minor-3: DELETE /api/instruments is a soft-delete (returns decommissioned status) — consider returning 200 with body or renaming to /decommission
 - Minor-4: No calibration void/correct workflow — admin has no path to remove a wrongly-entered record
-- Polish-7: Trial length 14-day (self-serve) vs 30-day (pilot) inconsistency across marketing copy — decision needed
+- Polish-7 resolved — see Completed above. Note: backend admin.py managed pilot duration still 30 days; marketing copy says 14 days (users get more than promised — confirm if backend should also change to 14)
 - Major-12: Supabase JWT refresh blips — infra/CSP issue, no app-code fix; check Railway response headers for CSP
 
 ### Phase 2 (30–90 days post-launch)

@@ -8,8 +8,8 @@ const SECTIONS = [
     section: 'Getting Started',
     faqs: [
       {
-        q: 'How long does the 30-day free trial last?',
-        a: 'Your 30-day trial starts the day you sign up and gives you full access to the Professional plan — all features, up to 500 instruments, unlimited users. No credit card required. After 30 days, you can choose to start a paid subscription, downgrade to Starter, or cancel without any fees or penalties.',
+        q: 'How long does the 14-day free trial last?',
+        a: 'Your 14-day trial starts the day you sign up and gives you full access to the Professional plan — all features, up to 500 instruments, unlimited users. No credit card required. After 14 days, you can choose to start a paid subscription, downgrade to Starter, or cancel without any fees or penalties.',
       },
       {
         q: 'How fast can I set up CalCheq?',
@@ -25,7 +25,7 @@ const SECTIONS = [
       },
       {
         q: 'What if I want to see CalCheq before committing?',
-        a: 'Visit our live demo or request a personalised walkthrough from our team. In a demo call, we\'ll show you how calibration recording, certificate generation, and compliance reporting work using realistic instrument data. No pressure — you can trial the full product free for 30 days after.',
+        a: 'Visit our live demo or request a personalised walkthrough from our team. In a demo call, we\'ll show you how calibration recording, certificate generation, and compliance reporting work using realistic instrument data. No pressure — you can trial the full product free for 14 days after.',
       },
     ],
   },

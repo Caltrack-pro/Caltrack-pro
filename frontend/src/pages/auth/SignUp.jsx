@@ -208,7 +208,7 @@ export default function SignUp() {
 
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-slate-800">Choose your plan</h2>
-            <p className="text-sm text-slate-500 mt-1">30-day free trial on all plans — no credit card charged until after the trial</p>
+            <p className="text-sm text-slate-500 mt-1">14-day free trial on all plans — no credit card charged until after the trial</p>
           </div>
 
           {/* Monthly / Annual toggle */}

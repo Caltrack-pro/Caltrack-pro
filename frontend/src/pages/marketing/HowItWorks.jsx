@@ -203,7 +203,7 @@ export default function HowItWorks() {
             Ready to see how CalCheq works?
           </h2>
           <p className="text-blue-200 text-lg mb-10">
-            Start your free 30-day pilot. Full Professional plan. No credit card required.
+            Start your free 14-day pilot. Full Professional plan. No credit card required.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/contact" className="px-8 py-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg text-sm">
