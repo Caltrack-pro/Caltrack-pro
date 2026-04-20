@@ -139,7 +139,7 @@ function CriticalitySelect({ value, onChange }) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  const selected = CRITICALITY_OPTS.find(o => o.value === value) ?? CRITICALITY_OPTS[2]
+  const selected = CRITICALITY_OPTS.find(o => o.value === value) ?? null
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -161,23 +161,29 @@ function CriticalitySelect({ value, onChange }) {
           textAlign: 'left',
         }}
       >
-        {/* Dot */}
-        <span style={{
-          width: 10, height: 10, borderRadius: '50%',
-          background: selected.dot, flexShrink: 0, display: 'inline-block',
-        }} />
-        {/* Label pill */}
-        <span style={{
-          display: 'inline-flex', alignItems: 'center',
-          padding: '1px 10px', borderRadius: 20,
-          background: selected.bg, color: selected.text,
-          fontSize: '0.72rem', fontWeight: 700,
-        }}>
-          {selected.label}
-        </span>
-        <span style={{ flex: 1, color: '#94a3b8', fontSize: '0.78rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {selected.sublabel}
-        </span>
+        {selected ? (
+          <>
+            {/* Dot */}
+            <span style={{
+              width: 10, height: 10, borderRadius: '50%',
+              background: selected.dot, flexShrink: 0, display: 'inline-block',
+            }} />
+            {/* Label pill */}
+            <span style={{
+              display: 'inline-flex', alignItems: 'center',
+              padding: '1px 10px', borderRadius: 20,
+              background: selected.bg, color: selected.text,
+              fontSize: '0.72rem', fontWeight: 700,
+            }}>
+              {selected.label}
+            </span>
+            <span style={{ flex: 1, color: '#94a3b8', fontSize: '0.78rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {selected.sublabel}
+            </span>
+          </>
+        ) : (
+          <span style={{ flex: 1, color: '#94a3b8', fontSize: '0.875rem' }}>Select criticality…</span>
+        )}
         {/* Chevron */}
         <svg style={{ width: 14, height: 14, color: '#94a3b8', flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
           viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
@@ -270,7 +276,7 @@ export default function InstrumentForm() {
   const [unit,           setUnit]           = useState('')
   const [location,       setLocation]       = useState('')
   const [status,         setStatus]         = useState('active')
-  const [criticality,    setCriticality]    = useState('standard')
+  const [criticality,    setCriticality]    = useState(null)
 
   // Section 2 — Technical
   const [instrType,      setInstrType]      = useState('')
@@ -317,7 +323,7 @@ export default function InstrumentForm() {
         setUnit(inst.unit ?? '')
         setLocation(inst.physical_location ?? '')
         setStatus(inst.status ?? 'active')
-        setCriticality(inst.criticality ?? 'standard')
+        setCriticality(inst.criticality ?? null)
         setInstrType(inst.instrument_type ?? '')
         setManufacturer(inst.manufacturer ?? '')
         setModelNumber(inst.model ?? '')

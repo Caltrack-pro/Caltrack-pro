@@ -210,7 +210,9 @@ def delete_document(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # Delete the document (cascades to document_instruments)
+    db.query(DocumentInstrument).filter(
+        DocumentInstrument.document_id == doc_id
+    ).delete(synchronize_session=False)
     db.delete(doc)
     db.commit()
 

@@ -90,12 +90,14 @@ function RecommendationsTab() {
       dashApi.upcoming(null, 30).catch(() => ([])),
       dashApi.badActors(null).catch(() => ([])),
       instrApi.list({ last_calibration_result: 'marginal', status: 'active', limit: 500 }).catch(() => ({ results: [] })),
+      instrApi.list({ last_calibration_result: 'fail',     status: 'active', limit: 500 }).catch(() => ({ results: [] })),
     ])
-      .then(([overdueRes, upcomingRes, badActorsRes, marginalRes]) => {
+      .then(([overdueRes, upcomingRes, badActorsRes, marginalRes, failedRes]) => {
         const overdueList = overdueRes.results ?? []
         const upcomingList = Array.isArray(upcomingRes) ? upcomingRes : []
         const badActorsList = Array.isArray(badActorsRes) ? badActorsRes : (badActorsRes?.results ?? [])
         const marginalList = marginalRes.results ?? []
+        const failedList = failedRes.results ?? []
 
         const crit = []
         const adv = []
@@ -130,6 +132,22 @@ function RecommendationsTab() {
               category: 'critical',
             })
           }
+        })
+
+        // CRITICAL: Instruments with a FAIL last calibration result
+        failedList.forEach((inst) => {
+          crit.push({
+            id: `critical-failed-${inst.id}`,
+            instrumentId: inst.id,
+            tagNumber: inst.tag_number,
+            title: `${inst.tag_number} — Failed last calibration.`,
+            description: inst.criticality === 'safety_critical'
+              ? 'Safety-critical instrument with a FAIL result. Corrective maintenance required immediately.'
+              : inst.criticality === 'process_critical'
+              ? 'Process-critical instrument with a FAIL result. Investigate and recalibrate as soon as possible.'
+              : 'Instrument recorded a FAIL as-found result. Investigate root cause and recalibrate.',
+            category: 'critical',
+          })
         })
 
         // ADVISORY: Marginal instruments

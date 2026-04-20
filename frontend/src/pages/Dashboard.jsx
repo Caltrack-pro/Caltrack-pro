@@ -36,20 +36,23 @@ function useDashboard() {
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
   const [data,    setData]    = useState(null)
-  const [tick,    setTick]    = useState(0)
+  const [user,    setUser]    = useState(() => getUser())
+  const [refresh, setRefresh] = useState(0)
 
   useEffect(() => {
-    function onUserChange() { setTick(t => t + 1) }
+    function onUserChange(e) { setUser(e.detail) }
     window.addEventListener('caltrack-user-change', onUserChange)
     return () => window.removeEventListener('caltrack-user-change', onUserChange)
   }, [])
 
+  const site     = user?.siteName   ?? null
+  const demoMode = user?.isDemoMode ?? false
+
   useEffect(() => {
+    if (!site) return
     let cancelled = false
     setLoading(true)
     setError(null)
-
-    const site = getUser()?.siteName ?? null
 
     Promise.all([
       dashApi.stats(site),
@@ -74,9 +77,9 @@ function useDashboard() {
       })
 
     return () => { cancelled = true }
-  }, [tick])
+  }, [site, demoMode, refresh])
 
-  return { loading, error, data, retry: () => setTick(t => t + 1) }
+  return { loading, error, data, retry: () => setRefresh(r => r + 1) }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

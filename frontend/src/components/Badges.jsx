@@ -93,7 +93,14 @@ export function CriticalityBadge({ criticality, size = 'sm' }) {
         Standard
       </span>
     )
-  // non_critical or null/undefined
+  if (criticality == null)
+    return (
+      <span style={{ ...base, background: '#FFFBEB', color: '#92400E' }}>
+        <span style={{ ...dot, background: '#F59E0B' }} />
+        Unclassified
+      </span>
+    )
+  // non_critical / not_applicable / any other value
   return (
     <span style={{ ...base, background: '#F1F5F9', color: '#64748B' }}>
       <span style={{ ...dot, background: '#94A3B8' }} />
