@@ -357,7 +357,9 @@ overall record: fail > marginal > pass (worst point wins)
 - ✅ Pilot approval system — pilot_requests table; contact form saves to DB with token; notification email has Approve/Deny links; admin routes create Supabase user + site + 30-day trial; welcome email with credentials; trial auto-expiry in assert_active_subscription
 - ✅ Trial abuse prevention — domain-based check in billing.py; personal email providers use exact match, company domains use domain-wide match
 - ✅ MarketingNav — "Start Free Trial" → /contact (30-day managed pilot); green "Sign Up" button → /auth/signup (self-serve plan selection)
-- ✅ QA bug-fix sprint (20–21 Apr 2026) — 19 bugs resolved across 6 commits; DB migration applied via MCP:
+- ✅ Brand casing unified — "CalCheq" now consistent across all 16 frontend + backend files (was "Calcheq" in many places)
+- ✅ Minor-1: Compliance Rate KPI card shows "—" on empty sites instead of red "0.0%"
+- ✅ QA bug-fix sprint (20–21 Apr 2026) — 21 bugs resolved across 7 commits; DB migration applied via MCP:
   - CRITICAL-1: tag_number uniqueness → composite (tag_number, created_by) per site; DB constraint swapped live
   - CRITICAL-2: last_calibration_date uses calendar MAX not submission order; approval guard + DB recompute
   - CRITICAL-3: canonical URL + og:url now set per-route by CanonicalManager in App.jsx
@@ -376,6 +378,13 @@ overall record: fail > marginal > pass (worst point wins)
   - Polish-5: Documents "Uploaded By" column reads `uploaded_by` field
   - Polish-6: Billing "30-day free trial" copy corrected to "14-day"
   - Polish-9: Resources cards link to /resources/:slug (canonical), not /blog/:slug
+
+### Known open items (low priority / design decisions)
+- Minor-3: DELETE /api/instruments is a soft-delete (returns decommissioned status) — consider returning 200 with body or renaming to /decommission
+- Minor-4: No calibration void/correct workflow — admin has no path to remove a wrongly-entered record
+- Polish-3: Planner "+ Add" — queue panel right side; handleAdd calls loadQueue(), appears already refreshing
+- Polish-7: Trial length 14-day (self-serve) vs 30-day (pilot) inconsistency across marketing copy — decision needed
+- Major-12: Supabase JWT refresh blips — infra/CSP issue, no app-code fix; check Railway response headers for CSP
 
 ### Phase 2 (30–90 days post-launch)
 - **Scheduled report delivery** — weekly/monthly compliance PDF by email (Resend + APScheduler already in place)
