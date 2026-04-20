@@ -360,7 +360,7 @@ overall record: fail > marginal > pass (worst point wins)
 - ✅ Brand casing unified — "CalCheq" now consistent across all 16 frontend + backend files (was "Calcheq" in many places)
 - ✅ Minor-1: Compliance Rate KPI card shows "—" on empty sites instead of red "0.0%"
 - ✅ Polish-3: Planner "+ Add" refreshes queue panel — confirmed `handleAdd` calls `await loadQueue()` after queueApi.add()
-- ✅ Polish-7: Trial length unified to 14 days across all marketing copy (Landing, Pricing, FAQ, Contact, HowItWorks, DemoPage, SignUp)
+- ✅ Polish-7: Trial length unified to 30 days across all marketing copy (Landing, Pricing, FAQ, Contact, HowItWorks, DemoPage, SignUp, AppSettings, SignUp); backend billing.py already set trial_period_days=30 — now consistent everywhere
 - ✅ QA bug-fix sprint (20–21 Apr 2026) — 21 bugs resolved across 7 commits; DB migration applied via MCP:
   - ✅ CRITICAL-1: tag_number uniqueness → composite (tag_number, created_by) per site; DB constraint swapped live
   - ✅ CRITICAL-2: last_calibration_date uses calendar MAX not submission order; approval guard + DB recompute
@@ -382,9 +382,8 @@ overall record: fail > marginal > pass (worst point wins)
   - ✅ Polish-9: Resources cards link to /resources/:slug (canonical), not /blog/:slug
 
 ### Known open items (low priority / design decisions)
-- Minor-3: DELETE /api/instruments is a soft-delete (returns decommissioned status) — consider returning 200 with body or renaming to /decommission
-- Minor-4: No calibration void/correct workflow — admin has no path to remove a wrongly-entered record
-- Polish-7 resolved — see Completed above. Note: backend admin.py managed pilot duration still 30 days; marketing copy says 14 days (users get more than promised — confirm if backend should also change to 14)
+- Minor-3: DELETE /api/instruments is intentional soft-delete — preserves calibration history; returns 200 with decommissioned instrument. By design, no code change needed.
+- ✅ Minor-4: DELETE /api/calibrations/{id} hard-delete endpoint added (admin only); deletes CalTestPoint rows + writes audit entry + recomputes instrument cal state if the deleted record was approved
 - Major-12: Supabase JWT refresh blips — infra/CSP issue, no app-code fix; check Railway response headers for CSP
 
 ### Phase 2 (30–90 days post-launch)

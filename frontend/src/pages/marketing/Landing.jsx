@@ -104,7 +104,7 @@ export default function Landing() {
             onMouseEnter={e => e.currentTarget.style.background = C.amber}
             onMouseLeave={e => e.currentTarget.style.background = C.orange}
           >
-            Start Free 14-Day Trial
+            Start Free 30-Day Trial
           </Link>
           <Link to="/demo" style={{
             background: 'transparent', color: '#fff',
@@ -398,7 +398,7 @@ export default function Landing() {
           Simple pricing. No surprises.
         </h2>
         <p style={{ color: C.muted, maxWidth: 520, margin: '0 auto 3rem' }}>
-          Priced for Australian processing plants — not global enterprise software budgets. Start with your 14-day free trial, no credit card required.
+          Priced for Australian processing plants — not global enterprise software budgets. Start with your 30-day free trial, no credit card required.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', maxWidth: 1000, margin: '0 auto' }}>
@@ -523,7 +523,7 @@ export default function Landing() {
         </div>
 
         <p style={{ marginTop: '2rem', color: C.muted, fontSize: '0.85rem' }}>
-          All plans include a <strong>14-day free trial</strong> with your real plant data. No credit card required. Cancel anytime during the trial.
+          All plans include a <strong>30-day free trial</strong> with your real plant data. No credit card required. Cancel anytime during the trial.
         </p>
       </section>
 
@@ -538,17 +538,17 @@ export default function Landing() {
           padding: '0.3rem 1rem', borderRadius: 20, marginBottom: '1.25rem',
         }}>No credit card required</span>
         <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 800, marginBottom: '1rem' }}>
-          Start your free 14-day trial today
+          Start your free 30-day trial today
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.75)', maxWidth: 580, margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
-          Full Professional plan — all features, unlimited users — for 14 days at no cost. Import your instrument list using our guided CSV wizard and be live within hours. No IT project. No consultant. No setup fee.
+          Full Professional plan — all features, unlimited users — for 30 days at no cost. Import your instrument list using our guided CSV wizard and be live within hours. No IT project. No consultant. No setup fee.
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', maxWidth: 860, margin: '0 auto 2.5rem' }}>
           {[
             { icon: '✅', heading: 'Full Professional plan', body: 'Criticality ranking, drift prediction, approval workflow, Beamex/Fluke CSV import — everything unlocked.' },
             { icon: '📥', heading: 'Guided import wizard', body: 'Upload your instrument list as a CSV or Excel file. Our wizard maps your columns and has you live within hours.' },
             { icon: '📧', heading: 'Email support included', body: 'Questions during your trial? Our team responds within one business day.' },
-            { icon: '🚫', heading: 'No lock-in', body: 'After 14 days, choose a paid plan or walk away. No automatic billing. No cancellation fees.' },
+            { icon: '🚫', heading: 'No lock-in', body: 'After 30 days, choose a paid plan or walk away. No automatic billing. No cancellation fees.' },
           ].map(({ icon, heading, body }) => (
             <div key={heading} style={{
               background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
@@ -653,7 +653,7 @@ export default function Landing() {
           />
           <FaqItem
             q="What's included in the free trial?"
-            a="The full Professional plan — drift prediction, criticality ranking, approval workflows, Beamex/Fluke CSV import, unlimited users — for 14 days at no cost. You import your own instrument data using the guided wizard. Email support is included throughout the trial. No credit card required, no automatic billing at the end."
+            a="The full Professional plan — drift prediction, criticality ranking, approval workflows, Beamex/Fluke CSV import, unlimited users — for 30 days at no cost. You import your own instrument data using the guided wizard. Email support is included throughout the trial. No credit card required, no automatic billing at the end."
           />
         </div>
       </section>
@@ -676,7 +676,7 @@ export default function Landing() {
           onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'none'}
         >
-          Start Your Free 14-Day Trial
+          Start Your Free 30-Day Trial
         </Link>
       </section>
 

@@ -7,7 +7,7 @@ export default function Contact() {
   useEffect(() => {
     document.title = 'Contact — CalCheq Instrument Calibration Management'
     const desc = document.querySelector('meta[name="description"]')
-    const content = 'Start your 14-day free CalCheq pilot — no credit card required. Full Professional plan with personal onboarding and training.'
+    const content = 'Start your 30-day free CalCheq pilot — no credit card required. Full Professional plan with personal onboarding and training.'
     if (desc) desc.setAttribute('content', content)
     else { const m = document.createElement('meta'); m.name = 'description'; m.content = content; document.head.appendChild(m) }
   }, [])
@@ -50,7 +50,7 @@ export default function Contact() {
       <section className="pt-32 pb-14 px-4 sm:px-6 text-center bg-gradient-to-b from-slate-50 to-white">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
-            Start Your Free 14-Day Pilot
+            Start Your Free 30-Day Pilot
           </h1>
           <p className="text-slate-500 text-lg">
             No credit card. Full Professional plan. 48-hour onboarding included.
@@ -222,7 +222,7 @@ export default function Contact() {
                     3
                   </div>
                   <div>
-                    <h4 className="font-semibold text-slate-900 text-sm mb-1">14 Days to Decide</h4>
+                    <h4 className="font-semibold text-slate-900 text-sm mb-1">30 Days to Decide</h4>
                     <p className="text-slate-500 text-sm">Full access to Professional plan. Run reports, test compliance workflows, and see how your team responds. No pressure. Cancel anytime.</p>
                   </div>
                 </div>

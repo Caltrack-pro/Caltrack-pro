@@ -217,7 +217,7 @@ export default function DemoPage() {
                 your instruments and see your own calibration schedule in action.
               </p>
               <p style={{ color: C.muted, marginBottom: '1.5rem', lineHeight: 1.7 }}>
-                Start a 14-day free trial and our team will help you import your data, configure your workflows,
+                Start a 30-day free trial and our team will help you import your data, configure your workflows,
                 and get you recording calibrations within 48 hours.
               </p>
               <Link
@@ -279,7 +279,7 @@ export default function DemoPage() {
           />
           <DemoFAQ
             question="Can I test with my own data?"
-            answer="Yes — start your 14-day free trial and we'll import your instrument register and historical calibration records. You'll see CalCheq working with your actual data, team, and workflow. Your pilot is completely separate from the public demo and fully editable."
+            answer="Yes — start your 30-day free trial and we'll import your instrument register and historical calibration records. You'll see CalCheq working with your actual data, team, and workflow. Your pilot is completely separate from the public demo and fully editable."
           />
           <DemoFAQ
             question="How long does the demo take?"
@@ -287,7 +287,7 @@ export default function DemoPage() {
           />
           <DemoFAQ
             question="Do I need to create an account to see the demo?"
-            answer="No login or registration required. Click 'Launch the Live Demo' above and you'll be signed in automatically to the demo environment. If you want to try recording a calibration or editing instrument details, start your 14-day free trial."
+            answer="No login or registration required. Click 'Launch the Live Demo' above and you'll be signed in automatically to the demo environment. If you want to try recording a calibration or editing instrument details, start your 30-day free trial."
           />
           <DemoFAQ
             question="What if I have questions while in the demo?"
@@ -295,7 +295,7 @@ export default function DemoPage() {
           />
           <DemoFAQ
             question="Is this the same as a pilot?"
-            answer="No — the demo is a shared, read-only environment to explore features. A pilot is your own account: you can record calibrations, edit settings, and truly test CalCheq with your instruments and team. Pilots get 14 days free with full Professional features."
+            answer="No — the demo is a shared, read-only environment to explore features. A pilot is your own account: you can record calibrations, edit settings, and truly test CalCheq with your instruments and team. Pilots get 30 days free with full Professional features."
           />
         </div>
       </section>
@@ -307,7 +307,7 @@ export default function DemoPage() {
             What's Next?
           </h2>
           <p style={{ fontSize: '1.05rem', color: C.muted, margin: '0 0 2rem' }}>
-            Explore the demo, then start your free 14-day pilot. See how CalCheq transforms your calibration program.
+            Explore the demo, then start your free 30-day pilot. See how CalCheq transforms your calibration program.
           </p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button

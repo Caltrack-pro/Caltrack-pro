@@ -8,6 +8,7 @@ PUT    /api/calibrations/{id}                         update (draft only)
 POST   /api/calibrations/{id}/submit                  draft → submitted
 POST   /api/calibrations/{id}/approve                 submitted → approved + updates instrument
 POST   /api/calibrations/{id}/reject                  submitted → rejected
+DELETE /api/calibrations/{id}                         hard-delete (admin only)
 GET    /api/instruments/{instrument_id}/calibration-history   all records newest-first
 """
 from __future__ import annotations
@@ -284,6 +285,46 @@ def _update_instrument_on_approve(record: CalibrationRecord, db: Session) -> Non
         instr.calibration_due_date = (
             record.calibration_date + timedelta(days=instr.calibration_interval_days)
         )
+
+
+def _recompute_instrument_cal_state(instrument_id: UUID, db: Session) -> None:
+    """
+    After a calibration record is hard-deleted, recompute the parent instrument's
+    calibration state from the most recent remaining approved record.
+    """
+    instr = db.get(Instrument, instrument_id)
+    if instr is None:
+        return
+
+    latest = (
+        db.query(CalibrationRecord)
+        .filter(
+            CalibrationRecord.instrument_id == instrument_id,
+            CalibrationRecord.record_status == RecordStatus.APPROVED,
+        )
+        .order_by(CalibrationRecord.calibration_date.desc())
+        .first()
+    )
+
+    if latest is None:
+        instr.last_calibration_date   = None
+        instr.last_calibration_result = CalibrationResultStatus.NOT_CALIBRATED.value
+        instr.calibration_due_date    = None
+    else:
+        instr.last_calibration_date = latest.calibration_date
+        al = latest.as_left_result
+        if al and al.value != AsLeftResult.NOT_REQUIRED.value:
+            final_result = al.value
+        elif latest.as_found_result:
+            final_result = latest.as_found_result.value
+        else:
+            final_result = CalibrationResultStatus.NOT_CALIBRATED.value
+        instr.last_calibration_result = final_result
+        if instr.calibration_interval_days:
+            instr.calibration_due_date = (
+                latest.calibration_date + timedelta(days=instr.calibration_interval_days)
+            )
+    db.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -706,6 +747,42 @@ def reject_calibration(
         pass
 
     return _to_record_response(rec, db)
+
+
+# ---------------------------------------------------------------------------
+# DELETE /api/calibrations/{id}  — admin hard-delete
+# ---------------------------------------------------------------------------
+
+@router.delete("/{record_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+def delete_calibration(
+    record_id:    UUID,
+    current_user: UserContext = Depends(get_current_user),
+    db:           Session     = Depends(get_db),
+) -> None:
+    rec = _get_record_or_404(record_id, db)
+    _check_cal_access(rec, current_user, db)
+    assert_writable_site(current_user)
+
+    if current_user.role not in ("admin",):
+        raise HTTPException(
+            status_code=403,
+            detail="Only admins can permanently delete calibration records.",
+        )
+
+    instrument_id = rec.instrument_id
+    was_approved  = rec.record_status == RecordStatus.APPROVED
+
+    _write_audit(db, current_user, rec.id, "hard_delete",
+                 {"record_status": rec.record_status.value,
+                  "calibration_date": str(rec.calibration_date)})
+    db.query(CalTestPoint).filter(
+        CalTestPoint.calibration_record_id == record_id
+    ).delete(synchronize_session=False)
+    db.delete(rec)
+    db.commit()
+
+    if was_approved:
+        _recompute_instrument_cal_state(instrument_id, db)
 
 
 # ---------------------------------------------------------------------------
