@@ -2,7 +2,8 @@
 -- Fixes CRITICAL-1 (tag_number global unique → composite per site)
 -- and CRITICAL-2 (recompute last_calibration_date from MAX(calibration_date))
 --
--- Run in Supabase SQL Editor. Safe to re-run (uses IF EXISTS / IF NOT EXISTS).
+-- Applied to production via Supabase MCP on 2026-04-21.
+-- NOTE: last_calibration_result cast to ::calibration_result_status_enum required.
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- CRITICAL-1: Change tag_number uniqueness from global → per-site composite
@@ -19,7 +20,7 @@ CREATE INDEX IF NOT EXISTS ix_instruments_tag_number ON instruments (tag_number)
 
 -- Add the new composite unique constraint: one tag per site
 ALTER TABLE instruments
-    ADD CONSTRAINT uq_instrument_tag_per_site
+    ADD CONSTRAINT IF NOT EXISTS uq_instrument_tag_per_site
     UNIQUE (tag_number, created_by);
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -36,12 +37,12 @@ WITH latest AS (
         COALESCE(
             CASE
                 WHEN cr.as_left_result IS NOT NULL
-                     AND cr.as_left_result != 'not_required'
+                     AND cr.as_left_result::text != 'not_required'
                 THEN cr.as_left_result::text
                 ELSE cr.as_found_result::text
             END,
             'not_calibrated'
-        ) AS final_result
+        )::calibration_result_status_enum AS final_result
     FROM calibration_records cr
     WHERE cr.record_status IN ('approved', 'submitted')
       AND cr.as_found_result IS NOT NULL

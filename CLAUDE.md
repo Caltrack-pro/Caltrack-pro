@@ -357,6 +357,18 @@ overall record: fail > marginal > pass (worst point wins)
 - ✅ Pilot approval system — pilot_requests table; contact form saves to DB with token; notification email has Approve/Deny links; admin routes create Supabase user + site + 30-day trial; welcome email with credentials; trial auto-expiry in assert_active_subscription
 - ✅ Trial abuse prevention — domain-based check in billing.py; personal email providers use exact match, company domains use domain-wide match
 - ✅ MarketingNav — "Start Free Trial" → /contact (30-day managed pilot); green "Sign Up" button → /auth/signup (self-serve plan selection)
+- ✅ QA bug-fix sprint (20–21 Apr 2026) — 12 bugs resolved across 4 commits; DB migration applied via MCP:
+  - CRITICAL-1: tag_number uniqueness → composite (tag_number, created_by) per site; DB constraint swapped live
+  - CRITICAL-2: last_calibration_date uses calendar MAX not submission order; approval guard + DB recompute
+  - CRITICAL-3: canonical URL + og:url now set per-route by CanonicalManager in App.jsx
+  - Major-3/4: Dashboard drift card + DriftAlertsTab now include exceeded (fail) instruments, not just marginal
+  - Major-6: bad_actors query requires ≥ 2 failures (matches UI copy)
+  - Major-7: InstrumentForm save errors now show toast regardless of scroll position
+  - Major-9: Documents.jsx reads `results` from API response (was `.documents` / `.instruments`)
+  - Minor-2: status=all no longer returns 500 — treated as no filter
+  - Polish-5: Documents "Uploaded By" column reads `uploaded_by` field
+  - Polish-6: Billing "30-day free trial" copy corrected to "14-day"
+  - Polish-9: Resources cards link to /resources/:slug (canonical), not /blog/:slug
 
 ### Phase 2 (30–90 days post-launch)
 - **Scheduled report delivery** — weekly/monthly compliance PDF by email (Resend + APScheduler already in place)
