@@ -63,12 +63,29 @@ export default function SignIn() {
     setError('')
     setLoading(true)
     try {
-      const { error: authErr } = await supabase.auth.signInWithPassword({ email, password })
+      const { data, error: authErr } = await supabase.auth.signInWithPassword({ email, password })
       if (authErr) {
         setError(authErr.message)
-      } else {
-        navigate(from, { replace: true })
+        return
       }
+      // Cross-check the typed company name against the user's actual site
+      try {
+        const meRes = await fetch('/api/auth/me', {
+          headers: { Authorization: `Bearer ${data.session.access_token}` },
+        })
+        if (meRes.ok) {
+          const me = await meRes.json()
+          if ((me.site_name ?? '').toLowerCase() !== companyName.trim().toLowerCase()) {
+            await supabase.auth.signOut()
+            setError(`This account belongs to "${me.site_name}", not "${companyName}". Check the company name and try again.`)
+            setStep(1)
+            return
+          }
+        }
+      } catch {
+        // Verification network error — proceed, user lands on their real site
+      }
+      navigate(from, { replace: true })
     } finally {
       setLoading(false)
     }

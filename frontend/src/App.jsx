@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom'
 import { useEffect } from 'react'
 import Layout from './components/Layout'
 import AuthGuard from './components/AuthGuard'
@@ -20,6 +20,21 @@ function CanonicalManager() {
     if (ogUrl) ogUrl.setAttribute('content', url)
   }, [pathname])
   return null
+}
+
+// 404 page rendered inside the authenticated layout (sidebar stays visible)
+function AppNotFound() {
+  return (
+    <div className="flex flex-col items-center justify-center py-32 text-center">
+      <p className="text-7xl font-bold text-slate-200 mb-4">404</p>
+      <h1 className="text-xl font-semibold text-slate-700 mb-2">Page not found</h1>
+      <p className="text-slate-500 mb-6 text-sm">This URL doesn't exist in the app.</p>
+      <Link to="/app"
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+        Go to Dashboard
+      </Link>
+    </div>
+  )
 }
 
 // Auth pages
@@ -121,6 +136,9 @@ export default function App() {
 
           {/* Support */}
           <Route path="support"                  element={<Support />} />
+
+          {/* /app/* catch-all — shows 404 within the app shell instead of bouncing to marketing homepage */}
+          <Route path="*" element={<AppNotFound />} />
 
           {/* Legacy in-app redirects — old bookmarks still work */}
           <Route path="alerts"                   element={<Navigate to="/app/schedule"      replace />} />
