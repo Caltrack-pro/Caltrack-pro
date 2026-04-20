@@ -357,14 +357,21 @@ overall record: fail > marginal > pass (worst point wins)
 - ✅ Pilot approval system — pilot_requests table; contact form saves to DB with token; notification email has Approve/Deny links; admin routes create Supabase user + site + 30-day trial; welcome email with credentials; trial auto-expiry in assert_active_subscription
 - ✅ Trial abuse prevention — domain-based check in billing.py; personal email providers use exact match, company domains use domain-wide match
 - ✅ MarketingNav — "Start Free Trial" → /contact (30-day managed pilot); green "Sign Up" button → /auth/signup (self-serve plan selection)
-- ✅ QA bug-fix sprint (20–21 Apr 2026) — 12 bugs resolved across 4 commits; DB migration applied via MCP:
+- ✅ QA bug-fix sprint (20–21 Apr 2026) — 19 bugs resolved across 6 commits; DB migration applied via MCP:
   - CRITICAL-1: tag_number uniqueness → composite (tag_number, created_by) per site; DB constraint swapped live
   - CRITICAL-2: last_calibration_date uses calendar MAX not submission order; approval guard + DB recompute
   - CRITICAL-3: canonical URL + og:url now set per-route by CanonicalManager in App.jsx
+  - Major-1: SignIn cross-checks typed company name against /api/auth/me after auth; signs out + errors on mismatch
+  - Major-2: Dashboard useDashboard depends on siteName/isDemoMode (not tick); guards fetch when site is null
   - Major-3/4: Dashboard drift card + DriftAlertsTab now include exceeded (fail) instruments, not just marginal
+  - Major-5: Recommendations engine fetches fail instruments and surfaces each as a critical recommendation
   - Major-6: bad_actors query requires ≥ 2 failures (matches UI copy)
   - Major-7: InstrumentForm save errors now show toast regardless of scroll position
+  - Major-8: CriticalityBadge renders amber "Unclassified" for null; form defaults null, shows placeholder
   - Major-9: Documents.jsx reads `results` from API response (was `.documents` / `.instruments`)
+  - Major-11: Document delete now explicitly removes document_instruments rows first (FK constraint fix)
+  - Major-13: AppNotFound component + catch-all Route inside /app AuthGuard layout
+  - Major-14: Mobile drawer already fully implemented in Layout.jsx + Header.jsx (confirmed, not deferred)
   - Minor-2: status=all no longer returns 500 — treated as no filter
   - Polish-5: Documents "Uploaded By" column reads `uploaded_by` field
   - Polish-6: Billing "30-day free trial" copy corrected to "14-day"
