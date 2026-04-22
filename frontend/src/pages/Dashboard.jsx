@@ -185,26 +185,39 @@ function DemoBanner() {
 // KPI stat card — coloured left border
 // ─────────────────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, borderColor, valueColor, sub }) {
-  return (
+function StatCard({ label, value, borderColor, valueColor, sub, to }) {
+  const [hovered, setHovered] = useState(false)
+  const inner = (
     <div style={{
-      background: '#fff',
+      background: hovered && to ? '#FAFCFF' : '#fff',
       borderRadius: 12,
-      border: '1px solid #e2e8f0',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+      border: `1px solid ${hovered && to ? borderColor : '#e2e8f0'}`,
+      boxShadow: hovered && to ? `0 4px 12px ${borderColor}33` : '0 1px 3px rgba(0,0,0,0.06)',
       borderLeft: `4px solid ${borderColor}`,
       padding: '18px 16px',
       minWidth: 0,
-    }}>
+      cursor: to ? 'pointer' : 'default',
+      transition: 'all 0.18s ease',
+    }}
+      onMouseEnter={() => to && setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <p style={{ fontSize: '0.7rem', fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
         {label}
       </p>
       <p style={{ fontSize: '2.2rem', fontWeight: 800, color: valueColor, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums', margin: '4px 0' }}>
         {value ?? '—'}
       </p>
-      {sub && <p style={{ fontSize: '0.75rem', color: MUTED, marginTop: 2 }}>{sub}</p>}
+      {sub && (
+        <p style={{ fontSize: '0.75rem', color: MUTED, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+          {sub}
+          {to && <span style={{ marginLeft: 'auto', opacity: hovered ? 1 : 0, transition: 'opacity 0.15s', fontSize: '0.8rem', color: borderColor }}>→</span>}
+        </p>
+      )}
     </div>
   )
+  if (to) return <Link to={to} style={{ textDecoration: 'none', display: 'block' }}>{inner}</Link>
+  return inner
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -551,6 +564,10 @@ export default function Dashboard() {
   const dueWithin30      = upcoming.total
   const dueThisWeek      = (upcoming.results ?? []).filter(i => i.days_until_due != null && i.days_until_due <= 7).length
 
+  // Attention card counts
+  const recommendationCount = alerts.filter(a => ['OVERDUE', 'FAILED', 'CONSECUTIVE_FAILURES', 'PREDICTED_TO_FAIL'].includes(a.alert_type)).length
+  const repeatFailureCount  = alerts.filter(a => a.alert_type === 'CONSECUTIVE_FAILURES').length
+
   // Compliance rate colour
   const compRate   = stats.compliance_rate
   const noInstrs   = stats.total_instruments === 0
@@ -635,6 +652,7 @@ export default function Dashboard() {
           borderColor="#EF4444"
           valueColor="#C62828"
           sub="Instruments past calibration due date"
+          to="/app/schedule"
         />
         <StatCard
           label="Due Within 30 Days"
@@ -642,6 +660,7 @@ export default function Dashboard() {
           borderColor="#F9A825"
           valueColor="#B45309"
           sub="Action required soon"
+          to="/app/instruments"
         />
         <StatCard
           label="Total Instruments"
@@ -649,6 +668,7 @@ export default function Dashboard() {
           borderColor={SKY}
           valueColor={BLUE}
           sub={areas.length > 0 ? `Across ${areas.length} process area${areas.length !== 1 ? 's' : ''}` : 'Active instruments'}
+          to="/app/instruments"
         />
         <StatCard
           label="Compliance Rate"
@@ -656,6 +676,7 @@ export default function Dashboard() {
           borderColor={compBorder}
           valueColor={compValue}
           sub={compSub}
+          to={noInstrs ? null : '/app/reports'}
         />
       </div>
 
@@ -667,34 +688,34 @@ export default function Dashboard() {
       {/* ── 3 Attention Cards ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
         <AttentionCard
-          emoji="🔴"
-          label="Overdue"
-          count={overdue}
-          subText={overdue === 0 ? 'All instruments calibrated on time' : 'Instruments past their due date — action needed'}
-          to="/app/schedule"
-          accentColor="#DC2626"
-          bgColor="#FFF5F5"
-          borderColor="#FECACA"
+          emoji="💡"
+          label="Recommendations"
+          count={recommendationCount}
+          subText={recommendationCount === 0 ? 'No active recommendations' : `${recommendationCount} action${recommendationCount !== 1 ? 's' : ''} flagged by diagnostics engine`}
+          to="/app/diagnostics?tab=recommendations"
+          accentColor="#1565C0"
+          bgColor="#EFF6FF"
+          borderColor="#BFDBFE"
         />
         <AttentionCard
-          emoji="🕐"
-          label="Pending Approvals"
-          count={pendingCount}
-          subText={pendingCount === 0 ? 'No calibrations awaiting review' : 'Calibration records submitted for approval'}
-          to="/app/calibrations"
-          accentColor="#D97706"
-          bgColor="#FFFBEB"
-          borderColor="#FDE68A"
-        />
-        <AttentionCard
-          emoji="↗"
+          emoji="📈"
           label="Drift Alerts"
-          count={estOutOfTol}
-          subText={estOutOfTol === 0 ? 'No instruments showing drift trends' : 'Instruments predicted to fail — review now'}
-          to="/app/diagnostics"
+          count={driftCount}
+          subText={driftCount === 0 ? 'No instruments showing drift trends' : 'Marginal or failing instruments — review trends'}
+          to="/app/diagnostics?tab=drift"
           accentColor="#7C3AED"
           bgColor="#F5F3FF"
           borderColor="#DDD6FE"
+        />
+        <AttentionCard
+          emoji="🔁"
+          label="Repeat Failures"
+          count={repeatFailureCount}
+          subText={repeatFailureCount === 0 ? 'No repeat failures detected' : 'Instruments with consecutive as-found failures'}
+          to="/app/diagnostics?tab=failures"
+          accentColor="#DC2626"
+          bgColor="#FFF5F5"
+          borderColor="#FECACA"
         />
       </div>
 
