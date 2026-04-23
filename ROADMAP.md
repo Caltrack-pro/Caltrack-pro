@@ -1,6 +1,6 @@
 # CalCheq — Forward Roadmap
 
-*Last updated: 19 April 2026*
+*Last updated: 23 April 2026*
 
 ---
 
@@ -33,6 +33,13 @@ Auth (Supabase ES256 JWT), custom domain (calcheq.com), immutable audit trail, C
 - Smart Analytics tab upgraded: Recharts AreaChart + tolerance bands + recommendation cards (was table only)
 - Activity Log default date range extended from 90 days → 365 days (historical CSV-imported records were falling outside the 90-day window)
 - Follow-up: 4 PT-9300 calibrations (IXOM pilot) still sitting in "submitted" — approve via Pending Approvals once deployed so Smart Analytics has data
+
+**Completed 23 April 2026:**
+- Super-admin / platform operator console — three phases shipped end-to-end:
+  - Phase 1 gate: `SUPERADMIN_EMAILS` env-var allowlist (not a DB role); `get_superadmin_user` dependency; `is_superadmin` flag on `/api/auth/me`; super-admins bypass `assert_active_subscription` on their own account
+  - Phase 2 platform console: `/api/superadmin/*` endpoints for list sites, site detail, extend-trial (DB-only, no Stripe call), override-plan, pause/resume, delete (refuses `calcheq`/`demo`, requires `?confirm=<name>`, cascades instruments/documents/queue/members); new `/app/admin` page with sortable/searchable site table + 3 modals; 👑 Platform Admin sidebar entry shown only to super-admins; unauthorised visitors hit `/app/admin` get a 404 (via `AppNotFound`), not a redirect
+  - Phase 3 impersonation: per-request `X-Impersonate-Site-Id` header (not a separate JWT); `UserContext` rewritten at a single choke-point so every auth helper respects it for free; `is_superadmin` flipped off on the impersonated context so `assert_writable_site` + `assert_active_subscription` still fire as if the super-admin were the site's own admin; writes audited via independent `SessionLocal()` (persists across 403 rollbacks); impersonate-start/end session markers carry the super-admin's real identity; sticky red `ImpersonationBanner` with Exit button that hard-reloads to drop in-memory caches
+- Rationale for each sub-decision captured in DECISIONS.md (env-var allowlist over DB column; DB-only trial override over Stripe-backed; header-based impersonation over separate JWT)
 
 **Completed 19 April 2026:**
 - Project folder cleanup: removed 4 orphaned legacy page .jsx files (Alerts, PendingApprovals, BadActors, Profile); removed superseded `seed_demo_data.sql`; removed duplicate `Sales One-Pager.html` at root; removed redundant `CalCheq Chat Instructions.md` + `CalCheq Opening Prompt.md`; reorganised into `scripts/`, `docs/business/`, `docs/specs/`, `docs/marketing/`, `assets/branding/`, `assets/screenshots/`, `assets/calibration-pdfs/`

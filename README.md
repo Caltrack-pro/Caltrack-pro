@@ -64,6 +64,7 @@ All set in Railway for production. For local dev, create `backend/.env` and `fro
 | `APP_URL`                   | Public URL of the app (https://calcheq.com)                        |
 | `STRIPE_SECRET_KEY`         | Stripe secret key (sk_test_... or sk_live_...)                     |
 | `STRIPE_WEBHOOK_SECRET`     | Stripe webhook signing secret (whsec_...)                          |
+| `SUPERADMIN_EMAILS`         | Comma-separated allowlist of platform operator emails (case-insensitive). Empty/unset = no super-admins. |
 
 ---
 
@@ -78,7 +79,8 @@ Caltrack-pro/
                            #      CalibrationQueue, Document, DocumentInstrument, Site, SiteMember
     schemas.py             # Pydantic v2 request/response schemas
     auth.py                # ES256 JWT verification, user/site resolution, assert_writable_site,
-                           #      assert_active_subscription
+                           #      assert_active_subscription, get_superadmin_user,
+                           #      impersonation via X-Impersonate-Site-Id header
     calibration_engine.py  # Pass/fail/marginal calculation (source of truth)
     notifications.py       # Resend email: submit/approve/reject/overdue/invite/cert
     pdf_generator.py       # fpdf2 — server-side PDF calibration certificate generation
@@ -95,11 +97,13 @@ Caltrack-pro/
       billing.py           # /api/billing — Stripe checkout, portal, subscription webhook
       contact.py           # /api/contact — pilot request intake + approval flow
       admin.py             # /api/admin — pilot approve/deny with Supabase user creation
+      superadmin.py        # /api/superadmin — platform operator console (list/extend-trial/override-plan/pause/resume/impersonate/delete)
 
   frontend/
     src/
       components/          # Layout, Sidebar, Header, AuthGuard, DemoBlockModal,
-                           #   Badges, Toast, TrendCharts, marketing/MarketingNav|Footer
+                           #   ImpersonationBanner, Badges, Toast, TrendCharts,
+                           #   marketing/MarketingNav|Footer
       pages/
         auth/              # SignIn, SignUp, AuthCallback, ForgotPassword, ResetPassword
         marketing/         # Landing, Pricing, HowItWorks, Resources, BlogPost,
@@ -119,6 +123,7 @@ Caltrack-pro/
         AppSettings.jsx    # Profile, Password, Team Members, Billing & Subscription
         Onboarding.jsx     # 3-step welcome wizard
         Support.jsx        # FAQ accordion, tutorials, contact
+        SuperAdmin.jsx     # Platform operator console (super-admin only)
         # Legacy (redirect-only): Alerts, BadActors, PendingApprovals, Profile
       utils/
         api.js             # All API calls with JWT injection

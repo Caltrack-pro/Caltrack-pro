@@ -173,6 +173,53 @@ site_members (id UUID PK, site_id FK→sites, user_id UUID, role TEXT, display_n
 
 ---
 
+## Super-Admin Privilege Model — April 2026
+
+**Decision:** CalCheq now has a platform-operator privilege level that sits above all sites. It is granted via an env-var email allowlist (`SUPERADMIN_EMAILS`), exposes a `/app/admin` console for running the business (extend trial, override plan, pause/resume, delete, impersonate), and implements impersonation as a per-request header rather than a separate JWT.
+
+**Three sub-decisions, each with a rationale:**
+
+### 1. Env-var allowlist over a DB column
+
+A `site_members.role = 'superadmin'` row would be the "obvious" DB-native choice. We chose `SUPERADMIN_EMAILS=nfish82@hotmail.com,...` instead.
+
+**Why:**
+- Revocation is a Railway env change + restart, not a SQL UPDATE someone could forget to audit
+- Can't be granted by compromising the web app or a site admin account — requires infrastructure access
+- Zero migration complexity; zero new RLS policies; no "is this admin row trustworthy?" question
+- Super-admin is a platform operator concept, not a customer-site concept, so keeping it out of `site_members` is semantically correct
+
+**Trade-off:** No UI for granting/revoking. For a team-of-one platform this is fine; if the ops team grows we revisit.
+
+### 2. DB-only trial override over a Stripe-backed extension
+
+The "Extend Trial" action updates `sites.trial_ends_at` (and `subscription_status = 'trialing'`) directly; it does NOT call Stripe.
+
+**Why:**
+- Most trial extensions happen before Stripe ever sees the customer (pilot leads, sales hand-shakes, edge cases). A Stripe-backed flow would need a Stripe customer/subscription to exist first, which isn't true for most of these situations
+- The DB is already the source of truth for `assert_active_subscription` — so a DB-only write is sufficient for access control
+- Keeps the super-admin console fully functional when Stripe is down or in a weird state
+- Stripe can still be reconciled later when the customer actually checks out
+
+**Trade-off:** Invoices issued by Stripe won't reflect the extended trial. Acceptable — `/app/admin` is an operator tool, not a billing tool. For customer-facing billing changes, use the Stripe dashboard.
+
+### 3. Header-based impersonation over a separate JWT
+
+Impersonation is implemented as a client-sent `X-Impersonate-Site-Id: <uuid>` header, read by `get_optional_user` and used to rewrite the `UserContext` at a single choke-point. No second JWT is issued.
+
+**Why:**
+- Every downstream auth helper (`resolve_site`, `assert_writable_site`, `assert_active_subscription`) automatically respects impersonation with no per-route changes
+- The super-admin's real identity is never lost — it's retained on `UserContext.real_user_id`/`real_email` and used for audit rows, so every impersonated write is traceable to the human who did it
+- Flipping `is_superadmin = False` on the impersonated context (but keeping `is_impersonating = True`) means a super-admin CAN still be blocked by `assert_writable_site` (Demo) and `assert_active_subscription` (paused customer) while impersonating — they see exactly what the target site sees, which is the whole point
+- A separate JWT would require a token-issuance endpoint, token storage, token refresh, and a way to prove "this JWT is an impersonation JWT" — all of which this header approach avoids
+- `/api/auth/me` and `get_superadmin_user` depend on `get_real_user` (decodes JWT directly, ignores header) so the sidebar's 👑 entry and the Exit button stay accessible across page refreshes during an impersonated session
+
+**Trade-off:** The header must be stripped on exit before calling `impersonate-end`, otherwise the audit marker would be attributed to the impersonated site instead of the real operator. Handled explicitly in `ImpersonationBanner.onExit`.
+
+**Audit scope:** Every write (POST/PUT/PATCH/DELETE) during an impersonated session writes an audit row via an independent `SessionLocal()`, so the audit persists even if the surrounding route 403s and rolls back. GETs are not audited — noise-to-signal ratio was too low. Impersonate-start and impersonate-end also write audit markers for session boundaries.
+
+---
+
 ## Calibration PDF Import: Client-Side Parser
 
 **Decision:** Beamex and Fluke calibrator CSV exports are parsed in the browser (`calibratorCsvParser.js`) before being sent to the backend.

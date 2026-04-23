@@ -53,12 +53,13 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - ImportInstruments.jsx  — bulk instrument CSV import UI; route: /app/import
 - Schedule.jsx           — 2 tabs: Technician Queue / Planner; default tab is role-aware (planner role → Planner tab); route: /app/schedule
 - Calibrations.jsx       — 2 tabs: Activity Log / Pending Approvals (with live count badge); supervisor/admin auto-switches to Pending Approvals when items exist; route: /app/calibrations
-- SmartDiagnostics.jsx   — 3 tabs: Recommendations (critical/advisory/optimisation, rule-based engine) / Drift Alerts (sparklines, projected failure dates) / Repeat Failures (bad actors); route: /app/diagnostics
+- SmartDiagnostics.jsx   — 3 tabs: Recommendations (critical/advisory/optimisation, 9-rule engine — each card shows a "Recommended action" solution box, category-coloured styling, View-instrument / Calibrate-now / Dismiss actions, and metric tile for projections) / Drift Alerts (sparklines, projected failure dates) / Repeat Failures (bad actors); route: /app/diagnostics
 - Documents.jsx          — document library: upload/manage procedures, manuals, certificates; link to instruments; CRUD via /api/documents; route: /app/documents
 - AppSettings.jsx        — 5 sections: Site info / Profile / Change Password / Team Members (admin) / Billing & Subscription (admin); route: /app/settings
 - Reports.jsx            — export centre: quick export bar (overdue/failed/compliance CSV), 4 report tabs (overdue/upcoming/failed/history); route: /app/reports
 - Support.jsx            — FAQ accordion (5 sections, 20 Q&As), tutorial placeholders, contact email; route: /app/support
 - Onboarding.jsx         — 3-step welcome wizard (site setup → add instruments → invite team); route: /app/onboarding; no sidebar, full-page
+- SuperAdmin.jsx         — platform operator console: sortable/searchable table of all sites, inline Trial/Plan/Pause/Impersonate/Delete actions, three modals (ExtendTrial, OverridePlan, DeleteSite); route: /app/admin; visible only to super-admins (others get 404)
 
 ### Legacy routes
 Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboard, /instruments, /alerts, /reports, /approvals) redirect in App.jsx — see "Legacy redirects" table below. Legacy page files were removed April 2026.
@@ -77,6 +78,7 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 - Layout.jsx             — app shell: fetches pendingCount for sidebar badge on mount, passes to Sidebar; renders Header + <Outlet> + DemoBlockModal
 - AuthGuard.jsx          — protects /app/* routes; redirects to /auth/sign-in if no Supabase session
 - DemoBlockModal.jsx     — global modal: listens for 'caltrack-demo-blocked' event; shows friendly conversion message when demo user tries a write action
+- ImpersonationBanner.jsx — sticky red banner at top of app layout while super-admin is impersonating a site; listens for 'caltrack-impersonation-change'; Exit button clears sessionStorage, calls admin.impersonateEnd for audit marker under real identity, then hard-reloads to /app/admin
 - Sidebar.jsx            — emoji nav: 🏠 Dashboard, 🔧 Instruments, 📅 Schedule, 📋 Calibrations (red badge), 🔬 Smart Diagnostics (hidden for technician), 📁 Documents, 📄 Reports (hidden for technician), ⚙️ Settings, 🆘 Support; user avatar; Try Demo toggle; Back to Website
 - Header.jsx             — top bar: logged-in user name + role; sign-out via Supabase
 - Badges.jsx             — shared status/result badge components (CriticalityBadge, ResultBadge, etc.)
@@ -107,15 +109,17 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 - routes/admin.py      — GET /api/admin/pilot/approve?token=X (creates Supabase user + site, sends welcome email, 30-day trial); GET /api/admin/pilot/deny?token=X (marks denied, sends denial email); returns branded HTML pages
 - routes/instruments.py — CRUD; site derived from JWT via resolve_site
 - routes/calibrations.py — CRUD + submit/approve/reject; ownership checks
-- routes/dashboard.py   — stats, alerts, compliance-by-area, upcoming, bad-actors
+- routes/dashboard.py   — stats, alerts, compliance-by-area, upcoming, bad-actors, recommendations (9-rule smart engine)
 - routes/queue.py       — GET/POST/DELETE/PATCH /api/queue; calibration work queue with auto-cleanup
 - routes/documents.py   — GET/POST/PUT/DELETE /api/documents; document library with instrument linking
 - routes/audit.py       — GET /api/instruments/{id}/audit-log, GET /api/audit (admin only)
 - routes/billing.py     — POST /api/billing/create-checkout-session, POST /api/billing/create-portal-session, GET /api/billing/subscription, POST /api/billing/webhook (Stripe)
+- routes/superadmin.py  — /api/superadmin/* platform operator endpoints (all require get_superadmin_user): GET /sites, GET /sites/{id}, POST /sites/{id}/extend-trial, POST /sites/{id}/override-plan, POST /sites/{id}/pause, POST /sites/{id}/resume, POST /sites/{id}/impersonate-start, POST /sites/{id}/impersonate-end, DELETE /sites/{id}?confirm=&lt;name&gt; (refuses 'calcheq' and 'demo')
 
 ### Operational scripts — scripts/
 - scripts/seed_instruments.py              — 30 demo instruments for "Demo" site (Python, hits local API)
 - scripts/seed_riverdale_demo.sql          — 130-instrument Riverdale Water Treatment Plant demo dataset (run via Supabase)
+- scripts/seed_recommendations_examples.sql — supplementary seed that reshapes 6 demo instruments so every Smart Recommendations rule fires at least once (run AFTER seed_riverdale_demo.sql)
 - scripts/import_instruments.py            — CSV bulk import script
 - scripts/caltrack_import_TEMPLATE.csv     — template CSV for bulk instrument import
 
@@ -174,6 +178,7 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 | /app/import                         | ImportInstruments   | bulk CSV import                 |
 | /app/support                        | Support             | FAQ accordion, tutorials, contact |
 | /app/onboarding                     | Onboarding          | 3-step welcome wizard (no sidebar) |
+| /app/admin                          | SuperAdmin          | platform operator console — super-admin only (others 404) |
 
 ### Legacy redirects (old bookmarks still work)
 | Old path        | → New path          |
@@ -214,7 +219,7 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 ### Auth API routes
 - `GET  /api/auth/check-site?name=X`  — validates site name (public)
 - `POST /api/auth/register`           — creates site + site_members row
-- `GET  /api/auth/me`                 — current user: name, email, role, site
+- `GET  /api/auth/me`                 — current user: name, email, role, site, subscription, `is_superadmin` (bool, derived from SUPERADMIN_EMAILS); uses `get_real_user` so impersonation never rewrites the identity reported to the sidebar/avatar
 - `GET  /api/auth/members`            — list site members (admin/supervisor only)
 - `POST /api/auth/invite`             — create user + add to site + send invite email (admin only; needs SUPABASE_SERVICE_ROLE_KEY)
 
@@ -224,6 +229,7 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 - technician: read + create/edit calibrations + edit instruments
 - planner: read + edit scheduling fields
 - readonly: read only
+- superadmin: platform operator — not a DB role, granted via `SUPERADMIN_EMAILS` env var allowlist; bypasses `assert_active_subscription`; sees 👑 Platform Admin sidebar entry; can impersonate any site
 
 ### Demo account
 - Email: demo@calcheq.com  |  Password: CalcheqDemo2026
@@ -243,6 +249,16 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 - `APP_URL`                   — https://calcheq.com
 - `STRIPE_SECRET_KEY`         — Stripe secret key (sk_test_... or sk_live_...)
 - `STRIPE_WEBHOOK_SECRET`     — Stripe webhook signing secret (whsec_...)
+- `SUPERADMIN_EMAILS`         — comma-separated allowlist of platform operator emails (case-insensitive, whitespace-trimmed). NOT a DB role. Empty or unset = no super-admins exist
+
+### Impersonation (super-admin only)
+- Super-admin starts a session via `POST /api/superadmin/sites/{id}/impersonate-start`; frontend stores `site_id` + `site_name` in sessionStorage (tab-scoped)
+- `api.js` attaches header `X-Impersonate-Site-Id: <uuid>` on every subsequent request
+- `get_optional_user` reads the header; if the caller is super-admin the UserContext is rewritten to the target site with role='admin', `is_superadmin=False` (so `assert_writable_site` + `assert_active_subscription` still fire on Demo/paused sites), `is_impersonating=True`, `real_user_id`/`real_email` retained
+- Writes (POST/PUT/PATCH/DELETE) during an impersonated session automatically write an audit row via an independent SQLAlchemy session (persists even if the surrounding route 403s and rolls back)
+- Impersonate-start/end endpoints emit session-marker audit rows; end is called AFTER sessionStorage is cleared so the marker carries the super-admin's real identity
+- Sidebar's 👑 Platform Admin entry + `/api/auth/me` always show the real identity because `/me` and `get_superadmin_user` depend on `get_real_user` (bypasses impersonation)
+- `ImpersonationBanner` is sticky red at top of Layout; Exit button does hard reload to drop in-memory query caches
 
 ---
 
@@ -332,6 +348,29 @@ overall record: fail > marginal > pass (worst point wins)
 
 ---
 
+## Smart Recommendations Rules (9 rules — GET /api/dashboard/recommendations)
+
+Each rule produces a card on the Recommendations tab. Cards are grouped into three buckets — `critical` (red), `advisory` (amber), `optimisation` (blue) — and every card includes a **Recommended action** solution box.
+
+**Critical**
+- `CRIT_SAFETY_OVERDUE` — safety-critical instrument is past its calibration due date.
+- `CRIT_CANNOT_CALIBRATE` — last approved calibration's as-left result was `fail` (could not be brought back within tolerance — recommend replacement).
+- `CRIT_LAST_CAL_OOT` — last approved calibration's as-found error exceeded 5% of span (large drift since previous cal).
+- `CRIT_EST_OOT_NOW` — drift projection using ≥3 approved records indicates the instrument is currently over tolerance (projected error > tol at today's date).
+- `CRIT_REPEAT_FAILURE` — 3+ consecutive approved records with as_found_result == `fail` (chronic bad actor).
+
+**Advisory**
+- `ADV_DRIFT_MARGINAL` — last approved calibration result was `marginal` (as-found error > 80% of tolerance).
+- `ADV_OVERDUE_NONCRITICAL` — non-safety/non-process-critical instrument is overdue.
+- `ADV_EST_OOT_30_DAYS` — drift projection indicates the instrument will exceed tolerance within 30 days (but not yet).
+
+**Optimisation**
+- `OPT_EXTEND_INTERVAL` — last 3+ approved calibrations all passed with peak as-found error < 20% of tolerance (stable — consider extending interval).
+
+Dropped April 2026: the old `LAST_CAL_FAIL` rule (misleading when as-left passed — issue already resolved).
+
+---
+
 ## UI Colour Conventions
 - Red (#EF4444 / #C62828): overdue, failed, critical
 - Amber (#F59E0B / #B45309): due soon, marginal, warning
@@ -345,6 +384,10 @@ overall record: fail > marginal > pass (worst point wins)
 ## Pending Work
 
 ### Completed (April 2026)
+- ✅ Super-admin / platform operator console (23 Apr 2026) — three phases shipped in one build:
+  - **Phase 1 gate:** `SUPERADMIN_EMAILS` env var (frozenset, case-insensitive); `UserContext.is_superadmin` + `is_impersonating` + `real_user_id` + `real_email`; `get_superadmin_user` dependency; `is_superadmin` added to `/api/auth/me`; `assert_active_subscription` bypass for super-admins on their own account
+  - **Phase 2 platform console:** new `backend/routes/superadmin.py` (7 endpoints + audit helper); list-sites uses grouped aggregate queries; extend-trial uses `days XOR new_end_date` Pydantic model_validator and extends from `max(now, trial_ends_at)`; delete refuses `calcheq`/`demo` via `UNDELETABLE_SITES` case-insensitive set, requires `?confirm=<name>` match, cascades instruments (by `created_by`) + documents + queue + members; new `frontend/src/pages/SuperAdmin.jsx` with sortable/searchable table and 3 modals; 👑 Platform Admin sidebar entry shown only when `is_superadmin`; `/app/admin` renders `<AppNotFound />` (not redirect) for non-super-admins
+  - **Phase 3 impersonation:** header-based (`X-Impersonate-Site-Id`) — no separate JWT; `_apply_impersonation` in `auth.py` rewrites UserContext at the single choke-point so every downstream helper (`resolve_site`, `assert_writable_site`, `assert_active_subscription`) respects it for free; `is_superadmin` flipped off on the impersonated context so subscription/demo gates still fire; writes audited via independent `SessionLocal()` (persists across 403 rollbacks); impersonate-start/end session markers; `ImpersonationBanner` sticky red banner + Exit button hard-reloads to `/app/admin`
 - ✅ Stripe payment integration — 3 plans ($199/$449/$899 AUD), checkout sessions, webhooks, customer portal, billing settings, 402 enforcement
 - ✅ Subscription enforcement — `assert_active_subscription` in auth.py; 402 → redirect to billing
 - ✅ Self-serve sign-up → Stripe checkout — full flow working
@@ -361,6 +404,7 @@ overall record: fail > marginal > pass (worst point wins)
 - ✅ Minor-1: Compliance Rate KPI card shows "—" on empty sites instead of red "0.0%"
 - ✅ Polish-3: Planner "+ Add" refreshes queue panel — confirmed `handleAdd` calls `await loadQueue()` after queueApi.add()
 - ✅ Polish-7: Trial length unified to 30 days across all marketing copy (Landing, Pricing, FAQ, Contact, HowItWorks, DemoPage, SignUp, AppSettings, SignUp); backend billing.py already set trial_period_days=30 — now consistent everywhere
+- ✅ Smart Recommendations engine rewrite (22 Apr 2026) — dropped misleading `LAST_CAL_FAIL` rule; added 4 new rules (`CRIT_CANNOT_CALIBRATE`, `CRIT_LAST_CAL_OOT` >5% span, `CRIT_EST_OOT_NOW` drift projection, `ADV_EST_OOT_30_DAYS` drift projection); every card now carries a "Recommended action" solution box with category-coloured styling and metric tile for projections; new backend endpoint `GET /api/dashboard/recommendations` evaluates all 9 rules per active instrument; `scripts/seed_recommendations_examples.sql` reshapes 6 Riverdale demo instruments so public demo visitors see every rule fire
 - ✅ QA bug-fix sprint (20–21 Apr 2026) — 21 bugs resolved across 7 commits; DB migration applied via MCP:
   - ✅ CRITICAL-1: tag_number uniqueness → composite (tag_number, created_by) per site; DB constraint swapped live
   - ✅ CRITICAL-2: last_calibration_date uses calendar MAX not submission order; approval guard + DB recompute
