@@ -70,6 +70,18 @@ import ImportInstruments   from './pages/ImportInstruments'
 import ImportCalibratorCSV from './pages/ImportCalibratorCSV'
 import Support             from './pages/Support'
 import Onboarding          from './pages/Onboarding'
+import SuperAdmin          from './pages/SuperAdmin'
+
+// Gate an element behind the super-admin check. Renders 404 (AppNotFound) if
+// the current user isn't a super-admin, so the route's existence isn't
+// advertised. Reads the module cache from userContext directly (not a hook)
+// since getUser() is synchronous — AuthGuard has already awaited init.
+import { getUser as _getUser } from './utils/userContext'
+function SuperadminOnly({ children }) {
+  const u = _getUser()
+  if (!u?.isSuperadmin) return <AppNotFound />
+  return children
+}
 
 export default function App() {
   return (
@@ -136,6 +148,9 @@ export default function App() {
 
           {/* Support */}
           <Route path="support"                  element={<Support />} />
+
+          {/* Platform Admin — super-admin only, 404 otherwise (no advertise) */}
+          <Route path="admin"                    element={<SuperadminOnly><SuperAdmin /></SuperadminOnly>} />
 
           {/* /app/* catch-all — shows 404 within the app shell instead of bouncing to marketing homepage */}
           <Route path="*" element={<AppNotFound />} />

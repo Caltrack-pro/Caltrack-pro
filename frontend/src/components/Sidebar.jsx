@@ -117,9 +117,10 @@ export default function Sidebar({ onNavigate, pendingCount }) {
     return () => window.removeEventListener('caltrack-user-change', onUserChange)
   }, [])
 
-  const isDemoMode = user?.isDemoMode ?? false
-  const isOwnSite  = !isDemoMode && !!user
-  const role       = user?.role ?? 'readonly'
+  const isDemoMode    = user?.isDemoMode ?? false
+  const isOwnSite     = !isDemoMode && !!user
+  const role          = user?.role ?? 'readonly'
+  const isSuperadmin  = user?.isSuperadmin === true
 
   return (
     <aside style={{
@@ -195,6 +196,9 @@ export default function Sidebar({ onNavigate, pendingCount }) {
         )}
         <NavItem to="/app/settings"       emoji="⚙️"  label="Settings"         onClick={onNavigate} />
         <NavItem to="/app/support"        emoji="🆘" label="Support"           onClick={onNavigate} />
+        {isSuperadmin && (
+          <NavItem to="/app/admin"        emoji="👑" label="Platform Admin"   onClick={onNavigate} />
+        )}
 
         {/* ── Divider + utility links ── */}
         <div style={{ paddingTop: 12, marginTop: 10, borderTop: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column', gap: 2 }}>

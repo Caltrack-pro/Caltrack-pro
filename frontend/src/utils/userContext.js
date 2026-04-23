@@ -81,6 +81,7 @@ async function _fetchUserContext(session) {
       subscriptionStatus: data.subscription_status || null,
       subscriptionPlan:   data.subscription_plan   || null,
       trialEndsAt:        data.trial_ends_at       || null,
+      isSuperadmin:       data.is_superadmin === true,
     }
   } catch {
     return null

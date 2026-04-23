@@ -246,6 +246,10 @@ export const dashboard = {
   /** Top-10 instruments by as-found failure count in the last 12 months. */
   badActors: (site) =>
     request(`/dashboard/bad-actors${toQueryString({ site })}`),
+
+  /** Smart recommendations feed: critical / advisory / optimisation. */
+  recommendations: () =>
+    request('/dashboard/recommendations'),
 }
 
 // ---------------------------------------------------------------------------
@@ -311,8 +315,44 @@ export const billing = {
 }
 
 // ---------------------------------------------------------------------------
+// Super-admin / platform operator
+// ---------------------------------------------------------------------------
+
+export const admin = {
+  /** List every site with aggregate counts. Super-admin only. */
+  listSites: () => request('/superadmin/sites'),
+
+  /** Full detail + members list for a single site. */
+  siteDetail: (id) => request(`/superadmin/sites/${id}`),
+
+  /** Extend a site's trial. Pass either { days } or { new_end_date: ISO }. */
+  extendTrial: (id, body) => post(`/superadmin/sites/${id}/extend-trial`, body),
+
+  /** Override a site's plan + interval. Does not charge Stripe. */
+  overridePlan: (id, plan, interval) =>
+    post(`/superadmin/sites/${id}/override-plan`, { plan, interval }),
+
+  /** Pause a site (subscription_status → cancelled). */
+  pause:  (id) => post(`/superadmin/sites/${id}/pause`, {}),
+
+  /** Resume a site. Optionally pass a status override. */
+  resume: (id, status = null) =>
+    post(`/superadmin/sites/${id}/resume`, status ? { status } : {}),
+
+  /**
+   * Hard-delete a site. confirm must exactly match the site's name.
+   * 'CalCheq' and 'Demo' are refused by the backend.
+   */
+  deleteSite: (id, confirm) =>
+    request(
+      `/superadmin/sites/${id}${toQueryString({ confirm })}`,
+      { method: 'DELETE' },
+    ),
+}
+
+// ---------------------------------------------------------------------------
 // Convenience re-export for one-line imports
 // ---------------------------------------------------------------------------
 
-const api = { instruments, calibrations, dashboard, queue, documents, billing }
+const api = { instruments, calibrations, dashboard, queue, documents, billing, admin }
 export default api
