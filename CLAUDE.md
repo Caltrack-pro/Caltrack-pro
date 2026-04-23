@@ -384,6 +384,11 @@ Dropped April 2026: the old `LAST_CAL_FAIL` rule (misleading when as-left passed
 ## Pending Work
 
 ### Completed (April 2026)
+- ✅ Approval flow: everyone submits to Pending, anyone can approve, cert goes to technician + approver (24 Apr 2026) — three changes:
+  - **Backend `calibrations.py` submit** — removed the admin/supervisor auto-approve branch. Every submission now goes to `SUBMITTED` regardless of role, guaranteeing a second-party approval step (MHF / safety-critical compliance requirement). Audit action is always `submit` — `submit_and_approve` is gone.
+  - **Backend `calibrations.py` approve** — cert recipients narrowed from `technician + all site admins/supervisors` to `technician + approver` (de-duplicated so a single email when the same user entered and approved, which is the intentional "entering on behalf of a contractor" workflow).
+  - **Frontend `Calibrations.jsx` Pending tab** — dropped the `canApprove()` role gate. Every authenticated site user sees Approve/Reject buttons; the old amber "your role cannot approve" banner is gone; the tab auto-defaults to Pending whenever `count > 0` for everyone, not just approvers.
+  - **Behavioural contract:** self-approval is explicitly allowed — a user can submit and approve the same record. The two-party control comes from the workflow (contractor entering → internal approver) rather than a role separation, because contractors don't have CalCheq seats.
 - ✅ Calibration cert auto-email hardening (23 Apr 2026) — three fixes so the PDF always reaches the technician who did the work:
   - **Backend `calibrations.py` submit auto-approve path** now resolves the recipient via `_technician_email(rec.technician_id, db)` (same helper the approve path already used), with `current_user.email` as a fallback. Prior code sent the cert to whoever clicked Submit, which for admin/supervisor self-approval was the submitter — not the technician on the record.
   - **Backend `routes/auth.py` `/api/auth/members`** — removed the admin/supervisor role gate (technicians need it for the dropdown; it's intra-site only so no tenant leakage) and added `user_id` to the response so the frontend can bind the Supabase user ID, not just the `site_members` row PK.

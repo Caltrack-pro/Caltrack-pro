@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom'
 import { calibrations as calApi, instruments as instrApi } from '../utils/api'
 import { ResultBadge, RecordStatusBadge } from '../components/Badges'
 import { fmtDate, fmtPct, humanise, todayISO } from '../utils/formatting'
-import { getUser, canApprove } from '../utils/userContext'
+import { getUser } from '../utils/userContext'
 import { ToastContainer, useToast } from '../components/Toast'
 import { generateSingleCalibrationCert } from '../utils/reportGenerator'
 
@@ -49,7 +49,6 @@ function PendingTab({ onApprovalDone }) {
   const [actioning, setActioning] = useState({})
   const { toasts, showToast, dismissToast } = useToast()
   const currentUser   = getUser()
-  const userCanApprove = canApprove(currentUser)
 
   const load = useCallback(() => {
     setLoading(true); setError(null)
@@ -91,13 +90,6 @@ function PendingTab({ onApprovalDone }) {
   return (
     <div className="space-y-4">
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
-
-      {/* Role notice */}
-      {!userCanApprove && currentUser && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700">
-          Your role (<em>{currentUser.role}</em>) cannot approve records. Admin or Supervisor access required.
-        </div>
-      )}
 
       {loading ? <Spinner /> : error ? <ErrorMsg message={error} onRetry={load} /> :
        records.length === 0 ? (
@@ -146,23 +138,16 @@ function PendingTab({ onApprovalDone }) {
                       </span>
                     </td>
                     <td className={`${TD} whitespace-nowrap`}>
-                      {userCanApprove ? (
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => handleReject(rec)} disabled={!!busy}
-                            className="text-xs px-2.5 py-1.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40">
-                            ✗ Reject
-                          </button>
-                          <button onClick={() => handleApprove(rec)} disabled={!!busy}
-                            className="text-xs px-2.5 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-40">
-                            {busy === 'approve' ? '…' : '✓ Approve'}
-                          </button>
-                        </div>
-                      ) : (
-                        <Link to={`/app/instruments/${rec.instrument_id}`}
-                          className="text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
-                          View
-                        </Link>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleReject(rec)} disabled={!!busy}
+                          className="text-xs px-2.5 py-1.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40">
+                          ✗ Reject
+                        </button>
+                        <button onClick={() => handleApprove(rec)} disabled={!!busy}
+                          className="text-xs px-2.5 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-40">
+                          {busy === 'approve' ? '…' : '✓ Approve'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )
@@ -375,8 +360,8 @@ export default function Calibrations({ defaultTab }) {
       .then(res => {
         const count = (res?.results ?? res ?? []).length
         setPendingCount(count)
-        // Default to approvals tab for approvers when there are pending records
-        if (!defaultTab && count > 0 && canApprove(user)) {
+        // Default to approvals tab whenever there are records awaiting review.
+        if (!defaultTab && count > 0) {
           setTab('pending')
         }
       })
