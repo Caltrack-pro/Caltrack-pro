@@ -154,6 +154,7 @@ def me(
         "subscription_status": sub_status,
         "subscription_plan":   sub_plan,
         "trial_ends_at":       trial_end,
+        "is_superadmin":       current_user.is_superadmin,
     }
 
 

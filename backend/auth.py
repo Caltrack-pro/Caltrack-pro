@@ -47,6 +47,23 @@ _AUDIENCE           = "authenticated"
 
 DEMO_SITE = "Demo"
 
+
+def _parse_superadmin_emails() -> frozenset[str]:
+    """
+    Parse the SUPERADMIN_EMAILS env var into a frozenset of normalised emails
+    (lower-cased, whitespace-trimmed). Evaluated at import time — to change the
+    allow-list, restart the server.
+    """
+    raw = os.getenv("SUPERADMIN_EMAILS", "")
+    return frozenset(
+        part.strip().lower()
+        for part in raw.split(",")
+        if part.strip()
+    )
+
+
+SUPERADMIN_EMAILS: frozenset[str] = _parse_superadmin_emails()
+
 # ---------------------------------------------------------------------------
 # JWKS cache — fetched once per hour from Supabase's public endpoint
 # ---------------------------------------------------------------------------
@@ -86,6 +103,16 @@ class UserContext:
     site_name:    str
     role:         str
     display_name: Optional[str] = None
+
+    # Platform-operator privilege. Sourced from the SUPERADMIN_EMAILS env var
+    # allow-list, never from a DB column. When impersonating (Phase 3), this is
+    # deliberately flipped to False on the returned context so the super-admin
+    # sees what the customer sees — subscription gates, demo write-blocks, etc.
+    # The real identity is preserved in real_user_id / real_email for audit.
+    is_superadmin:     bool           = False
+    is_impersonating:  bool           = False
+    real_user_id:      Optional[str]  = None
+    real_email:        Optional[str]  = None
 
 
 # ---------------------------------------------------------------------------
@@ -199,13 +226,15 @@ def get_optional_user(
     if not site:
         return None
 
+    email = payload.get("email", "") or ""
     return UserContext(
         user_id=user_id,
-        email=payload.get("email", ""),
+        email=email,
         site_id=str(member.site_id),
         site_name=site.name,
         role=member.role,
         display_name=member.display_name,
+        is_superadmin=email.strip().lower() in SUPERADMIN_EMAILS,
     )
 
 
@@ -218,6 +247,21 @@ def get_current_user(
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication required")
     return user
+
+
+def get_superadmin_user(
+    current_user: UserContext = Depends(get_current_user),
+) -> UserContext:
+    """
+    Dependency that enforces platform-operator privilege. Use on every
+    /api/superadmin/* route. Raises 403 with a generic message if the caller's
+    email is not in SUPERADMIN_EMAILS — the endpoint's existence is not
+    confirmed to unauthorised callers (same reasoning as the /app/admin route
+    rendering 404 rather than a friendly redirect).
+    """
+    if not current_user.is_superadmin:
+        raise HTTPException(status_code=403, detail="Not found")
+    return current_user
 
 
 def resolve_site(
@@ -269,7 +313,15 @@ def assert_active_subscription(
     a 402 is raised so the user is redirected to billing.
 
     Call in write routes that should be gated behind a paid subscription.
+
+    Platform operators (super-admins) bypass this check entirely — their
+    accounts are working accounts, not billed customer accounts. When a
+    super-admin impersonates a customer, `is_superadmin` is deliberately
+    flipped to False on the impersonated context so this gate still fires
+    and they see the 402 their real customer would see.
     """
+    if current_user.is_superadmin:
+        return
     if current_user.site_name == DEMO_SITE:
         return  # Demo is handled by assert_writable_site
 
