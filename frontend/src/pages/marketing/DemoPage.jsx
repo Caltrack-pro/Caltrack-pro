@@ -195,7 +195,7 @@ export default function DemoPage() {
                 See how drift trend analysis works: instruments showing escalating as-found error across calibrations are flagged automatically before they fail.
               </FeatureItem>
               <FeatureItem num="6" title="Approve Calibration Records">
-                See the approval workflow: submitted calibration records are reviewed and signed off by supervisors before they are locked into the register.
+                See the approval workflow: every submitted record is reviewed and signed off on the Pending Approvals tab before it locks into the register, so every calibration has a documented second-party sign-off.
               </FeatureItem>
             </div>
           </div>

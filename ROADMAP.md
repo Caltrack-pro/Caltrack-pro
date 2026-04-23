@@ -15,7 +15,7 @@ Auth (Supabase ES256 JWT), custom domain (calcheq.com), immutable audit trail, C
 - DECISIONS.md updated for 9-tab nav
 - Header getPageTitle entries for new routes
 - Onboarding wizard (5.1–5.2): 3-step welcome wizard (/app/onboarding), Dashboard welcome banner for empty sites, enhanced empty states on Instruments page
-- Role-based views (6.1–6.3): Technician nav hides Reports + Smart Diagnostics; Planner defaults to Planner tab on Schedule; Supervisor/Admin defaults to Pending Approvals tab on Calibrations when approvals exist
+- Role-based views (6.1–6.3): Technician nav hides Reports + Smart Diagnostics; Planner defaults to Planner tab on Schedule; Calibrations page defaults to Pending Approvals tab whenever approvals exist (all users — see 24 Apr approval-flow rewrite)
 
 **Completed 17 April 2026:**
 - Trial period updated from 14 days to 30 days across all copy (Landing, Pricing, AppSettings) and backend Stripe checkout session
@@ -28,11 +28,15 @@ Auth (Supabase ES256 JWT), custom domain (calcheq.com), immutable audit trail, C
 **Completed 18 April 2026:**
 - Smart Analytics 500 error fixed (`record_status.in_()` now uses string values `["approved", "submitted"]` not enum members)
 - Trends tab "not enough data" bug fixed — TrendCharts now includes `submitted` records, not just `approved`
-- Admin/supervisor submit → auto-approve + PDF cert emailed immediately (previously required separate approve click)
+- Admin/supervisor submit → auto-approve + PDF cert emailed immediately (previously required separate approve click) [SUPERSEDED 24 Apr 2026 — auto-approve removed; every submission now routes through Pending Approvals regardless of role]
 - "Drift Analysis" tab renamed to "Smart Analytics"
 - Smart Analytics tab upgraded: Recharts AreaChart + tolerance bands + recommendation cards (was table only)
 - Activity Log default date range extended from 90 days → 365 days (historical CSV-imported records were falling outside the 90-day window)
 - Follow-up: 4 PT-9300 calibrations (IXOM pilot) still sitting in "submitted" — approve via Pending Approvals once deployed so Smart Analytics has data
+
+**Completed 24 April 2026:**
+- Calibration approval flow rewrite: every submission now goes to Pending Approvals regardless of the submitter's role (auto-approve removed); every authenticated site user can click Approve/Reject (previous admin/supervisor gate dropped, amber "cannot approve" banner removed); the Pending tab auto-opens for all users when `count > 0`; cert recipients on approve narrowed from "technician + all site supervisors/admins" to "technician + approver" (deduped when the same person). Self-approval is explicitly allowed for the contractor-data-entry workflow. See DECISIONS.md "Calibration Approval Flow".
+- Calibration cert auto-email hardening: submit auto-approve path resolves recipient via `_technician_email(rec.technician_id, db)` (matches approve path); `/api/auth/members` opened to all authenticated site users and now returns `user_id` so the frontend binds the Supabase user ID not the row PK; CalibrationForm Technician field changed from free text to a dropdown populated from `/api/auth/members` so `technician_id` and `technician_name` can't drift. (This sprint ran into the 24 Apr rewrite — the auto-approve path is now unreachable but the technician-dropdown + member-endpoint changes stand.)
 
 **Completed 23 April 2026:**
 - Super-admin / platform operator console — three phases shipped end-to-end:

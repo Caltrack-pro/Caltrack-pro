@@ -1,0 +1,96 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S8 CalCheq State</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  .rp-switch { display: inline-flex; background: var(--bg-2); border: 1px solid var(--border); border-radius: 100px; padding: 4px; margin-bottom: 14px; }
+  .rp-btn { padding: 9px 22px; border-radius: 100px; font-size: 13px; font-weight: 600; color: var(--muted); border: none; background: transparent; font-family: inherit; }
+  .rp-btn.active { background: var(--grad); color: #06253F; }
+  .state-toggle { display: inline-flex; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 100px; padding: 3px; margin: 0 auto 14px; gap: 2px; }
+  .state-btn { padding: 7px 16px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); border: none; background: transparent; font-family: inherit; }
+  .state-btn.active.green-state { background: rgba(63,242,220,.15); color: #fff; box-shadow: inset 0 0 0 1px rgba(63,242,220,.5); }
+  .compliance-row { display: grid; grid-template-columns: 440px 1fr; gap: 24px; align-items: start; text-align: left; width: 100%; }
+  .comp-list { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .comp-list .comp-head { font-size: 10px; letter-spacing: 2.5px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--accent-3); }
+  .comp-list .comp-sub { font-size: 10.5px; color: var(--muted-2); font-weight: 500; margin-bottom: 8px; }
+  .comp-items { display: flex; flex-direction: column; gap: 8px; }
+  .comp-item { border-top: 1px dashed rgba(255,255,255,.06); padding-top: 8px; }
+  .comp-item:first-child { border-top: none; padding-top: 0; }
+  .comp-row { display: grid; grid-template-columns: 54px 18px 1fr; gap: 6px; align-items: baseline; font-size: 11.5px; line-height: 1.35; padding: 1px 0; }
+  .comp-row .lbl { font-size: 9px; letter-spacing: 1.5px; font-weight: 700; text-transform: uppercase; color: var(--muted-2); text-align: right; }
+  .comp-row .mk { font-size: 12px; font-weight: 800; text-align: center; }
+  .comp-row .txt { color: rgba(255,255,255,.88); }
+  .comp-row.req .txt { color: #fff; font-weight: 600; font-size: 12px; }
+  .comp-row.good .mk { color: var(--accent-3); }
+  .comp-row.risk .txt { color: var(--muted); font-size: 11px; }
+  .comp-clause { grid-column: 2 / 4; font-size: 9.5px; color: var(--muted-2); font-style: italic; margin-top: 1px; }
+  .comp-list .comp-foot { font-size: 10px; color: var(--muted-2); margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); font-style: italic; }
+  .cert-frame { background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
+  .cert-frame img { width: 100%; height: auto; max-height: 620px; object-fit: contain; border-radius: 6px; display: block; }
+  .cert-caption { font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; color: var(--muted-2); text-align: center; margin-top: 8px; }
+  .flow-line { margin-top: 16px; font-size: 13px; color: var(--muted); text-align: center; width: 100%; }
+  .flow-line b { color: var(--accent-3); font-weight: 600; }
+</style></head>
+<body>
+<div class="mockup-label">Slide 8 · Proposed · With CalCheq view</div>
+<section class="slide">
+  <div class="slide-inner">
+    <div class="eyebrow">Reporting</div>
+    <h2>Done. Certified. <span class="grad-text">Sent.</span></h2>
+    <div class="sub-h">Generated and emailed automatically on completion</div>
+    <div class="rp-switch"><button class="rp-btn active">Calibration Certificate</button><button class="rp-btn">Historical Certificate</button></div>
+    <div class="state-toggle"><button class="state-btn">Current State</button><button class="state-btn green-state active">With CalCheq</button></div>
+    <div class="compliance-row">
+      <div class="comp-list">
+        <div class="comp-head">ISO/IEC 17025 § 7.8 · Calibration Certificate Requirements</div>
+        <div class="comp-sub">Built into every CalCheq certificate automatically</div>
+        <div class="comp-items">
+          <div class="comp-item">
+            <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">State measurement uncertainty</span></div>
+            <div class="comp-row good"><span class="lbl">CalCheq</span><span class="mk">✓</span><span class="txt">Calculated from reference-standard uncertainty + repeatability, printed on every cert</span></div>
+            <div class="comp-row risk"><span class="lbl">Benefit</span><span></span><span class="txt">Defensible pass / fail boundary on every record</span></div>
+            <div class="comp-clause">§ 7.8.4.1 b</div>
+          </div>
+          <div class="comp-item">
+            <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Traceability of reference standard</span></div>
+            <div class="comp-row good"><span class="lbl">CalCheq</span><span class="mk">✓</span><span class="txt">Reference cert number and expiry date captured and printed</span></div>
+            <div class="comp-row risk"><span class="lbl">Benefit</span><span></span><span class="txt">Full traceability chain preserved for audit</span></div>
+            <div class="comp-clause">§ 6.5.2 · § 7.8.4.1 c</div>
+          </div>
+          <div class="comp-item">
+            <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Independent reviewer / approver</span></div>
+            <div class="comp-row good"><span class="lbl">CalCheq</span><span class="mk">✓</span><span class="txt">Second-party approval enforced by workflow — every cert carries both the technician and the approver, timestamped</span></div>
+            <div class="comp-row risk"><span class="lbl">Benefit</span><span></span><span class="txt">Second set of eyes on every safety-critical result</span></div>
+            <div class="comp-clause">§ 7.8.2.1 k</div>
+          </div>
+          <div class="comp-item">
+            <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Unique certificate identifier</span></div>
+            <div class="comp-row good"><span class="lbl">CalCheq</span><span class="mk">✓</span><span class="txt">Auto-generated, printed on the cert, searchable in the register</span></div>
+            <div class="comp-row risk"><span class="lbl">Benefit</span><span></span><span class="txt">Record always matchable back, even if detached</span></div>
+            <div class="comp-clause">§ 7.8.2.1 b</div>
+          </div>
+          <div class="comp-item">
+            <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Decision rule for conformity</span></div>
+            <div class="comp-row good"><span class="lbl">CalCheq</span><span class="mk">✓</span><span class="txt">Pass / fail / marginal against tolerance and uncertainty, rule stated on cert</span></div>
+            <div class="comp-row risk"><span class="lbl">Benefit</span><span></span><span class="txt">Marginal results flagged explicitly — no silent passes</span></div>
+            <div class="comp-clause">§ 7.8.6.1</div>
+          </div>
+          <div class="comp-item">
+            <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Adjustment documentation</span></div>
+            <div class="comp-row good"><span class="lbl">CalCheq</span><span class="mk">✓</span><span class="txt">Adjustment flag, amount, and technician notes required on every record</span></div>
+            <div class="comp-row risk"><span class="lbl">Benefit</span><span></span><span class="txt">Complete record of what changed and why</span></div>
+            <div class="comp-clause">§ 7.8.4.1 f</div>
+          </div>
+        </div>
+        <div class="comp-foot">Audit-ready by default. PDFs auto-named, auto-emailed, auto-archived on approval.</div>
+      </div>
+      <div>
+        <div class="cert-frame">
+          <img src="../../assets/screenshots/Cal Cert.png" alt="CalCheq calibration certificate"/>
+        </div>
+        <div class="cert-caption">CalCheq calibration certificate</div>
+      </div>
+    </div>
+    <div class="flow-line">Technician submits → Pass/fail calculated → <b>PDF auto-generated, emailed, archived</b> → Audit trail recorded.</div>
+  </div>
+</section>
+</body></html>

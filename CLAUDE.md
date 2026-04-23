@@ -52,7 +52,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - ImportCalibratorCSV.jsx — 3-step Beamex/Fluke CSV import: Upload → Review → Confirm; route: /app/calibrations/import-csv
 - ImportInstruments.jsx  — bulk instrument CSV import UI; route: /app/import
 - Schedule.jsx           — 2 tabs: Technician Queue / Planner; default tab is role-aware (planner role → Planner tab); route: /app/schedule
-- Calibrations.jsx       — 2 tabs: Activity Log / Pending Approvals (with live count badge); supervisor/admin auto-switches to Pending Approvals when items exist; route: /app/calibrations
+- Calibrations.jsx       — 2 tabs: Activity Log / Pending Approvals (with live count badge); auto-switches to Pending Approvals tab for every user when items exist; Approve/Reject buttons visible to all site members (no role gate); route: /app/calibrations
 - SmartDiagnostics.jsx   — 3 tabs: Recommendations (critical/advisory/optimisation, 9-rule engine — each card shows a "Recommended action" solution box, category-coloured styling, View-instrument / Calibrate-now / Dismiss actions, and metric tile for projections) / Drift Alerts (sparklines, projected failure dates) / Repeat Failures (bad actors); route: /app/diagnostics
 - Documents.jsx          — document library: upload/manage procedures, manuals, certificates; link to instruments; CRUD via /api/documents; route: /app/documents
 - AppSettings.jsx        — 5 sections: Site info / Profile / Change Password / Team Members (admin) / Billing & Subscription (admin); route: /app/settings
@@ -220,16 +220,18 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 - `GET  /api/auth/check-site?name=X`  — validates site name (public)
 - `POST /api/auth/register`           — creates site + site_members row
 - `GET  /api/auth/me`                 — current user: name, email, role, site, subscription, `is_superadmin` (bool, derived from SUPERADMIN_EMAILS); uses `get_real_user` so impersonation never rewrites the identity reported to the sidebar/avatar
-- `GET  /api/auth/members`            — list site members (admin/supervisor only)
+- `GET  /api/auth/members`            — list site members (any authenticated site user — needed for the CalibrationForm technician dropdown; intra-site only so no tenant leakage; mutation endpoints remain admin-only)
 - `POST /api/auth/invite`             — create user + add to site + send invite email (admin only; needs SUPABASE_SERVICE_ROLE_KEY)
 
 ### Roles
-- admin: full access
-- supervisor: read/write + approve calibrations
+- admin: full access (manage team, billing, delete records)
+- supervisor: read/write
 - technician: read + create/edit calibrations + edit instruments
 - planner: read + edit scheduling fields
 - readonly: read only
 - superadmin: platform operator — not a DB role, granted via `SUPERADMIN_EMAILS` env var allowlist; bypasses `assert_active_subscription`; sees 👑 Platform Admin sidebar entry; can impersonate any site
+
+**Calibration approval is open to every authenticated site user** (not role-gated) — see DECISIONS.md "Calibration Approval Flow". Role differences above cover mutation scope and nav layout, not approval rights.
 
 ### Demo account
 - Email: demo@calcheq.com  |  Password: CalcheqDemo2026

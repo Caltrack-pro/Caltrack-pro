@@ -54,10 +54,17 @@ You are a QA tester for CalCheq (https://calcheq.com), an industrial instrument 
 - [ ] Fill out the form with 3–5 test points. Use as-found values that are clearly pass, clearly fail, and one marginal (0.8x tolerance).
 - [ ] Check the live pass/fail calculation — does it match the rules? (fail > marginal > pass, worst point wins).
 - [ ] Save as draft. Return. Reopen. Still a draft?
-- [ ] Submit. As an admin, this should auto-approve + trigger a PDF cert email. Check:
-  - Does the confirmation toast appear?
-  - Does the record show "approved" status?
-  - Did the PDF arrive in the email inbox? Open it — does the header show "IXOM", correct branding, tag, technician, results?
+- [ ] Pick the technician from the dropdown (not free text). Confirm the helper line reads "Calibration certificate PDF is emailed to the selected technician on approval."
+- [ ] Submit. Record should transition to **Submitted** (NOT auto-approved, regardless of your role). Check:
+  - Confirmation toast appears
+  - Record status is "submitted", not "approved"
+  - Sidebar 📋 Calibrations badge increments
+- [ ] Open `/app/calibrations` → Pending Approvals tab. The tab should auto-open when there are pending items. Approve/Reject buttons are visible for every signed-in user (no amber "cannot approve" banner). Click Approve.
+  - Toast appears
+  - Record moves to Activity Log with "approved" status
+  - PDF cert arrives at BOTH the technician's email (the member selected on the form) AND the approver's email (collapsed to a single email if same person)
+  - Open the PDF: header shows site name, correct branding, tag, technician, test points, results
+- [ ] Try rejecting a submission. Confirm technician gets a rejection notice and record status becomes "rejected".
 - [ ] Enter a SECOND calibration on a different date (say 90 days earlier). This gives drift data.
 - [ ] Enter a THIRD calibration on another earlier date.
 - [ ] Go back to instrument detail → Trends tab and Smart Analytics tab — do the charts now show data?
@@ -72,7 +79,7 @@ You are a QA tester for CalCheq (https://calcheq.com), an industrial instrument 
 
 **G. Calibrations page (`/app/calibrations`)**
 - [ ] Activity Log tab: default 365-day range. Do recent submissions appear?
-- [ ] Pending Approvals tab: does it show the live badge count? As admin, can you approve/reject one?
+- [ ] Pending Approvals tab: does it show the live badge count? Any signed-in role (admin, supervisor, technician, planner) should see Approve/Reject buttons — test with a non-admin account to confirm there is no role gate and no amber "cannot approve" banner.
 
 **H. Smart Diagnostics (`/app/diagnostics`)**
 - [ ] All 3 tabs load: Recommendations / Drift Alerts / Repeat Failures.

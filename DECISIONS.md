@@ -154,7 +154,7 @@ site_members (id UUID PK, site_id FK→sites, user_id UUID, role TEXT, display_n
 **Changes:**
 - **Technician:** Sidebar hides Smart Diagnostics and Reports (manager-only tools). Reduces clutter.
 - **Planner:** Schedule page defaults to the Planner tab (workload chart) instead of Technician Queue.
-- **Supervisor/Admin:** Calibrations page auto-switches to Pending Approvals tab when there are items waiting for review.
+- **Any role with pending work:** Calibrations page auto-switches to Pending Approvals tab when there are items waiting for review. Approve/Reject is open to every authenticated site user (see "Calibration Approval Flow" decision below for why).
 
 **Why soft gating, not hard:** At many smaller sites, one person wears multiple hats. Hard-blocking a technician from viewing reports creates friction. The nav simplification guides them to what they need most, but direct URL access remains available.
 
@@ -227,3 +227,22 @@ Impersonation is implemented as a client-sent `X-Impersonate-Site-Id: <uuid>` he
 **Why:** Keeps parsing logic testable in isolation, avoids multipart file upload complexity for the review step, and allows the user to see a full preview before any data is written to the database.
 
 **Supported formats:** Beamex MC6/MC4/MC2, Fluke 754/729/726
+
+---
+
+## Calibration Approval Flow — April 2026 Rewrite
+
+**Decision:** Every calibration record goes through an explicit approval step, and **any authenticated site user can approve or reject** (not restricted to admin/supervisor). Self-approval is allowed — the same person may submit and then approve.
+
+**Flow:**
+1. A signed-in user enters a calibration on `CalibrationForm` and picks the responsible technician from the dropdown. The technician dropdown is populated from `/api/auth/members` so `technician_id` (Supabase user_id) and `technician_name` are bound atomically.
+2. Clicking **Submit for Approval** transitions the record to `SUBMITTED` — regardless of the submitter's role. There is no longer an admin/supervisor auto-approve shortcut.
+3. The record appears in the **Pending Approvals** tab on `/app/calibrations`. The sidebar's 📋 Calibrations badge shows the count for everyone. When the count is >0 the page auto-defaults to that tab for any logged-in user.
+4. Any site member can click **Approve** or **Reject**. On approve: the backend generates the fpdf2 PDF certificate and Resend emails it to (a) the technician recorded on the record, and (b) the approver. The same email appearing for both is collapsed to a single send.
+5. Submission also emails any site admins/supervisors a "pending approval" notification so they can triage, but the approval itself is not gated to them.
+
+**Why no role restriction on approval:** In many smaller plants an internal CalCheq user enters data on behalf of a contractor (who doesn't have a CalCheq seat). That user needs to be able to both submit and approve so the record is closed off, while still producing the audit trail. MHF / safety-critical compliance requires a second party signature — we satisfy that at the workflow level (contractor → internal user) rather than by hard role separation, because the contractor isn't in the system to sign as a first party.
+
+**Why no auto-approve shortcut for admins anymore:** The prior "admin/supervisor submit → APPROVED in one step" path skipped the visible Pending tab and the audit distinction between submission and approval. It also hid cert-send failures because the send happened inside the same try/except as the state change. Forcing every record through `SUBMITTED → APPROVED` gives every calibration the same two-step paper trail and makes failures easier to diagnose.
+
+**Cert recipients — narrow vs broad:** We considered copying all site admins/supervisors on every cert (previous behaviour) but dropped it. Reasoning: the technician needs it for the work order, the approver needs it as their signed artefact, and anyone else who wants a copy can pull the PDF from the instrument's history tab. Broad CC lists turned into noise that users filtered to trash.

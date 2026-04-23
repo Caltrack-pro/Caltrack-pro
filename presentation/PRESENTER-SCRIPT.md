@@ -112,7 +112,7 @@
 > 2. **Instruments** — "The full register. Every tag, every tolerance, every criticality rating. I can filter by area, by status, by anything. Export to CSV if I need to."
 > 3. *Click into an instrument* — "Here's PT-9300. Full history, the drift chart, all the calibration certificates attached."
 > 4. **Schedule** — "This is the technician queue and the planner view. I can see what's due this week. Drag to assign."
-> 5. **Calibrations** — "Activity log and pending approvals. This is where a supervisor signs off before the cert gets issued."
+> 5. **Calibrations** — "Activity log and pending approvals. Every calibration goes through this queue so a second authorised user signs it off before the cert gets issued — that's the two-party trail IXOM needs for MHF."
 > 6. *Open a calibration form on your phone (if you can mirror it)* — "And on a phone, this is what a tech sees in the field. Tolerance is right there. Pass or fail shows live as I type."
 > 7. **Diagnostics** — just tease it: "This is where it gets interesting. Let me go back to the slides and walk through this properly."
 >
@@ -173,7 +173,7 @@
 
 > The output you already know — just automated.
 >
-> When a calibration is submitted and approved, CalCheq generates a PDF certificate. **Auto-named** by tag number and date. **Auto-emailed** to the technician and the supervisor. **Auto-archived** in the instrument record.
+> When a calibration is submitted and approved, CalCheq generates a PDF certificate. **Auto-named** by tag number and date. **Auto-emailed** to the technician who did the work and the user who approved it. **Auto-archived** in the instrument record.
 >
 > No scanning. No re-typing. No manually attaching it to a work order.
 

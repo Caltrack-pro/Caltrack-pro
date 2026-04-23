@@ -126,7 +126,7 @@ const FAQ_SECTIONS = [
       },
       {
         question: 'How does the approval workflow work?',
-        answer: 'After a technician submits a calibration record, it appears in the Calibrations page under Pending Approvals. A supervisor or admin reviews the results and either approves or rejects with a note. Once approved, the instrument\'s calibration due date is automatically updated. Rejected records go back to the technician for correction.',
+        answer: 'When anyone submits a calibration record, it appears in the Calibrations page under Pending Approvals — regardless of the submitter\'s role. Any authenticated site user can then review and either approve or reject the record with a note. Once approved, the instrument\'s calibration due date updates automatically and the PDF certificate is emailed to both the technician on the record and the approver. Rejected records return to draft for correction. Self-approval (the same person submits and approves) is allowed — this supports recording calibrations on behalf of external contractors.',
       },
     ],
   },
@@ -135,7 +135,7 @@ const FAQ_SECTIONS = [
     items: [
       {
         question: 'Why does an instrument show as Overdue even though we just calibrated it?',
-        answer: 'Overdue status is based on the calibration_due_date field on the instrument. If a calibration record was submitted but not yet approved, the instrument\'s due date won\'t update until the record is approved. Check the Calibrations → Pending Approvals tab — if there\'s a record waiting for approval, that\'s the cause. Ask a supervisor or admin to approve it.',
+        answer: 'Overdue status is based on the calibration_due_date field on the instrument. If a calibration record was submitted but not yet approved, the instrument\'s due date won\'t update until the record is approved. Check the Calibrations → Pending Approvals tab — if there\'s a record waiting for approval, that\'s the cause. Any signed-in site user can approve it.',
       },
       {
         question: 'How is the calibration due date calculated?',
@@ -160,7 +160,7 @@ const FAQ_SECTIONS = [
     items: [
       {
         question: 'Can I edit a calibration record after submitting it?',
-        answer: 'Submitted records cannot be edited by technicians — this protects the integrity of the calibration trail. If there\'s an error, a supervisor or admin can reject the record with a note explaining what needs to be corrected. The technician then needs to submit a new record.',
+        answer: 'Once a record is submitted it cannot be edited — this protects the integrity of the calibration trail. If there\'s an error, any signed-in site user can reject the record with a note explaining what needs to be corrected, and the technician then submits a new record.',
       },
       {
         question: 'How do I import calibration data from my Beamex or Fluke calibrator?',
@@ -197,11 +197,12 @@ const FAQ_SECTIONS = [
         answer: (
           <>
             <ul className="space-y-2 mt-1">
-              <li><strong className="text-slate-800">Admin</strong> — full access: instrument CRUD, calibration entry and approval, team management, settings.</li>
-              <li><strong className="text-slate-800">Supervisor</strong> — can view everything, create and edit instruments, enter calibrations, and approve/reject records.</li>
-              <li><strong className="text-slate-800">Technician</strong> — can view instruments and history, enter calibration records, and edit instrument details. Cannot approve records.</li>
+              <li><strong className="text-slate-800">Admin</strong> — full access: instrument CRUD, calibration entry, team management, billing, settings.</li>
+              <li><strong className="text-slate-800">Supervisor</strong> — can view everything, create and edit instruments, enter calibrations.</li>
+              <li><strong className="text-slate-800">Technician</strong> — can view instruments and history, enter calibration records, and edit instrument details.</li>
               <li><strong className="text-slate-800">Planner</strong> — read access plus the ability to edit scheduling fields (intervals, due dates). Cannot enter calibrations.</li>
               <li><strong className="text-slate-800">Read Only</strong> — view-only access to all data.</li>
+              <li className="list-none pt-2 text-slate-600 text-[13px]"><strong className="text-slate-800">Approvals</strong> are open to every signed-in site user regardless of role — every submitted calibration routes through Pending Approvals so there is always a documented two-party trail (enter and approve).</li>
             </ul>
           </>
         ),
@@ -276,7 +277,7 @@ const TUTORIALS = [
           <li><strong>Enter as-found readings.</strong> For each test point, type the actual reading you measured at that nominal input. Error %, pass/fail, and marginal flags calculate automatically as you type.</li>
           <li><strong>Decide on adjustment.</strong> If any point failed or was marginal and you adjusted the instrument, toggle <strong>Adjustment made</strong> to Yes, then enter the as-left readings. If no adjustment was needed, leave as-left blank — it will copy from as-found.</li>
           <li><strong>Add notes and return-to-service.</strong> Record defects, replaced parts, or observations. Tick <strong>Return to Service</strong> if the instrument is back in operation.</li>
-          <li><strong>Submit.</strong> Click <strong>Submit for Approval</strong>. The record moves to the Pending Approvals queue. Admins auto-approve their own records — technicians and supervisors must wait for a supervisor or admin review.</li>
+          <li><strong>Submit.</strong> Click <strong>Submit for Approval</strong>. The record moves to the Pending Approvals queue regardless of your role — there is no role-based auto-approve. Any signed-in site user (including you) can then review and approve it from the Calibrations page.</li>
         </ol>
         <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900">
           <strong>Remember:</strong> The calibration due date doesn't update until the record is approved. Check the Calibrations → Pending Approvals tab if an instrument is still flagged as overdue right after you entered data.
@@ -287,21 +288,24 @@ const TUTORIALS = [
   {
     emoji: '✅',
     title: 'Approving calibration records',
-    blurb: 'For supervisors and admins — the review & approve workflow.',
+    blurb: 'Open to every signed-in site user — the review & approve workflow.',
     body: (
       <>
         <ol className="list-decimal list-outside ml-5 space-y-2">
-          <li><strong>Watch the sidebar badge.</strong> The red number on <strong>📋 Calibrations</strong> shows how many records are waiting for approval. Supervisors and admins landing on this page are auto-switched to the Pending Approvals tab when items exist.</li>
+          <li><strong>Watch the sidebar badge.</strong> The red number on <strong>📋 Calibrations</strong> shows how many records are waiting for approval. Any signed-in user landing on this page is auto-switched to the Pending Approvals tab when items exist.</li>
           <li><strong>Open a record.</strong> Click the row to expand the full calibration — you'll see every test point with as-found and as-left readings, error %, and pass/fail per point, plus the reference standard details and technician notes.</li>
           <li><strong>Review the essentials.</strong> Check that: (a) the reference standard has a valid, unexpired certificate, (b) the results look correct against the tolerance, (c) the technician's notes explain any adjustments or defects, and (d) the calibration date and type are right.</li>
           <li><strong>Approve or reject.</strong>
             <ul className="list-disc list-outside ml-5 mt-1 space-y-1">
-              <li><strong>Approve</strong> — the record becomes permanent, the instrument's last-calibration fields update, and a new due date is calculated (cal date + interval days).</li>
+              <li><strong>Approve</strong> — the record becomes permanent, the instrument's last-calibration fields update, and a new due date is calculated (cal date + interval days). The PDF certificate is emailed to both the technician on the record and you (the approver) — if both are the same person, a single email goes out.</li>
               <li><strong>Reject</strong> — you'll be asked for a reason. The technician gets an email with your note so they can correct and re-submit.</li>
             </ul>
           </li>
           <li><strong>Audit trail.</strong> Every approve/reject is timestamped with your name and appears on the instrument's Audit Log tab.</li>
         </ol>
+        <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
+          <strong>Self-approval is allowed.</strong> When a CalCheq user enters data on behalf of an external contractor who doesn't have a seat, that same user can also approve — the two-party sign-off lives in the contractor-to-operator handover, not inside CalCheq. A site admin is the one able to decide whether their team treats self-approval as best practice for their compliance obligations.
+        </div>
         <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
           <strong>Cannot edit:</strong> Once submitted, records cannot be edited by anyone — only rejected back for correction. This protects the calibration trail for audit purposes.
         </div>
@@ -368,11 +372,12 @@ const TUTORIALS = [
           <li><strong>Invite a new member.</strong> Click <strong>Invite Member</strong>. Enter their email, a display name, and choose a role. Click Send. They receive an email with a link that lets them set a password and sign in — their account is tied to your site automatically.</li>
           <li><strong>Pick the right role.</strong>
             <ul className="list-disc list-outside ml-5 mt-1 space-y-1">
-              <li><strong>Admin</strong> — everything: team, billing, approvals, imports, instrument CRUD.</li>
-              <li><strong>Supervisor</strong> — same as Admin minus team and billing; can approve calibrations.</li>
-              <li><strong>Technician</strong> — enter calibrations and edit instruments. Cannot approve. Sidebar is simplified (no Reports, no Smart Diagnostics).</li>
+              <li><strong>Admin</strong> — everything: team, billing, imports, instrument CRUD, record delete.</li>
+              <li><strong>Supervisor</strong> — same as Admin minus team and billing.</li>
+              <li><strong>Technician</strong> — enter calibrations and edit instruments. Sidebar is simplified (no Reports, no Smart Diagnostics).</li>
               <li><strong>Planner</strong> — read access plus the ability to edit scheduling fields (intervals, due dates). Cannot enter calibrations. Defaults to the Planner tab in Schedule.</li>
               <li><strong>Read Only</strong> — viewing access to everything, no writes.</li>
+              <li className="list-none pt-1 text-[12px] text-slate-600"><strong>Approve/reject</strong> on Pending Approvals is open to every signed-in role above, not just Admin/Supervisor.</li>
             </ul>
           </li>
           <li><strong>Change or remove a role.</strong> In the Team Members table, click the role dropdown to update or click the red <strong>Remove</strong> button. Removed members lose access immediately.</li>
