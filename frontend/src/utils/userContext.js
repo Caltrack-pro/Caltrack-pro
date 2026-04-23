@@ -29,6 +29,45 @@ import { supabase } from './supabase'
 export const DEMO_SITE = 'Demo'
 
 // ---------------------------------------------------------------------------
+// Platform-admin impersonation (super-admin only)
+//
+// When a super-admin clicks "Impersonate" on a site in /app/admin, we store
+// the target site id + name in sessionStorage. All subsequent API calls in
+// api.js attach X-Impersonate-Site-Id, and the red banner in Layout.jsx
+// reads the name from here. Scoped to the tab (sessionStorage) by design.
+// ---------------------------------------------------------------------------
+
+const IMPERSONATE_ID_KEY   = 'caltrack-impersonate-site-id'
+const IMPERSONATE_NAME_KEY = 'caltrack-impersonate-site-name'
+
+export function getImpersonationSiteId() {
+  try { return sessionStorage.getItem(IMPERSONATE_ID_KEY) || null } catch { return null }
+}
+export function getImpersonationSiteName() {
+  try { return sessionStorage.getItem(IMPERSONATE_NAME_KEY) || null } catch { return null }
+}
+
+/** Set the impersonation target. Caller is responsible for calling
+ *  /api/superadmin/sites/{id}/impersonate-start for the audit marker. */
+export function startImpersonation(siteId, siteName) {
+  try {
+    sessionStorage.setItem(IMPERSONATE_ID_KEY,   siteId)
+    sessionStorage.setItem(IMPERSONATE_NAME_KEY, siteName)
+  } catch { /* ignore */ }
+  window.dispatchEvent(new CustomEvent('caltrack-impersonation-change', { detail: { siteId, siteName } }))
+}
+
+/** Clear impersonation. Caller is responsible for calling impersonate-end
+ *  AFTER this returns so the audit row carries the super-admin's identity. */
+export function exitImpersonation() {
+  try {
+    sessionStorage.removeItem(IMPERSONATE_ID_KEY)
+    sessionStorage.removeItem(IMPERSONATE_NAME_KEY)
+  } catch { /* ignore */ }
+  window.dispatchEvent(new CustomEvent('caltrack-impersonation-change', { detail: null }))
+}
+
+// ---------------------------------------------------------------------------
 // Module-level state — synchronous reads for backward compat
 // ---------------------------------------------------------------------------
 

@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import DemoBlockModal from './DemoBlockModal'
+import ImpersonationBanner from './ImpersonationBanner'
 import { calibrations as calsApi } from '../utils/api'
 
 export default function Layout() {
@@ -51,6 +52,7 @@ export default function Layout() {
 
       {/* ── Right-hand panel: header + scrollable content ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <ImpersonationBanner />
         <Header onMenuClick={() => setSidebarOpen(v => !v)} />
 
         <main className="flex-1 overflow-y-auto">

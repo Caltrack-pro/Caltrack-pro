@@ -28,11 +28,13 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Optional
 
+from uuid import UUID
+
 from fastapi import Depends, HTTPException, Query, Request
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
-from database import get_db
+from database import SessionLocal, get_db
 from models import Site, SiteMember
 
 logger = logging.getLogger(__name__)
@@ -46,6 +48,17 @@ SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")   # legacy HS256 fall
 _AUDIENCE           = "authenticated"
 
 DEMO_SITE = "Demo"
+
+# Header used by the frontend platform-admin banner to scope a session into a
+# different site. Only honoured when the caller's email is in SUPERADMIN_EMAILS
+# — otherwise we 403. Read by get_optional_user, applied uniformly so every
+# authenticated route automatically sees the impersonated site_id/site_name.
+IMPERSONATION_HEADER = "X-Impersonate-Site-Id"
+
+# HTTP methods that produce audit-log rows when issued under an impersonation
+# header. GETs are excluded — too noisy, no forensic benefit. Session start/end
+# are recorded by dedicated /api/superadmin/sites/{id}/impersonate-* endpoints.
+_AUDITED_IMPERSONATION_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
 
 def _parse_superadmin_emails() -> frozenset[str]:
@@ -194,6 +207,97 @@ def get_jwt_claims(request: Request) -> dict:
     return _decode_jwt(token)
 
 
+def _apply_impersonation(
+    user:    Optional[UserContext],
+    request: Request,
+    db:      Session,
+) -> Optional[UserContext]:
+    """
+    If the request carries the X-Impersonate-Site-Id header, rewrite the user
+    context so downstream code sees the impersonated site.
+
+    Rules:
+      - No header                             → return user unchanged
+      - Header + no auth                      → ignore (upstream will 401)
+      - Header + caller is not super-admin    → 403 (never a legitimate request)
+      - Header + caller IS super-admin        → rewrite context:
+          * site_id / site_name  → target site
+          * role                 → 'admin' (full role, so admin-only UIs work)
+          * is_superadmin        → False  (so subscription/demo gates still fire)
+          * is_impersonating     → True
+          * real_user_id / email → preserved for audit attribution
+    """
+    header = request.headers.get(IMPERSONATION_HEADER)
+    if not header:
+        return user
+    if user is None:
+        return None
+    if not user.is_superadmin:
+        raise HTTPException(status_code=403, detail="Impersonation is not permitted.")
+
+    try:
+        target_id = UUID(header)
+    except (ValueError, AttributeError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid X-Impersonate-Site-Id header") from exc
+
+    target = db.query(Site).filter(Site.id == target_id).first()
+    if target is None:
+        raise HTTPException(status_code=404, detail="Impersonation target site not found")
+
+    return UserContext(
+        user_id=user.user_id,
+        email=user.email,
+        site_id=str(target.id),
+        site_name=target.name,
+        role="admin",
+        display_name=user.display_name,
+        is_superadmin=False,
+        is_impersonating=True,
+        real_user_id=user.user_id,
+        real_email=user.email,
+    )
+
+
+def _audit_impersonated_request(user: UserContext, request: Request) -> None:
+    """
+    Write an audit_log row recording the super-admin's action while
+    impersonating. Uses a short-lived session so the row is committed even if
+    the surrounding route later rolls back (e.g. a 403 from assert_writable_site
+    on Demo) — we still want the attempt on record. Never raises.
+    """
+    # Late import to avoid circular (models <- database <- auth)
+    from models import AuditLog  # noqa: WPS433
+
+    session = SessionLocal()
+    try:
+        try:
+            site_uuid = UUID(str(user.site_id))
+        except (ValueError, TypeError):
+            return
+        entry = AuditLog(
+            site_id=site_uuid,
+            entity_type="site",
+            entity_id=site_uuid,
+            user_id=user.real_user_id or user.user_id,
+            user_name=user.real_email or user.email or user.user_id,
+            action="impersonation_write",
+            changed_fields={
+                "method": request.method,
+                "path":   request.url.path,
+            },
+        )
+        session.add(entry)
+        session.commit()
+    except Exception as exc:
+        logger.warning("Impersonation audit write failed: %s", exc)
+        try:
+            session.rollback()
+        except Exception:
+            pass
+    finally:
+        session.close()
+
+
 def get_optional_user(
     request: Request,
     db: Session = Depends(get_db),
@@ -227,6 +331,67 @@ def get_optional_user(
         return None
 
     email = payload.get("email", "") or ""
+    user = UserContext(
+        user_id=user_id,
+        email=email,
+        site_id=str(member.site_id),
+        site_name=site.name,
+        role=member.role,
+        display_name=member.display_name,
+        is_superadmin=email.strip().lower() in SUPERADMIN_EMAILS,
+    )
+    # Apply platform-admin impersonation header if present. Raises 403 if the
+    # header is on a request from a non-super-admin, so this cannot be abused
+    # by regular customers to escalate into other sites.
+    return _apply_impersonation(user, request, db)
+
+
+def get_current_user(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> UserContext:
+    """Like get_optional_user but raises 401 if the user is not authenticated."""
+    user = get_optional_user(request, db)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    # Record every write issued under an active impersonation. Uses an
+    # independent session so the row sticks even if the surrounding route
+    # raises (e.g. 403 from assert_writable_site on Demo — we still want
+    # the attempt logged).
+    if user.is_impersonating and request.method in _AUDITED_IMPERSONATION_METHODS:
+        _audit_impersonated_request(user, request)
+
+    return user
+
+
+def get_real_user(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> UserContext:
+    """
+    Like get_current_user but never applies the X-Impersonate-Site-Id header.
+    Use on endpoints where the frontend needs the super-admin's *real* identity
+    even during an impersonation session (the /api/auth/me endpoint in
+    particular — it drives the sidebar/avatar/is_superadmin flag, which must
+    continue to reflect the real user so Exit always works).
+    """
+    token = _extract_token(request)
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    payload = _decode_jwt(token)
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    member = db.query(SiteMember).filter(SiteMember.user_id == user_id).first()
+    if not member:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    site = db.query(Site).filter(Site.id == member.site_id).first()
+    if not site:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    email = payload.get("email", "") or ""
     return UserContext(
         user_id=user_id,
         email=email,
@@ -238,26 +403,22 @@ def get_optional_user(
     )
 
 
-def get_current_user(
-    request: Request,
-    db: Session = Depends(get_db),
-) -> UserContext:
-    """Like get_optional_user but raises 401 if the user is not authenticated."""
-    user = get_optional_user(request, db)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    return user
-
-
 def get_superadmin_user(
-    current_user: UserContext = Depends(get_current_user),
+    current_user: UserContext = Depends(get_real_user),
 ) -> UserContext:
     """
     Dependency that enforces platform-operator privilege. Use on every
-    /api/superadmin/* route. Raises 403 with a generic message if the caller's
-    email is not in SUPERADMIN_EMAILS — the endpoint's existence is not
-    confirmed to unauthorised callers (same reasoning as the /app/admin route
-    rendering 404 rather than a friendly redirect).
+    /api/superadmin/* route.
+
+    Depends on get_real_user (not get_current_user) — super-admin routes
+    operate at the platform level and must not be scoped by an impersonation
+    header, so e.g. /impersonate-end still works even if the caller's session
+    somehow still carries the header.
+
+    Raises 403 with a generic message if the caller's email is not in
+    SUPERADMIN_EMAILS — the endpoint's existence is not confirmed to
+    unauthorised callers (same reasoning as the /app/admin route rendering
+    404 rather than a friendly redirect).
     """
     if not current_user.is_superadmin:
         raise HTTPException(status_code=403, detail="Not found")

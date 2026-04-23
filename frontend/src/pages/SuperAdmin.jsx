@@ -11,7 +11,9 @@
  * stub handler that's filled in when the header + banner land.
  */
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { admin } from '../utils/api'
+import { startImpersonation } from '../utils/userContext'
 
 // Brand colours from CLAUDE.md
 const NAVY   = '#0B1F3A'
@@ -247,6 +249,7 @@ function DeleteSiteModal({ site, onClose, onDone }) {
 // ---------------------------------------------------------------------------
 
 export default function SuperAdmin() {
+  const navigate = useNavigate()
   const [sites, setSites]   = useState([])
   const [loading, setLoad]  = useState(true)
   const [err,  setErr]      = useState(null)
@@ -300,12 +303,21 @@ export default function SuperAdmin() {
   async function onResume(site) {
     await admin.resume(site.id); await load()
   }
-  function onImpersonate(site) {
-    // Wired up fully in Phase 3 — header + banner + audit session markers.
-    // For now we surface a console hint so it's obviously stubbed.
-    // eslint-disable-next-line no-console
-    console.info('[Phase 3] Impersonation not yet wired:', site.name)
-    alert('Impersonation lands in Phase 3 — backend gate is ready, banner + header wiring is next.')
+  async function onImpersonate(site) {
+    // Order matters: record the audit marker BEFORE setting the header so the
+    // impersonate-start row carries the super-admin's real identity (no
+    // X-Impersonate-Site-Id on that call). Only then do we flip sessionStorage,
+    // which causes every subsequent API request to send the header and be
+    // scoped to the target site. A hard navigate ensures the Dashboard query
+    // runs fresh under the impersonated identity.
+    try {
+      await admin.impersonateStart(site.id)
+    } catch (e) {
+      alert(`Could not start impersonation: ${e.detail ?? e.message}`)
+      return
+    }
+    startImpersonation(site.id, site.name)
+    navigate('/app')
   }
 
   return (

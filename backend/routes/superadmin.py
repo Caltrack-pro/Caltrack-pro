@@ -408,6 +408,49 @@ def resume_site(
 
 
 # ---------------------------------------------------------------------------
+# Impersonation session markers
+#
+# The impersonation mechanism itself lives in auth.py (header rewrite +
+# per-write audit). These endpoints exist purely to bracket a session in the
+# audit trail — they're called by the frontend without the impersonation
+# header, so the super-admin's real identity is recorded.
+# ---------------------------------------------------------------------------
+
+@router.post("/sites/{site_id}/impersonate-start")
+def impersonate_start(
+    site_id: str,
+    actor:   UserContext = Depends(get_superadmin_user),
+    db:      Session     = Depends(get_db),
+):
+    """
+    Records the start of an impersonation session. Returns the target site's
+    name for the frontend to display in the red banner. Does NOT set any
+    server-side state — impersonation is request-scoped via the header.
+    """
+    site = _site_or_404(db, site_id)
+    _audit(db, actor, site.id, "impersonation_start", {"target_site_name": site.name})
+    db.commit()
+    return {"site_id": str(site.id), "site_name": site.name}
+
+
+@router.post("/sites/{site_id}/impersonate-end")
+def impersonate_end(
+    site_id: str,
+    actor:   UserContext = Depends(get_superadmin_user),
+    db:      Session     = Depends(get_db),
+):
+    """
+    Records the end of an impersonation session. The frontend clears the
+    X-Impersonate-Site-Id header before calling this endpoint so the
+    super-admin's real identity reaches the audit helper.
+    """
+    site = _site_or_404(db, site_id)
+    _audit(db, actor, site.id, "impersonation_end", {"target_site_name": site.name})
+    db.commit()
+    return {"site_id": str(site.id), "site_name": site.name}
+
+
+# ---------------------------------------------------------------------------
 # DELETE /api/superadmin/sites/{id}
 # ---------------------------------------------------------------------------
 

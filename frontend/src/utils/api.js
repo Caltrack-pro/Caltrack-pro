@@ -8,6 +8,19 @@ import { supabase } from './supabase'
 
 const BASE_URL = '/api'
 
+// Header name the backend (auth.py) expects for platform-admin impersonation.
+// We read sessionStorage directly here rather than importing userContext to
+// avoid the existing static/dynamic-import cycle with userContext.js.
+const IMPERSONATE_HEADER = 'X-Impersonate-Site-Id'
+function _impersonationHeader() {
+  try {
+    const id = sessionStorage.getItem('caltrack-impersonate-site-id')
+    return id ? { [IMPERSONATE_HEADER]: id } : {}
+  } catch {
+    return {}
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Core fetch wrapper
 // ---------------------------------------------------------------------------
@@ -41,11 +54,17 @@ async function _getAuthHeader() {
 async function request(path, options = {}) {
   const url = `${BASE_URL}${path}`
   const authHeader = await _getAuthHeader()
+  const impersonateHeader = _impersonationHeader()
 
   let response
   try {
     response = await fetch(url, {
-      headers: { 'Content-Type': 'application/json', ...authHeader, ...options.headers },
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeader,
+        ...impersonateHeader,
+        ...options.headers,
+      },
       ...options,
     })
   } catch (networkErr) {
@@ -161,13 +180,14 @@ export const instruments = {
    */
   bulkImport: async (file, dryRun = false) => {
     const authHeader = await _getAuthHeader()
+    const impersonateHeader = _impersonationHeader()
     const formData = new FormData()
     formData.append('file', file)
     let response
     try {
       response = await fetch(`${BASE_URL}/instruments/bulk-import?dry_run=${dryRun}`, {
         method: 'POST',
-        headers: { ...authHeader },  // no Content-Type — let browser set multipart boundary
+        headers: { ...authHeader, ...impersonateHeader },  // no Content-Type — let browser set multipart boundary
         body: formData,
       })
     } catch (networkErr) {
@@ -348,6 +368,16 @@ export const admin = {
       `/superadmin/sites/${id}${toQueryString({ confirm })}`,
       { method: 'DELETE' },
     ),
+
+  /** Record the start of an impersonation session (audit marker). Call this
+   *  BEFORE setting the X-Impersonate-Site-Id header so the audit row carries
+   *  the super-admin's real identity. */
+  impersonateStart: (id) => post(`/superadmin/sites/${id}/impersonate-start`, {}),
+
+  /** Record the end of an impersonation session. Call this AFTER clearing
+   *  sessionStorage so the X-Impersonate-Site-Id header isn't sent and the
+   *  audit row carries the super-admin's real identity. */
+  impersonateEnd:   (id) => post(`/superadmin/sites/${id}/impersonate-end`,   {}),
 }
 
 // ---------------------------------------------------------------------------

@@ -19,7 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
-from auth import UserContext, get_current_user, get_jwt_claims, get_optional_user
+from auth import UserContext, get_current_user, get_jwt_claims, get_optional_user, get_real_user
 from database import get_db
 from models import Site, SiteMember
 import notifications
@@ -125,12 +125,17 @@ def register(
 @router.get("/me")
 def me(
     request: Request,
-    current_user: UserContext = Depends(get_current_user),
+    current_user: UserContext = Depends(get_real_user),
     db: Session = Depends(get_db),
 ):
     """
     Returns the authenticated user's site membership and role.
-    Also back-fills the email column on site_members if not yet stored.
+
+    Uses get_real_user (not get_current_user) so this endpoint always reports
+    the super-admin's real identity even during an impersonation session —
+    otherwise a page refresh during impersonation would silently rewrite the
+    sidebar/avatar state and hide the 👑 nav entry. The impersonation is
+    communicated to the user via ImpersonationBanner, which reads sessionStorage.
     """
     # Back-fill email for existing members who don't have it stored yet
     if current_user.email:
