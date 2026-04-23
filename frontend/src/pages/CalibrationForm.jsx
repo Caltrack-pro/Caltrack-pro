@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { instruments as instrApi, calibrations as calApi } from '../utils/api'
+import { instruments as instrApi, calibrations as calApi, auth as authApi } from '../utils/api'
 import { CalStatusBadge } from '../components/Badges'
 import { fmtDate, fmtNum, fmtPct, todayISO, humanise } from '../utils/formatting'
 import { calcPoint, overallResult, maxErrorPct, generateTestPoints } from '../utils/calEngine'
@@ -157,7 +157,8 @@ export default function CalibrationForm() {
   // Section 2 — Calibration details
   const [calDate,       setCalDate]       = useState(todayISO())
   const [calType,       setCalType]       = useState('routine')
-  const [technician,    setTechnician]    = useState(() => getUser()?.userName ?? '')
+  const [members,       setMembers]       = useState([])        // site members for technician dropdown
+  const [technicianId,  setTechnicianId]  = useState(() => getUser()?.userId ?? '')
   const [workOrder,     setWorkOrder]     = useState('')
   const [procedureUsed, setProcedureUsed] = useState('')
 
@@ -198,6 +199,13 @@ export default function CalibrationForm() {
       .catch(err => { setError(err.message); setLoading(false) })
   }, [instrumentId])
 
+  // ── Fetch site members for the technician dropdown ────────────────────────
+  useEffect(() => {
+    authApi.listMembers()
+      .then(list => setMembers(Array.isArray(list) ? list : []))
+      .catch(() => setMembers([]))
+  }, [])
+
   // ── Computed as-found overall result ─────────────────────────────────────
   const asFoundCalc = useMemo(() => {
     if (!instrument) return { overall: null, maxErr: null }
@@ -230,11 +238,17 @@ export default function CalibrationForm() {
   function validate() {
     const e = {}
     if (!calDate)    e.calDate    = 'Date required'
-    if (!technician.trim()) e.technician = 'Technician required'
+    if (!technicianId) e.technician = 'Technician required'
     if (adjustmentMade && !adjType) e.adjType = 'Select adjustment type'
     if (refExpiry && refExpiry < todayISO()) e.refExpiry = 'Reference standard is expired'
     return e
   }
+
+  // Selected technician lookup — technician_id on the record stores the Supabase user_id
+  const selectedTech = useMemo(
+    () => members.find(m => m.user_id === technicianId),
+    [members, technicianId]
+  )
 
   // ── Build payload ─────────────────────────────────────────────────────────
   function buildPayload() {
@@ -253,8 +267,8 @@ export default function CalibrationForm() {
       instrument_id:                   instrument.id,
       calibration_date:                calDate,
       calibration_type:                calType,
-      technician_name:                 technician,
-      technician_id:                   getUser()?.userId ?? null,
+      technician_name:                 selectedTech?.display_name || getUser()?.userName || '',
+      technician_id:                   technicianId || null,
       work_order_reference:            workOrder || null,
       procedure_used:                  procedureUsed || null,
       reference_standard_description:  refDesc || null,
@@ -394,14 +408,24 @@ export default function CalibrationForm() {
             </select>
           </Field>
 
-          <Field label="Technician Name" required>
-            <input
-              type="text"
-              value={technician}
-              onChange={e => setTechnician(e.target.value)}
-              placeholder="e.g. John Smith"
+          <Field label="Technician" required>
+            <select
+              value={technicianId}
+              onChange={e => setTechnicianId(e.target.value)}
               className={inputCls(errors.technician)}
-            />
+            >
+              <option value="">— Select technician —</option>
+              {members
+                .filter(m => m.user_id)
+                .map(m => (
+                  <option key={m.user_id} value={m.user_id}>
+                    {m.display_name || m.email || '(unnamed)'}{m.role ? ` · ${m.role}` : ''}
+                  </option>
+                ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Calibration certificate PDF is emailed to the selected technician on approval.
+            </p>
             {errors.technician && <p className="text-xs text-red-600 mt-1">{errors.technician}</p>}
           </Field>
 
@@ -581,7 +605,7 @@ export default function CalibrationForm() {
             </div>
             <div className="bg-slate-50 rounded-lg p-3">
               <p className="text-xs text-slate-500 mb-1">Technician</p>
-              <p className="font-semibold text-slate-700">{technician || '—'}</p>
+              <p className="font-semibold text-slate-700">{selectedTech?.display_name || '—'}</p>
             </div>
             <div className="bg-slate-50 rounded-lg p-3">
               <p className="text-xs text-slate-500 mb-1">As-Found Result</p>

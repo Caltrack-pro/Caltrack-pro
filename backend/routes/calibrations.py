@@ -554,7 +554,9 @@ def submit_calibration(
     if is_self_approver:
         # Send PDF cert immediately — same logic as approve endpoint
         try:
-            tech_email  = current_user.email
+            # Resolve recipient from the technician_id on the record (not the submitter).
+            # Falls back to the submitter's email if the technician member can't be found.
+            tech_email  = _technician_email(rec.technician_id, db) or current_user.email
             test_points = _fetch_test_points(rec.id, db)
             from pdf_generator import generate_calibration_cert, cert_filename
             site_name   = current_user.site_name or ""

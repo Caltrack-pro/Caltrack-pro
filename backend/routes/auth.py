@@ -174,11 +174,10 @@ def list_members(
 ):
     """
     Returns all members of the current user's site.
-    Accessible to admin and supervisor roles only.
+    Readable by any authenticated user — the CalibrationForm technician
+    dropdown needs it, and it's intra-site only (never crosses tenants).
+    Mutations (invite/delete) remain admin-only on their own endpoints.
     """
-    if current_user.role not in ("admin", "supervisor"):
-        raise HTTPException(status_code=403, detail="Admin or supervisor access required.")
-
     members = (
         db.query(SiteMember)
         .filter(SiteMember.site_id == current_user.site_id)
@@ -189,6 +188,7 @@ def list_members(
     return [
         {
             "id":           str(m.id),
+            "user_id":      str(m.user_id) if m.user_id else None,
             "display_name": m.display_name,
             "email":        m.email,
             "role":         m.role,
