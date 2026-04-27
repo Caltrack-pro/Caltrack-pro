@@ -197,8 +197,8 @@ BEGIN
       'WTW IQ SensorNet DO Reference', 'WT-IQ-7702',
       'NATA-2024-003', '2026-12-31',
       'CAL-WTP-INT-AT103', false,
-      CASE WHEN i < 4 THEN 'pass' ELSE 'marginal' END,
-      'pass',
+      (CASE WHEN i < 4 THEN 'pass' ELSE 'marginal' END)::as_found_result_enum,
+      'pass'::as_left_result_enum,
       (0.20 + i * 0.425)::numeric(6,3),
       (0.18 + i * 0.400)::numeric(6,3),
       'approved', 'Emily Walsh', NOW()
