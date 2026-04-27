@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CalCheq</string>
+    <string name="title_activity_main">CalCheq</string>
+    <string name="package_name">com.calcheq.app</string>
+    <string name="custom_url_scheme">com.calcheq.app</string>
+</resources>
