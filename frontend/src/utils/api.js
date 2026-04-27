@@ -148,6 +148,10 @@ export const instruments = {
   get: (id) =>
     request(`/instruments/${id}`),
 
+  /** Mobile QR scan lookup: tag → instrument on the caller's site (404 if absent). */
+  byTag: (tagNumber) =>
+    request(`/instruments/by-tag/${encodeURIComponent(tagNumber)}`),
+
   create: (data) =>
     post('/instruments', data),
 

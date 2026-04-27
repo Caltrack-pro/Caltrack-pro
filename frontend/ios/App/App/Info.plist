@@ -45,5 +45,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>CalCheq uses the camera to scan instrument tags and capture calibration photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>CalCheq attaches calibration photos from your library to instrument records.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>CalCheq saves captured calibration photos to your library.</string>
 </dict>
 </plist>

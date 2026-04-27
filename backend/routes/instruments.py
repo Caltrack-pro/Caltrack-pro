@@ -214,6 +214,31 @@ def list_instruments(
 
 
 # ---------------------------------------------------------------------------
+# GET /api/instruments/by-tag/{tag_number}
+# Mobile QR/barcode scan lookup. Must be declared BEFORE /{instrument_id}
+# so FastAPI's path matcher doesn't try to parse a tag string as a UUID.
+# ---------------------------------------------------------------------------
+
+@router.get("/by-tag/{tag_number}", response_model=InstrumentResponse)
+def get_instrument_by_tag(
+    tag_number:    str,
+    resolved_site: str     = Depends(resolve_site),
+    db:            Session = Depends(get_db),
+) -> InstrumentResponse:
+    instr = (
+        db.query(Instrument)
+        .filter(
+            Instrument.created_by == resolved_site,
+            Instrument.tag_number == tag_number,
+        )
+        .one_or_none()
+    )
+    if instr is None:
+        raise HTTPException(status_code=404, detail=f"No instrument with tag '{tag_number}' on this site")
+    return _to_response(instr)
+
+
+# ---------------------------------------------------------------------------
 # GET /api/instruments/{id}
 # ---------------------------------------------------------------------------
 
