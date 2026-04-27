@@ -69,6 +69,65 @@ const TD = 'px-4 py-3'
 
 // ── TAB 1: Recommendations ────────────────────────────────────────────────────
 
+// Category styling map — keeps RecommendationCard and section headers in sync.
+const CATEGORY_STYLES = {
+  critical: {
+    label: 'Critical',
+    emoji: '🚨',
+    border: 'border-l-red-500',
+    bg: 'bg-red-50',
+    ring: 'ring-red-100',
+    title: 'text-red-900',
+    heading: 'text-red-700',
+    solutionBg: 'bg-white',
+    solutionBorder: 'border-red-200',
+    solutionLabel: 'text-red-700',
+    metricBg: 'bg-red-100 text-red-700',
+    helper: 'Resolve immediately — these instruments pose an active risk.',
+  },
+  advisory: {
+    label: 'Advisory',
+    emoji: '⚠️',
+    border: 'border-l-amber-500',
+    bg: 'bg-amber-50',
+    ring: 'ring-amber-100',
+    title: 'text-amber-900',
+    heading: 'text-amber-700',
+    solutionBg: 'bg-white',
+    solutionBorder: 'border-amber-200',
+    solutionLabel: 'text-amber-700',
+    metricBg: 'bg-amber-100 text-amber-800',
+    helper: 'Plan action in the next 2–4 weeks to prevent these becoming critical.',
+  },
+  optimisation: {
+    label: 'Optimisation',
+    emoji: '💡',
+    border: 'border-l-blue-500',
+    bg: 'bg-blue-50',
+    ring: 'ring-blue-100',
+    title: 'text-blue-900',
+    heading: 'text-blue-700',
+    solutionBg: 'bg-white',
+    solutionBorder: 'border-blue-200',
+    solutionLabel: 'text-blue-700',
+    metricBg: 'bg-blue-100 text-blue-700',
+    helper: 'Efficiency wins — not urgent, but worth considering.',
+  },
+}
+
+// Short, user-facing rule names used as a pill next to the title.
+const RULE_LABELS = {
+  CRIT_SAFETY_OVERDUE:     'Critical overdue',
+  CRIT_CANNOT_CALIBRATE:   'Cannot hold calibration',
+  CRIT_LAST_CAL_OOT:       '>5% out of tolerance',
+  CRIT_EST_OOT_NOW:        'Estimated OOT now',
+  CRIT_REPEAT_FAILURE:     'Repeat failures',
+  ADV_DRIFT_MARGINAL:      'Drift trend',
+  ADV_OVERDUE_NONCRITICAL: '30+ days overdue',
+  ADV_EST_OOT_30_DAYS:     'OOT within 30 days',
+  OPT_EXTEND_INTERVAL:     'Extend interval',
+}
+
 function RecommendationsTab() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -85,119 +144,12 @@ function RecommendationsTab() {
     setError(null)
     setDismissed(new Set())
 
-    Promise.all([
-      instrApi.list({ calibration_status: 'overdue', limit: 500 }).catch(() => ({ results: [] })),
-      dashApi.upcoming(null, 30).catch(() => ([])),
-      dashApi.badActors(null).catch(() => ([])),
-      instrApi.list({ last_calibration_result: 'marginal', status: 'active', limit: 500 }).catch(() => ({ results: [] })),
-      instrApi.list({ last_calibration_result: 'fail',     status: 'active', limit: 500 }).catch(() => ({ results: [] })),
-    ])
-      .then(([overdueRes, upcomingRes, badActorsRes, marginalRes, failedRes]) => {
-        const overdueList = overdueRes.results ?? []
-        const upcomingList = Array.isArray(upcomingRes) ? upcomingRes : []
-        const badActorsList = Array.isArray(badActorsRes) ? badActorsRes : (badActorsRes?.results ?? [])
-        const marginalList = marginalRes.results ?? []
-        const failedList = failedRes.results ?? []
-
-        const crit = []
-        const adv = []
-        const opt = []
-
-        // CRITICAL: Safety/process critical overdue instruments
-        overdueList.forEach((inst) => {
-          if (inst.criticality === 'safety_critical' || inst.criticality === 'process_critical') {
-            const days = inst.days_overdue || 0
-            crit.push({
-              id: `critical-overdue-${inst.id}`,
-              instrumentId: inst.id,
-              tagNumber: inst.tag_number,
-              title: `${inst.tag_number} — ${inst.criticality === 'safety_critical' ? 'Safety-critical' : 'Process-critical'} instrument is ${days} days overdue.`,
-              description: inst.criticality === 'safety_critical'
-                ? 'Calibrate immediately to maintain SIL compliance.'
-                : 'Exceeding calibration interval increases process risk. Calibrate now.',
-              category: 'critical',
-            })
-          }
-        })
-
-        // CRITICAL: Instruments with 3+ consecutive failures
-        badActorsList.forEach((actor) => {
-          if (actor.failure_count >= 3) {
-            crit.push({
-              id: `critical-failures-${actor.instrument_id}`,
-              instrumentId: actor.instrument_id,
-              tagNumber: actor.tag_number,
-              title: `${actor.tag_number} — ${actor.failure_count} consecutive as-found failures in 12 months.`,
-              description: 'Investigate root cause: check installation, process conditions, or consider replacement.',
-              category: 'critical',
-            })
-          }
-        })
-
-        // CRITICAL: Instruments with a FAIL last calibration result
-        failedList.forEach((inst) => {
-          crit.push({
-            id: `critical-failed-${inst.id}`,
-            instrumentId: inst.id,
-            tagNumber: inst.tag_number,
-            title: `${inst.tag_number} — Failed last calibration.`,
-            description: inst.criticality === 'safety_critical'
-              ? 'Safety-critical instrument with a FAIL result. Corrective maintenance required immediately.'
-              : inst.criticality === 'process_critical'
-              ? 'Process-critical instrument with a FAIL result. Investigate and recalibrate as soon as possible.'
-              : 'Instrument recorded a FAIL as-found result. Investigate root cause and recalibrate.',
-            category: 'critical',
-          })
-        })
-
-        // ADVISORY: Marginal instruments
-        marginalList.forEach((inst) => {
-          adv.push({
-            id: `advisory-marginal-${inst.id}`,
-            instrumentId: inst.id,
-            tagNumber: inst.tag_number,
-            title: `${inst.tag_number} — Showing drift trend.`,
-            description: 'Current estimated error is approaching tolerance limit. Consider bringing forward next calibration.',
-            category: 'advisory',
-          })
-        })
-
-        // ADVISORY: Instruments overdue by 30+ days
-        overdueList
-          .filter((inst) => inst.days_overdue >= 30)
-          .filter((inst) => inst.criticality !== 'safety_critical' && inst.criticality !== 'process_critical')
-          .forEach((inst) => {
-            const days = inst.days_overdue || 0
-            adv.push({
-              id: `advisory-overdue-${inst.id}`,
-              instrumentId: inst.id,
-              tagNumber: inst.tag_number,
-              title: `${inst.tag_number} — ${days} days overdue.`,
-              description: 'Extended periods without calibration increase process risk.',
-              category: 'advisory',
-            })
-          })
-
-        // OPTIMISATION: Instruments with 3+ consecutive passes with low error
-        // (Simulated: instruments with low current error and old calibration dates)
-        overdueList
-          .filter((inst) => inst.max_as_found_error_pct != null && inst.max_as_found_error_pct < 20)
-          .slice(0, 3)
-          .forEach((inst) => {
-            opt.push({
-              id: `opt-extend-${inst.id}`,
-              instrumentId: inst.id,
-              tagNumber: inst.tag_number,
-              title: `${inst.tag_number} — Very stable calibration results.`,
-              description: `Last 3 calibrations all passed with <20% of tolerance used. Consider extending calibration interval from ${inst.calibration_interval_days || 180} to 365 days to reduce workload.`,
-              category: 'optimisation',
-            })
-          })
-
+    dashApi.recommendations()
+      .then((res) => {
         setRecommendations({
-          critical: crit,
-          advisory: adv,
-          optimisation: opt,
+          critical:     Array.isArray(res?.critical)     ? res.critical     : [],
+          advisory:     Array.isArray(res?.advisory)     ? res.advisory     : [],
+          optimisation: Array.isArray(res?.optimisation) ? res.optimisation : [],
         })
         setLoading(false)
       })
@@ -211,9 +163,6 @@ function RecommendationsTab() {
     load()
   }, [load])
 
-  const allRecs = [...recommendations.critical, ...recommendations.advisory, ...recommendations.optimisation]
-  const visibleRecs = allRecs.filter((r) => !dismissed.has(r.id))
-
   function handleDismiss(recId) {
     setDismissed((prev) => new Set(prev).add(recId))
   }
@@ -223,53 +172,137 @@ function RecommendationsTab() {
   }
 
   function RecommendationCard({ rec }) {
-    const accentColor =
-      rec.category === 'critical' ? 'border-l-red-500 bg-red-50' :
-      rec.category === 'advisory' ? 'border-l-amber-500 bg-amber-50' :
-      'border-l-blue-500 bg-blue-50'
-
-    const titleColor =
-      rec.category === 'critical' ? 'text-red-900' :
-      rec.category === 'advisory' ? 'text-amber-900' :
-      'text-blue-900'
+    const s = CATEGORY_STYLES[rec.category] || CATEGORY_STYLES.advisory
+    const ruleLabel = RULE_LABELS[rec.rule] || null
 
     return (
-      <div className={`border-l-4 rounded-r-lg p-4 flex items-start gap-3 ${accentColor}`}>
-        <div className="flex-1">
-          <p className={`font-semibold text-sm ${titleColor}`}>{rec.title}</p>
-          <p className="text-sm text-slate-700 mt-1">{rec.description}</p>
-          <div className="mt-3 flex gap-2">
-            <Link
-              to={`/app/instruments/${rec.instrumentId}`}
-              className="text-xs px-3 py-1.5 rounded bg-white border border-slate-300 hover:bg-slate-50 transition-colors font-medium"
-            >
-              View instrument
-            </Link>
-            <button
-              onClick={() => handleDismiss(rec.id)}
-              className="text-xs px-3 py-1.5 rounded text-slate-600 hover:bg-white/50 transition-colors"
-            >
-              Dismiss
-            </button>
+      <div className={`border-l-4 ${s.border} ${s.bg} rounded-r-lg p-4 shadow-sm ring-1 ${s.ring} transition-shadow hover:shadow-md`}>
+        <div className="flex items-start gap-3">
+          <div className="text-2xl leading-none pt-0.5 flex-shrink-0" aria-hidden>{rec.icon || s.emoji}</div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-0.5">
+              <Link
+                to={`/app/instruments/${rec.instrument_id}`}
+                className="font-mono font-bold text-sm text-slate-800 hover:text-blue-600 hover:underline"
+              >
+                {rec.tag_number}
+              </Link>
+              {ruleLabel && (
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${s.metricBg}`}>
+                  {ruleLabel}
+                </span>
+              )}
+              {rec.area && (
+                <span className="text-xs text-slate-400">• {rec.area}</span>
+              )}
+            </div>
+
+            <p className={`font-semibold text-sm ${s.title}`}>{rec.title}</p>
+            {rec.description && (
+              <p className="text-xs text-slate-500 mt-0.5">{rec.description}</p>
+            )}
+
+            <p className="text-sm text-slate-700 mt-2 leading-relaxed">{rec.evidence}</p>
+
+            {/* Solution box — the "what to do" payload */}
+            <div className={`mt-3 rounded-md border ${s.solutionBorder} ${s.solutionBg} px-3 py-2`}>
+              <p className={`text-xs font-bold uppercase tracking-wide ${s.solutionLabel} mb-0.5`}>
+                ✅ Recommended action
+              </p>
+              <p className="text-sm text-slate-800">{rec.solution}</p>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Link
+                to={`/app/instruments/${rec.instrument_id}`}
+                className="text-xs px-3 py-1.5 rounded bg-white border border-slate-300 hover:bg-slate-100 transition-colors font-medium"
+              >
+                View instrument →
+              </Link>
+              <Link
+                to={`/app/calibrations/new/${rec.instrument_id}`}
+                className="text-xs px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium"
+              >
+                🔧 Calibrate now
+              </Link>
+              <button
+                onClick={() => handleDismiss(rec.id)}
+                className="ml-auto text-xs px-3 py-1.5 rounded text-slate-500 hover:bg-white/60 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
+
+          {rec.metric && (
+            <div className={`flex-shrink-0 hidden sm:flex flex-col items-center justify-center rounded-lg px-3 py-2 min-w-[80px] ${s.metricBg}`}>
+              <span className="text-lg font-extrabold leading-none">{rec.metric.value}</span>
+              <span className="text-[10px] font-medium mt-1 text-center uppercase tracking-wide opacity-80">{rec.metric.label}</span>
+            </div>
+          )}
         </div>
       </div>
     )
   }
 
+  const counts = {
+    critical:     recommendations.critical.filter(r => !dismissed.has(r.id)).length,
+    advisory:     recommendations.advisory.filter(r => !dismissed.has(r.id)).length,
+    optimisation: recommendations.optimisation.filter(r => !dismissed.has(r.id)).length,
+  }
+  const totalVisible = counts.critical + counts.advisory + counts.optimisation
+  const totalAll = recommendations.critical.length + recommendations.advisory.length + recommendations.optimisation.length
+
   return (
     <div className="space-y-6">
+      {/* Explainer banner */}
+      <div className="bg-indigo-50 border border-indigo-200 rounded-xl px-5 py-4 flex items-start gap-3">
+        <span className="text-2xl flex-shrink-0">💡</span>
+        <div>
+          <p className="text-sm font-semibold text-indigo-900">What are recommendations?</p>
+          <p className="text-sm text-indigo-700 mt-0.5">
+            CalCheq continuously evaluates every active instrument against nine smart rules — checking
+            overdue status, drift trends, tolerance history, and stability — then surfaces a prioritised
+            list of <strong>actions you can take today</strong>. Each recommendation includes the
+            evidence and a specific solution.
+          </p>
+        </div>
+      </div>
+
       {loading ? (
         <Spinner />
       ) : error ? (
         <ErrorMsg message={error} onRetry={load} />
-      ) : allRecs.length === 0 ? (
+      ) : totalAll === 0 ? (
         <EmptyOk icon="🎯" message="No recommendations at this time. Your calibration program is in good shape." />
       ) : (
         <>
+          {/* Summary strip */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              ['critical', counts.critical],
+              ['advisory', counts.advisory],
+              ['optimisation', counts.optimisation],
+            ].map(([cat, n]) => {
+              const s = CATEGORY_STYLES[cat]
+              return (
+                <div key={cat} className={`${s.bg} rounded-xl px-4 py-3 border border-slate-200`}>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl">{s.emoji}</span>
+                    <span className="text-2xl font-bold text-slate-800">{n}</span>
+                  </div>
+                  <p className={`text-sm font-semibold ${s.heading} mt-1`}>{s.label}</p>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-snug">{s.helper}</p>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Dismissed banner */}
           {dismissed.size > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 flex items-center justify-between">
-              <p className="text-sm text-blue-700">
+            <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 flex items-center justify-between">
+              <p className="text-sm text-slate-600">
                 <span className="font-semibold">{dismissed.size}</span> recommendation{dismissed.size !== 1 ? 's' : ''} dismissed
               </p>
               <button onClick={handleShowAll} className="text-sm text-blue-600 hover:underline font-medium">
@@ -279,11 +312,13 @@ function RecommendationsTab() {
           )}
 
           {/* CRITICAL */}
-          {recommendations.critical.length > 0 && (
+          {recommendations.critical.length > 0 && counts.critical > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🚨</span>
-                <h3 className="text-lg font-bold text-red-700">Critical ({recommendations.critical.filter((r) => !dismissed.has(r.id)).length})</h3>
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                <span className="text-lg">{CATEGORY_STYLES.critical.emoji}</span>
+                <h3 className={`text-lg font-bold ${CATEGORY_STYLES.critical.heading}`}>
+                  Critical ({counts.critical})
+                </h3>
               </div>
               <div className="space-y-3">
                 {recommendations.critical.map((rec) => !dismissed.has(rec.id) && <RecommendationCard key={rec.id} rec={rec} />)}
@@ -292,11 +327,13 @@ function RecommendationsTab() {
           )}
 
           {/* ADVISORY */}
-          {recommendations.advisory.length > 0 && (
+          {recommendations.advisory.length > 0 && counts.advisory > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">⚠️</span>
-                <h3 className="text-lg font-bold text-amber-700">Advisory ({recommendations.advisory.filter((r) => !dismissed.has(r.id)).length})</h3>
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                <span className="text-lg">{CATEGORY_STYLES.advisory.emoji}</span>
+                <h3 className={`text-lg font-bold ${CATEGORY_STYLES.advisory.heading}`}>
+                  Advisory ({counts.advisory})
+                </h3>
               </div>
               <div className="space-y-3">
                 {recommendations.advisory.map((rec) => !dismissed.has(rec.id) && <RecommendationCard key={rec.id} rec={rec} />)}
@@ -305,16 +342,23 @@ function RecommendationsTab() {
           )}
 
           {/* OPTIMISATION */}
-          {recommendations.optimisation.length > 0 && (
+          {recommendations.optimisation.length > 0 && counts.optimisation > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">💡</span>
-                <h3 className="text-lg font-bold text-blue-700">Optimisation ({recommendations.optimisation.filter((r) => !dismissed.has(r.id)).length})</h3>
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                <span className="text-lg">{CATEGORY_STYLES.optimisation.emoji}</span>
+                <h3 className={`text-lg font-bold ${CATEGORY_STYLES.optimisation.heading}`}>
+                  Optimisation ({counts.optimisation})
+                </h3>
               </div>
               <div className="space-y-3">
                 {recommendations.optimisation.map((rec) => !dismissed.has(rec.id) && <RecommendationCard key={rec.id} rec={rec} />)}
               </div>
             </div>
+          )}
+
+          {/* Everything dismissed */}
+          {totalAll > 0 && totalVisible === 0 && (
+            <EmptyOk icon="✅" message={`All ${totalAll} recommendations have been dismissed for this session.`} />
           )}
         </>
       )}

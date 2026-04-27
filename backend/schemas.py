@@ -435,6 +435,34 @@ class BadActor(BaseModel):
     last_failure_date: date
 
 
+class RecommendationMetric(BaseModel):
+    label: str
+    value: str
+
+
+class Recommendation(BaseModel):
+    """One actionable recommendation surfaced on the Smart Diagnostics page."""
+    id:            str           # deterministic: "{rule}_{instrument_id}"
+    rule:          str           # rule code, e.g. "CRIT_LAST_CAL_OOT"
+    category:      str           # 'critical' | 'advisory' | 'optimisation'
+    instrument_id: UUID
+    tag_number:    str
+    description:   Optional[str]
+    area:          Optional[str]
+    criticality:   Optional[Criticality]
+    icon:          str           # emoji
+    title:         str
+    evidence:      str           # what was observed (facts/metrics)
+    solution:      str           # recommended next action
+    metric:        Optional[RecommendationMetric] = None   # headline number
+
+
+class RecommendationsResponse(BaseModel):
+    critical:     List[Recommendation]
+    advisory:     List[Recommendation]
+    optimisation: List[Recommendation]
+
+
 # ===========================================================================
 # Audit log schemas
 # ===========================================================================
