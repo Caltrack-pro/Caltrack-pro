@@ -6,6 +6,7 @@ import { fmtDate, fmtNum, fmtPct, todayISO, humanise } from '../utils/formatting
 import { calcPoint, overallResult, maxErrorPct, generateTestPoints } from '../utils/calEngine'
 import { getUser } from '../utils/userContext'
 import { ToastContainer, useToast } from '../components/Toast'
+import PhotoAttachment from '../components/PhotoAttachment'
 
 // ── Small helpers ────────────────────────────────────────────────────────────
 
@@ -185,6 +186,15 @@ export default function CalibrationForm() {
   const [defectDescription,  setDefectDescription]   = useState('')
   const [returnedToService,  setReturnedToService]   = useState(true)
 
+  // Section 7b — Photo attachments (mobile workflow). One upload session
+  // groups all photos for this draft under {site_name}/{uploadSessionId}/.
+  const [photoUrls, setPhotoUrls] = useState([])
+  const uploadSessionId = useMemo(
+    () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`),
+    [],
+  )
+  const siteName = getUser()?.siteName ?? null
+
   // ── Fetch instrument ──────────────────────────────────────────────────────
   useEffect(() => {
     instrApi.get(instrumentId)
@@ -282,6 +292,7 @@ export default function CalibrationForm() {
       defect_found:                    defectFound,
       defect_description:              defectFound && defectDescription ? defectDescription : null,
       return_to_service:               returnedToService,
+      photo_urls:                      photoUrls,
       test_points,
     }
   }
@@ -593,6 +604,18 @@ export default function CalibrationForm() {
             )}
           </div>
         </div>
+      </SectionCard>
+
+      {/* ── Section 7b: Photo evidence ─── */}
+      <SectionCard title="Photo Evidence">
+        <PhotoAttachment
+          value={photoUrls}
+          onChange={setPhotoUrls}
+          siteName={siteName}
+          uploadSessionId={uploadSessionId}
+          disabled={saving || saved}
+          onError={(msg) => showToast(msg, 'error')}
+        />
       </SectionCard>
 
       {/* ── Section 8: Summary & actions ─── */}

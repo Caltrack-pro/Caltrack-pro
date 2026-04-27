@@ -276,6 +276,10 @@ class CalibrationRecordCreate(BaseModel):
 
     work_order_reference: Optional[str] = Field(None, max_length=100)
 
+    # Storage paths (not signed URLs) of photos uploaded to the
+    # calibration-photos bucket. Set by the mobile app at submit time.
+    photo_urls: List[str] = Field(default_factory=list)
+
     # Test points — optional at creation (technician fills these in while draft)
     test_points: Optional[List[TestPointInput]] = None
 
@@ -305,6 +309,9 @@ class CalibrationRecordUpdate(BaseModel):
     return_to_service:  Optional[bool] = None
 
     work_order_reference: Optional[str] = Field(None, max_length=100)
+
+    # Replaces the photo_urls array if provided (None = leave alone).
+    photo_urls: Optional[List[str]] = None
 
     # Providing test_points replaces ALL existing test points for this record
     test_points: Optional[List[TestPointInput]] = None
@@ -347,6 +354,8 @@ class CalibrationRecordResponse(BaseModel):
     created_at:           datetime
     approved_by:          Optional[str]
     approved_at:          Optional[datetime]
+
+    photo_urls: List[str] = []
 
     test_points: List[TestPointResponse] = []
 

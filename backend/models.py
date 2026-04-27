@@ -4,7 +4,7 @@ from sqlalchemy import (
     Integer, String, Text, UniqueConstraint,
 )
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.sql import func, text
 
 from database import Base
@@ -185,6 +185,13 @@ class CalibrationRecord(Base):
         nullable=False, server_default="draft"
     )
     work_order_reference = Column(String(100))
+
+    # Object paths (NOT signed URLs) within the calibration-photos Supabase
+    # Storage bucket. Path convention: {site_name}/{upload_session_uuid}/{filename}.
+    # The first segment is enforced by RLS for site isolation; the second is
+    # a per-form grouping UUID generated client-side (record_id isn't known
+    # until after first save). Frontend signs URLs on read.
+    photo_urls = Column(ARRAY(Text), nullable=False, server_default=text("'{}'::text[]"))
 
     created_at   = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     approved_by  = Column(String(100))

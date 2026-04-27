@@ -6,6 +6,7 @@ import { fmtDate, fmtPct, fmtNum, humanise } from '../utils/formatting'
 import TrendCharts from '../components/TrendCharts'
 import { getUser, canApprove, canEdit, canCalibrate } from '../utils/userContext'
 import { generateSingleCalibrationCert, generateMultiCalibrationReport } from '../utils/reportGenerator'
+import { signCalibrationPhotos } from '../utils/photoCapture'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine,
   ResponsiveContainer, Dot,
@@ -19,6 +20,41 @@ function Spinner() {
   return (
     <div className="flex items-center justify-center py-16">
       <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+    </div>
+  )
+}
+
+// Lazy thumbnail strip — signs Storage paths into short-lived URLs.
+function CalibrationPhotos({ paths }) {
+  const [urls, setUrls] = useState([])
+  useEffect(() => {
+    let cancelled = false
+    if (!paths || paths.length === 0) { setUrls([]); return }
+    signCalibrationPhotos(paths).then((u) => { if (!cancelled) setUrls(u) })
+    return () => { cancelled = true }
+  }, [paths])
+
+  if (!paths || paths.length === 0) return null
+  return (
+    <div>
+      <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+        Photo Evidence ({paths.length})
+      </h4>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+        {paths.map((p, i) => (
+          <a
+            key={p}
+            href={urls[i] || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100"
+          >
+            {urls[i]
+              ? <img src={urls[i]} alt={`Calibration evidence ${i + 1}`} className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">…</div>}
+          </a>
+        ))}
+      </div>
     </div>
   )
 }
@@ -203,6 +239,9 @@ function SlidePanel({ recordId, instrument, onClose, onRefresh }) {
                   <p className="text-sm text-slate-700 whitespace-pre-wrap">{rec.technician_notes}</p>
                 </div>
               )}
+
+              {/* Photos */}
+              <CalibrationPhotos paths={rec.photo_urls} />
 
               {/* Approval info for approved/rejected records */}
               {(rec.record_status === 'approved' || rec.record_status === 'rejected') && rec.approved_by && (
