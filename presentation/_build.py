@@ -27,9 +27,11 @@ IMG_MAP = {
     "IMG_DRIFT":        "Diagnostics Drift Alerts.png",
     "IMG_DRIFT2":       "Drift alerts 2.png",
     "IMG_RECS":         "Diagnostics Recommendations.png",
+    "IMG_RECS2":        "Diagnostics Recommendations v2.png",
     "IMG_REPEAT":       "Diagnostics Repeat Failures.png",
     "IMG_CAL_CERT":     "Cal Cert.png",
     "IMG_CAL_HIST":     "Historical cal cert.png",
+    "IMG_IXOM_CERT":    "FT17003A 20-02-2026.png",
 }
 
 QR_URL = "https://calcheq.com"

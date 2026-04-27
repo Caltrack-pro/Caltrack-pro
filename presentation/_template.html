@@ -1311,134 +1311,30 @@
     <div class="rp-stage-new">
 
       <!-- Single Certificate panel -->
-      <div class="rp-panel block visible" data-rp="cert">
-        <div class="state-toggle" id="stateToggle">
-          <button class="state-btn red-state active" data-state="now">Current State</button>
-          <button class="state-btn green-state" data-state="cc">With CalCheq</button>
+      <div class="rp-panel visible" data-rp="cert">
+        <div class="rp-text">
+          <div class="rp-label">Calibration Certificate</div>
+          <h3>ISO/IEC 17025:2017 Compliant. <span class="grad-text">In one click.</span></h3>
+          <p>Calibration records are not just maintenance paperwork — they are evidence that process and safety-critical instruments remain <b>reliable, traceable and fit for service</b>.</p>
+          <ul class="rp-ex">
+            <li><b>Minimum Required Information</b></li>
+            <li>Instrument identification (tag, description, location)</li>
+            <li>Calibration date and next due date</li>
+            <li>Procedure / calibration method used</li>
+            <li>Test equipment used &amp; calibration status</li>
+            <li>Acceptance tolerance</li>
+            <li>As-found results</li>
+            <li>Adjustments / repairs completed</li>
+            <li>As-left results</li>
+            <li>Pass / fail decision</li>
+            <li>Technician name / sign-off</li>
+            <li>Reviewer approval for critical devices</li>
+            <li>Traceability statement</li>
+            <li>Comments / defects / returned to service status</li>
+          </ul>
         </div>
-
-        <!-- Current State -->
-        <div class="state-content visible" data-state="now">
-          <div class="compliance-row">
-            <div class="comp-list bad">
-              <div class="comp-head">ISO/IEC 17025 § 7.8 · Calibration Certificate Requirements</div>
-              <div class="comp-sub">Applied to the current IXOM calibration sheet</div>
-              <div class="comp-items">
-
-                <div class="comp-item">
-                  <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">State measurement uncertainty</span></div>
-                  <div class="comp-row bad"><span class="lbl">Today</span><span class="mk">✕</span><span class="txt">Not stated on the sheet</span></div>
-                  <div class="comp-row risk"><span class="lbl">Risk</span><span></span><span class="txt">No defensible boundary between pass and fail</span></div>
-                  <div class="comp-clause">§ 7.8.4.1 b</div>
-                </div>
-
-                <div class="comp-item">
-                  <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Traceability of reference standard</span></div>
-                  <div class="comp-row bad"><span class="lbl">Today</span><span class="mk">✕</span><span class="txt">"Calibrator in date? Yes" — no cert number or expiry</span></div>
-                  <div class="comp-row risk"><span class="lbl">Risk</span><span></span><span class="txt">Can't prove standard was valid on the day</span></div>
-                  <div class="comp-clause">§ 6.5.2 · § 7.8.4.1 c</div>
-                </div>
-
-                <div class="comp-item">
-                  <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Independent reviewer / approver</span></div>
-                  <div class="comp-row bad"><span class="lbl">Today</span><span class="mk">✕</span><span class="txt">Only the technician performing the work signs</span></div>
-                  <div class="comp-row risk"><span class="lbl">Risk</span><span></span><span class="txt">No second set of eyes on safety-critical results</span></div>
-                  <div class="comp-clause">§ 7.8.2.1 k</div>
-                </div>
-
-                <div class="comp-item">
-                  <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Unique certificate identifier</span></div>
-                  <div class="comp-row warn"><span class="lbl">Today</span><span class="mk">⚠</span><span class="txt">Filename convention only — not printed on the doc</span></div>
-                  <div class="comp-row risk"><span class="lbl">Risk</span><span></span><span class="txt">If detached from the file, record can't be matched back</span></div>
-                  <div class="comp-clause">§ 7.8.2.1 b</div>
-                </div>
-
-                <div class="comp-item">
-                  <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Decision rule for conformity</span></div>
-                  <div class="comp-row warn"><span class="lbl">Today</span><span class="mk">⚠</span><span class="txt">Linearity rule present — no uncertainty-based decision rule</span></div>
-                  <div class="comp-row risk"><span class="lbl">Risk</span><span></span><span class="txt">Marginal results can be called "pass" without justification</span></div>
-                  <div class="comp-clause">§ 7.8.6.1</div>
-                </div>
-
-                <div class="comp-item">
-                  <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Adjustment documentation</span></div>
-                  <div class="comp-row bad"><span class="lbl">Today</span><span class="mk">✕</span><span class="txt">Adjustment amount and justification not captured</span></div>
-                  <div class="comp-row risk"><span class="lbl">Risk</span><span></span><span class="txt">No record of what was changed or why</span></div>
-                  <div class="comp-clause">§ 7.8.4.1 f</div>
-                </div>
-
-              </div>
-              <div class="comp-foot">Assessed against ISO/IEC 17025:2017. Additional gaps exist under IEC 61511 for SIS instruments and AS ISO 9001 § 7.1.5.</div>
-            </div>
-            <div>
-              <div class="cert-frame">
-                <img src="{{IMG_IXOM_CERT}}" alt="Current IXOM calibration result sheet"/>
-              </div>
-              <div class="cert-caption">Current IXOM calibration result sheet</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CalCheq State -->
-        <div class="state-content" data-state="cc">
-          <div class="compliance-row">
-            <div class="comp-list good">
-              <div class="comp-head">ISO/IEC 17025 § 7.8 · Calibration Certificate Requirements</div>
-              <div class="comp-sub">Built into every CalCheq certificate automatically</div>
-              <div class="comp-items">
-
-                <div class="comp-item">
-                  <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">State measurement uncertainty</span></div>
-                  <div class="comp-row good"><span class="lbl">CalCheq</span><span class="mk">✓</span><span class="txt">Calculated from reference-standard uncertainty + repeatability, printed on every cert</span></div>
-                  <div class="comp-row risk"><span class="lbl">Benefit</span><span></span><span class="txt">Defensible pass / fail boundary on every record</span></div>
-                  <div class="comp-clause">§ 7.8.4.1 b</div>
-                </div>
-
-                <div class="comp-item">
-                  <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Traceability of reference standard</span></div>
-                  <div class="comp-row good"><span class="lbl">CalCheq</span><span class="mk">✓</span><span class="txt">Reference cert number and expiry date captured and printed</span></div>
-                  <div class="comp-row risk"><span class="lbl">Benefit</span><span></span><span class="txt">Full traceability chain preserved for audit</span></div>
-                  <div class="comp-clause">§ 6.5.2 · § 7.8.4.1 c</div>
-                </div>
-
-                <div class="comp-item">
-                  <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Independent reviewer / approver</span></div>
-                  <div class="comp-row good"><span class="lbl">CalCheq</span><span class="mk">✓</span><span class="txt">Second-party approval enforced by workflow — every cert carries both the technician and the approver, timestamped</span></div>
-                  <div class="comp-row risk"><span class="lbl">Benefit</span><span></span><span class="txt">Second set of eyes on every safety-critical result</span></div>
-                  <div class="comp-clause">§ 7.8.2.1 k</div>
-                </div>
-
-                <div class="comp-item">
-                  <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Unique certificate identifier</span></div>
-                  <div class="comp-row good"><span class="lbl">CalCheq</span><span class="mk">✓</span><span class="txt">Auto-generated, printed on the cert, searchable in the register</span></div>
-                  <div class="comp-row risk"><span class="lbl">Benefit</span><span></span><span class="txt">Record always matchable back, even if detached</span></div>
-                  <div class="comp-clause">§ 7.8.2.1 b</div>
-                </div>
-
-                <div class="comp-item">
-                  <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Decision rule for conformity</span></div>
-                  <div class="comp-row good"><span class="lbl">CalCheq</span><span class="mk">✓</span><span class="txt">Pass / fail / marginal against tolerance and uncertainty, rule stated on cert</span></div>
-                  <div class="comp-row risk"><span class="lbl">Benefit</span><span></span><span class="txt">Marginal results flagged explicitly — no silent passes</span></div>
-                  <div class="comp-clause">§ 7.8.6.1</div>
-                </div>
-
-                <div class="comp-item">
-                  <div class="comp-row req"><span class="lbl">Required</span><span></span><span class="txt">Adjustment documentation</span></div>
-                  <div class="comp-row good"><span class="lbl">CalCheq</span><span class="mk">✓</span><span class="txt">Adjustment flag, amount, and technician notes required on every record</span></div>
-                  <div class="comp-row risk"><span class="lbl">Benefit</span><span></span><span class="txt">Complete record of what changed and why</span></div>
-                  <div class="comp-clause">§ 7.8.4.1 f</div>
-                </div>
-
-              </div>
-              <div class="comp-foot">Audit-ready by default. PDFs auto-named, auto-emailed, auto-archived on approval.</div>
-            </div>
-            <div>
-              <div class="cert-frame">
-                <img src="{{IMG_CAL_CERT}}" alt="CalCheq calibration certificate"/>
-              </div>
-              <div class="cert-caption">CalCheq calibration certificate</div>
-            </div>
-          </div>
+        <div class="rp-imgs">
+          <img src="{{IMG_CAL_CERT}}" alt="CalCheq calibration certificate"/>
         </div>
       </div>
 
