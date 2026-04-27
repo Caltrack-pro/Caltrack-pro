@@ -2,6 +2,20 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react
 import { useEffect } from 'react'
 import Layout from './components/Layout'
 import AuthGuard from './components/AuthGuard'
+import { isNative } from './utils/platform'
+
+// On native (Capacitor) the marketing site is unreachable by design — the
+// mobile app is the calibration tool, nothing else. Any visit to a marketing
+// route bounces straight into /app, which AuthGuard further redirects to
+// /auth/signin if the user isn't logged in.
+//
+// We don't code-split the marketing components out of the bundle yet; the
+// extra ~50kb is acceptable for a v1 mobile build, and revisiting once we
+// have real-device telemetry is cheaper than designing for it now.
+function NativeOrMarketing({ children }) {
+  if (isNative()) return <Navigate to="/app" replace />
+  return children
+}
 
 const SITE_BASE = 'https://calcheq.com'
 
@@ -97,18 +111,18 @@ export default function App() {
         <Route path="/auth/forgot-password" element={<ForgotPassword />} />
         <Route path="/auth/reset-password"  element={<ResetPassword />} />
 
-        {/* ── Marketing pages (no app chrome) ─────────────────────────── */}
-        <Route path="/"             element={<Landing />} />
-        <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/pricing"      element={<Pricing />} />
-        <Route path="/resources"       element={<Resources />} />
-        <Route path="/resources/:slug" element={<BlogPost />} />
-        <Route path="/faq"             element={<FAQ />} />
-        <Route path="/contact"         element={<Contact />} />
-        <Route path="/demo"            element={<DemoPage />} />
+        {/* ── Marketing pages (no app chrome; bounced to /app on native) ── */}
+        <Route path="/"             element={<NativeOrMarketing><Landing /></NativeOrMarketing>} />
+        <Route path="/how-it-works" element={<NativeOrMarketing><HowItWorks /></NativeOrMarketing>} />
+        <Route path="/pricing"      element={<NativeOrMarketing><Pricing /></NativeOrMarketing>} />
+        <Route path="/resources"       element={<NativeOrMarketing><Resources /></NativeOrMarketing>} />
+        <Route path="/resources/:slug" element={<NativeOrMarketing><BlogPost /></NativeOrMarketing>} />
+        <Route path="/faq"             element={<NativeOrMarketing><FAQ /></NativeOrMarketing>} />
+        <Route path="/contact"         element={<NativeOrMarketing><Contact /></NativeOrMarketing>} />
+        <Route path="/demo"            element={<NativeOrMarketing><DemoPage /></NativeOrMarketing>} />
         {/* /blog is now an alias for /resources; /blog/:slug still serves articles */}
         <Route path="/blog"            element={<Navigate to="/resources" replace />} />
-        <Route path="/blog/:slug"      element={<BlogPost />} />
+        <Route path="/blog/:slug"      element={<NativeOrMarketing><BlogPost /></NativeOrMarketing>} />
 
         {/* ── Onboarding wizard (auth required, no sidebar) ─────────── */}
         <Route path="/app/onboarding" element={<AuthGuard><Onboarding /></AuthGuard>} />
