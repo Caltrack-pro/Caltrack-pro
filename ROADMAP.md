@@ -1,6 +1,6 @@
 # CalCheq — Forward Roadmap
 
-*Last updated: 23 April 2026*
+*Last updated: 27 April 2026*
 
 ---
 
@@ -33,6 +33,16 @@ Auth (Supabase ES256 JWT), custom domain (calcheq.com), immutable audit trail, C
 - Smart Analytics tab upgraded: Recharts AreaChart + tolerance bands + recommendation cards (was table only)
 - Activity Log default date range extended from 90 days → 365 days (historical CSV-imported records were falling outside the 90-day window)
 - Follow-up: 4 PT-9300 calibrations (IXOM pilot) still sitting in "submitted" — approve via Pending Approvals once deployed so Smart Analytics has data
+
+**Completed 27 April 2026:**
+- Mobile app shipped — Capacitor 6 wrapper for iOS + Android, app ID `com.calcheq.app`. Same React build powers web + native. Five phases:
+  - **P1 scaffold** — Capacitor config, `frontend/android/` + `frontend/ios/` projects, `npm run build:mobile` / `sync` scripts
+  - **P2 native auth + JWT** — `@capacitor/preferences` storage adapter for Supabase Auth (encrypted on native, localStorage fallback on web)
+  - **P3 QR scanning** — `@capacitor-mlkit/barcode-scanning` fullscreen ML Kit scanner, `frontend/src/utils/barcodeScanner.js`, Scan FAB on mobile layouts, new backend `GET /api/instruments/by-tag/{tag_number}` endpoint (registered before `/{instrument_id}` to avoid path collision); permission strings for camera + photos added to iOS Info.plist + Android Manifest
+  - **P4 photo evidence** — `photo_urls TEXT[]` on `calibration_records`; private `calibration-photos` Supabase Storage bucket (10 MB cap, image/* whitelist, 4 RLS policies enforcing site-prefix isolation); `frontend/src/utils/photoCapture.js` (native `@capacitor/camera` + web file-input fallback); `PhotoAttachment` grid on CalibrationForm; signed thumbnails on InstrumentDetail; path convention `{site_name}/{uploadSessionId}/{filename}` (UUID at form mount because the record doesn't exist at upload time)
+  - **P5 brand assets + store metadata** — `frontend/assets/icon-only.svg` + `splash.svg`; `@capacitor/assets` + `npm run icons` script regenerates all iOS/Android/PWA variants; `mobile/store-metadata/` holds App Store + Play Store listing copy, permission strings, data-safety declarations, screenshot capture plan
+- Android-first via the Windows dev machine for the IXOM pilot; iOS deferred to Codemagic CI macOS runner once App Store account is provisioned
+- Out of v1 (deliberate): offline mode/sync, push notifications, biometric auth, plan-gated mobile features, React Native rewrite — see DECISIONS.md "Mobile App: Capacitor Wrapper over a Native Rewrite" for the full rationale
 
 **Completed 24 April 2026:**
 - Calibration approval flow rewrite: every submission now goes to Pending Approvals regardless of the submitter's role (auto-approve removed); every authenticated site user can click Approve/Reject (previous admin/supervisor gate dropped, amber "cannot approve" banner removed); the Pending tab auto-opens for all users when `count > 0`; cert recipients on approve narrowed from "technician + all site supervisors/admins" to "technician + approver" (deduped when the same person). Self-approval is explicitly allowed for the contractor-data-entry workflow. See DECISIONS.md "Calibration Approval Flow".
@@ -323,7 +333,12 @@ Update the Navigation Restructure decision to reflect the new 9-tab structure:
 These items are not speculative — they are the right next steps once real customers are generating data and feedback. Do not build until there is demand.
 
 - **CMMS Integration** — MEX first (most common in Australian water/mining), then Maximo/SAP PM. Start with one-way sync: push completed calibrations to CMMS work order history.
-- **QR Code / NFC Tags** — Printable QR labels linking to InstrumentDetail. Technician scans on tablet → taps "Start Calibration". Significant field workflow improvement.
+- **Printable QR / NFC labels** — The mobile scanner ships in v1. The label-printing pipeline (PDF sheet generator, NFC encoding) doesn't. Add it once a pilot site asks for re-labelling.
+- **Mobile follow-ups (post-pilot)** — only after telemetry from the IXOM rollout shows demand:
+  - Offline calibration entry with replay-on-reconnect (IndexedDB queue + conflict resolution UI)
+  - Push notifications for pending approvals (Capacitor Push Notifications + APNs/FCM)
+  - Biometric unlock for the app (Face ID / Touch ID / Android BiometricPrompt)
+  - iOS App Store submission via Codemagic CI macOS runner (Android-first ships first)
 - **Advanced Analytics** — Statistical failure prediction once 12+ months of real data exists. Fleet benchmarking across anonymised platform data.
 - **Public API / Webhooks** — REST API for Enterprise customers to integrate with BI tools. Webhook events for key actions (calibration submitted, instrument overdue).
 - **Enterprise: AI-Generated Calibration Procedures** — For Enterprise tier, auto-generate a draft calibration procedure document based on instrument model, type, and range (manufacturer name + instrument model → structured procedure with test points, tolerances, equipment list). Delivered as a downloadable PDF or Word document from the instrument detail page. Requires LLM integration (OpenAI/Anthropic API). Useful for sites that need procedures but haven't yet formalised them — technicians can review and sign off rather than write from scratch. Requires customer signal before building.
@@ -335,7 +350,7 @@ These items are not speculative — they are the right next steps once real cust
 - SIL / IEC 61511 functional safety module (separate product domain)
 - HART / 4-20mA communicator integration (hardware dependency)
 - SMS notifications (email covers this)
-- Native mobile app (responsive web is sufficient)
+- React Native rewrite (Capacitor wrapper is shipping; rewriting buys nothing until WebView perf is provably blocking)
 - AI/ML prediction (rule-based drift engine covers this for now)
 - Multi-language (English-only for initial market)
 

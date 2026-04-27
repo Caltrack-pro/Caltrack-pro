@@ -264,6 +264,72 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 
 ---
 
+## Mobile App (Capacitor wrapper, April 2026)
+
+CalCheq ships as native iOS + Android apps via **Capacitor 6** wrapping the same React build that runs on the web. App ID: `com.calcheq.app`. Android-first via the Windows dev machine for the IXOM pilot; iOS native build is deferred to a Codemagic CI macOS runner once the App Store account is provisioned.
+
+### Native projects
+- `frontend/android/` — Android Studio project (capacitor add android)
+- `frontend/ios/` — Xcode project (capacitor add ios)
+- `frontend/capacitor.config.ts` — appId, appName, webDir=`dist`, plugin config
+- `frontend/dist/` — Vite build output, copied into the native projects by `cap sync`
+
+### Plugins
+- `@capacitor/core` + `@capacitor/cli` 6.x
+- `@capacitor/preferences` — JWT storage on native (encrypted), localStorage fallback on web
+- `@capacitor/camera` — photo capture (CameraSource.Prompt) for calibration evidence
+- `@capacitor/splash-screen` + `@capacitor/status-bar` — native chrome
+- `@capacitor-mlkit/barcode-scanning` — fullscreen native ML Kit scanner for instrument tags
+
+### npm scripts (frontend/package.json)
+- `npm run build:mobile` — `vite build && cap sync` (always run before opening native IDE)
+- `npm run sync` / `sync:android` / `sync:ios` — copy web build + plugin config into native projects
+- `npm run open:android` / `open:ios` — open the native project in its IDE
+- `npm run icons` — `capacitor-assets generate --assetPath assets` (regenerates all icon + splash variants from `frontend/assets/`)
+
+### Brand assets (regeneration sources)
+- `frontend/assets/icon-only.svg` — 1024×1024, brand-navy bg + gauge-and-checkmark mark, no pre-rounded corners (iOS applies its own mask)
+- `frontend/assets/splash.svg` — 2732×2732, horizontal lockup centred on radial-glow navy background
+- Generated outputs (DO NOT hand-edit — re-run `npm run icons`):
+  - Android: `frontend/android/app/src/main/res/mipmap-*/ic_launcher*.png` + `drawable*/splash.png`
+  - iOS: `frontend/ios/App/App/Assets.xcassets/AppIcon.appiconset/` + `Splash.imageset/`
+  - PWA: `frontend/public/assets/icons/` + `frontend/public/manifest.webmanifest`
+
+### Native permissions (Phase 3)
+- **iOS** (`frontend/ios/App/App/Info.plist`): `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`, `NSPhotoLibraryAddUsageDescription` — copy in `mobile/store-metadata/app-store-listing.md` is the source of truth for the strings shown to the user.
+- **Android** (`frontend/android/app/src/main/AndroidManifest.xml`): `CAMERA`, `READ_EXTERNAL_STORAGE`, `READ_MEDIA_IMAGES`, plus `<uses-feature android:name="android.hardware.camera" android:required="false"/>` so the app can list on devices without a camera (rare but blocks Play submission otherwise).
+
+### QR / barcode scan flow
+1. User taps the floating Scan FAB (`frontend/src/components/ScanFab.jsx`) on mobile-sized layouts.
+2. `frontend/src/utils/barcodeScanner.js` `scanBarcode()` checks/requests camera permission, lazy-installs the Google Barcode Scanner module on Android, and opens the fullscreen ML Kit scanner. **Utility, not component** — `scan()` opens its own native UI.
+3. The raw scanned string is treated as a tag_number and looked up via `instruments.byTag(tag)` → `GET /api/instruments/by-tag/{tag_number}` (defined BEFORE `/{instrument_id}` in `backend/routes/instruments.py` so the path doesn't collide).
+4. Frontend navigates to `/app/instruments/{id}` on success, toasts the error otherwise.
+
+Supported formats: QR_CODE, CODE_128, CODE_39, CODE_93, DATA_MATRIX, EAN_13, EAN_8, ITF, UPC_A, UPC_E.
+
+### Photo evidence flow
+1. `CalibrationForm` mounts and generates a per-form `uploadSessionId` UUID. Each photo upload writes to Supabase Storage at `{site_name}/{uploadSessionId}/{filename}`. UUID instead of record_id because the record doesn't exist at upload time.
+2. `frontend/src/utils/photoCapture.js` `capturePhoto()` calls `@capacitor/camera` `Camera.getPhoto({ source: CameraSource.Prompt })` on native; falls back to a hidden `<input type="file" accept="image/*" capture="environment">` on web.
+3. `uploadCalibrationPhoto({ blob, ext, siteName, uploadSessionId })` uploads to the **`calibration-photos`** Supabase Storage bucket (private, 10 MB cap, image/* whitelist) and returns the object path.
+4. The path is appended to `photo_urls` (TEXT[]) on `calibration_records`. `signCalibrationPhotos(paths)` creates 30-min signed URLs for thumbnail rendering in `PhotoAttachment` and `InstrumentDetail`.
+5. **RLS:** the bucket has 4 policies (select/insert/update/delete) that enforce `split_part(name, '/', 1) IN (SELECT s.name FROM sites s JOIN site_members sm ON sm.site_id = s.id WHERE sm.user_id = auth.uid())` — so a user can only ever touch photos under their own site's prefix. The second segment (uploadSessionId) is not enforced, it just groups one form's uploads.
+
+### Mobile-aware UI
+- `Capacitor.isNativePlatform()` (frontend/src/utils/platform.js) gates native-only chrome (Scan FAB, bottom nav).
+- Tailwind safe-area-inset utilities used in the bottom nav so it clears the iOS home indicator.
+- Tap targets ≥44 px square on touch surfaces; mobile drawer in `Layout.jsx` + `Header.jsx` for nav.
+
+### Store metadata
+Pre-filled listing copy, permission strings, data-safety declarations, and the screenshot capture plan live in `mobile/store-metadata/`:
+- `app-store-listing.md` — Apple App Store
+- `play-store-listing.md` — Google Play
+- `screenshots/README.md` — required sizes per device, shot list, capture method (Riverdale demo account in the simulator/emulator)
+
+### Out of v1 (do not build until clear customer signal)
+Offline mode + sync, push notifications, biometric auth, plan-gated mobile-only features, React Native rewrite. Web app already works on mobile browsers — these only earn their keep once we have field telemetry from the pilot.
+
+---
+
 ## Stripe Billing Integration
 
 ### Stripe Account
@@ -386,6 +452,13 @@ Dropped April 2026: the old `LAST_CAL_FAIL` rule (misleading when as-left passed
 ## Pending Work
 
 ### Completed (April 2026)
+- ✅ Mobile app — Capacitor 6 wrapper for iOS + Android (27 Apr 2026), shipped in 5 phases (commits f16ff36 / cab69a2 / 761af63 + earlier scaffold/auth phases). Same React build powers web + native; no separate mobile codebase. Highlights:
+  - **Phase 1 scaffold** — Capacitor config, `frontend/android/` + `frontend/ios/` projects, `npm run build:mobile` / `sync` scripts, app ID `com.calcheq.app`
+  - **Phase 2 native auth + JWT** — `@capacitor/preferences` storage adapter for Supabase Auth (encrypted on native, localStorage fallback on web)
+  - **Phase 3 QR scanning** — `@capacitor-mlkit/barcode-scanning` with fullscreen ML Kit UI; new `frontend/src/utils/barcodeScanner.js` utility (not component); new backend endpoint `GET /api/instruments/by-tag/{tag_number}` placed before `/{instrument_id}` to avoid path collision; Scan FAB on mobile layouts; Phase 3 also added all camera + photo permission strings (iOS Info.plist + Android Manifest) so Phase 4 didn't need a second native rebuild
+  - **Phase 4 photo evidence** — `photo_urls TEXT[]` column on `calibration_records` (default `'{}'::text[]`); private `calibration-photos` Supabase Storage bucket (10 MB cap, image/* whitelist) with 4 RLS policies enforcing `split_part(name, '/', 1) IN (user's site names)`; `frontend/src/utils/photoCapture.js` with native `@capacitor/camera` + web file-input fallback; `PhotoAttachment` grid on `CalibrationForm`; signed thumbnail rendering on `InstrumentDetail`. Path convention `{site_name}/{uploadSessionId}/{filename}` — UUID generated at form mount because the calibration record doesn't exist yet at upload time
+  - **Phase 5 brand assets + store metadata** — `frontend/assets/icon-only.svg` (1024×1024 brand-navy bg + gauge mark) and `frontend/assets/splash.svg` (2732×2732 lockup centred on radial-glow navy); `@capacitor/assets` + `npm run icons` script regenerates all iOS/Android/PWA variants; `mobile/store-metadata/` holds App Store + Play Store listing copy, permission strings, data-safety declarations, and screenshot capture plan
+  - **Out of v1 (do NOT build):** offline mode/sync, push notifications, biometric auth, plan-gated mobile-only features, React Native rewrite. Web app already works on mobile browsers — these only earn their keep once we have field telemetry from the IXOM pilot
 - ✅ Approval flow: everyone submits to Pending, anyone can approve, cert goes to technician + approver (24 Apr 2026) — three changes:
   - **Backend `calibrations.py` submit** — removed the admin/supervisor auto-approve branch. Every submission now goes to `SUBMITTED` regardless of role, guaranteeing a second-party approval step (MHF / safety-critical compliance requirement). Audit action is always `submit` — `submit_and_approve` is gone.
   - **Backend `calibrations.py` approve** — cert recipients narrowed from `technician + all site admins/supervisors` to `technician + approver` (de-duplicated so a single email when the same user entered and approved, which is the intentional "entering on behalf of a contractor" workflow).
@@ -448,9 +521,10 @@ Dropped April 2026: the old `LAST_CAL_FAIL` rule (misleading when as-left passed
 
 ### Phase 3 (post-launch with real customers)
 - CMMS integration (MEX first, then Maximo / SAP PM)
-- QR code / NFC labels per instrument
+- Printable QR / NFC labels per instrument (the scanner ships in v1; the label-printing pipeline does not)
 - Advanced analytics / statistical failure prediction
 - Public API + webhooks for Enterprise tier
+- Mobile follow-ups: offline calibration entry with replay-on-reconnect, push notifications for pending approvals, biometric unlock — only after pilot signal
 
 ### Do not build yet
-- SIL / IEC 61511 functional safety module | HART hardware integration | SMS notifications | Native mobile app | AI/ML prediction (rule-based drift engine covers this for now)
+- SIL / IEC 61511 functional safety module | HART hardware integration | SMS notifications | React Native rewrite | AI/ML prediction (rule-based drift engine covers this for now)

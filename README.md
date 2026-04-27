@@ -1,8 +1,8 @@
 # CalCheq
 
-Industrial instrument calibration management — SaaS web application for process plants.
+Industrial instrument calibration management — SaaS web application + native iOS/Android apps for process plants.
 
-**Stack:** React 18 + Vite + Tailwind CSS · Python 3.11 + FastAPI · PostgreSQL via Supabase · Deployed on Railway
+**Stack:** React 18 + Vite + Tailwind CSS · Python 3.11 + FastAPI · PostgreSQL via Supabase · Capacitor 6 (iOS/Android) · Deployed on Railway
 
 **Live:** https://calcheq.com
 
@@ -43,6 +43,24 @@ npm run dev
 ```
 
 App: http://localhost:5173
+
+### 3. Mobile (Capacitor — iOS + Android)
+
+The mobile apps are wrappers around the same Vite build that powers the web. App ID: `com.calcheq.app`. See `CLAUDE.md` "Mobile App (Capacitor wrapper)" for architecture; `mobile/store-metadata/` for store listings.
+
+```bash
+cd frontend
+npm run build:mobile    # vite build + cap sync (always run before opening native IDE)
+npm run open:android    # opens frontend/android/ in Android Studio
+npm run open:ios        # opens frontend/ios/App/App.xcworkspace in Xcode (macOS only)
+npm run icons           # regenerate iOS+Android+PWA icons/splashes from frontend/assets/*.svg
+```
+
+**Android-first** via the Windows dev machine for the IXOM pilot. iOS native build is deferred to a Codemagic CI macOS runner once the App Store account is provisioned.
+
+**Permissions** (already declared, do not re-prompt):
+- iOS — `frontend/ios/App/App/Info.plist`: `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`, `NSPhotoLibraryAddUsageDescription`
+- Android — `frontend/android/app/src/main/AndroidManifest.xml`: `CAMERA`, `READ_EXTERNAL_STORAGE`, `READ_MEDIA_IMAGES`
 
 ---
 
@@ -100,10 +118,14 @@ Caltrack-pro/
       superadmin.py        # /api/superadmin — platform operator console (list/extend-trial/override-plan/pause/resume/impersonate/delete)
 
   frontend/
+    assets/                # Mobile icon + splash SVG sources (regenerate variants via `npm run icons`)
+    android/               # Capacitor Android project (open in Android Studio)
+    ios/                   # Capacitor iOS project (open in Xcode on macOS)
+    capacitor.config.ts    # Capacitor 6 config — appId com.calcheq.app, webDir=dist
     src/
       components/          # Layout, Sidebar, Header, AuthGuard, DemoBlockModal,
                            #   ImpersonationBanner, Badges, Toast, TrendCharts,
-                           #   marketing/MarketingNav|Footer
+                           #   ScanFab, PhotoAttachment, marketing/MarketingNav|Footer
       pages/
         auth/              # SignIn, SignUp, AuthCallback, ForgotPassword, ResetPassword
         marketing/         # Landing, Pricing, HowItWorks, Resources, BlogPost,
@@ -126,19 +148,27 @@ Caltrack-pro/
         SuperAdmin.jsx     # Platform operator console (super-admin only)
         # Legacy (redirect-only): Alerts, BadActors, PendingApprovals, Profile
       utils/
-        api.js             # All API calls with JWT injection
-        supabase.js        # Supabase client init
+        api.js             # All API calls with JWT injection (incl. instruments.byTag for QR scan)
+        supabase.js        # Supabase client init (Preferences storage adapter on native)
         userContext.js     # getUser(), onAuthStateChange, role helpers
         calEngine.js       # Client-side pass/fail/marginal (mirrors backend)
         formatting.js      # Date and number formatting helpers
         reportGenerator.js # jsPDF certificate + multi-cal report (client-side)
         calibratorCsvParser.js # Beamex/Fluke CSV parser
+        barcodeScanner.js  # @capacitor-mlkit/barcode-scanning utility (fullscreen native UI)
+        photoCapture.js    # @capacitor/camera + Supabase Storage upload (calibration evidence)
+        platform.js        # Capacitor.isNativePlatform() helper
 
-  seed_instruments.py           # Seed 30 demo instruments
-  seed_riverdale_demo.sql       # 130-instrument Riverdale Water Treatment Plant demo dataset
-  caltrack_import_TEMPLATE.csv  # Template for bulk instrument CSV import
-  nixpacks.toml                 # Railway build config
-  railway.json                  # Railway deployment config
+  mobile/
+    store-metadata/        # App Store + Play Store listing copy, permissions, screenshot plan
+      app-store-listing.md
+      play-store-listing.md
+      screenshots/         # Final PNGs go here (see screenshots/README.md for sizes)
+
+  scripts/                 # seed_instruments.py, seed_riverdale_demo.sql, import_instruments.py,
+                           # caltrack_import_TEMPLATE.csv, seed_recommendations_examples.sql
+  nixpacks.toml            # Railway build config
+  railway.json             # Railway deployment config
 ```
 
 ---

@@ -246,3 +246,69 @@ Impersonation is implemented as a client-sent `X-Impersonate-Site-Id: <uuid>` he
 **Why no auto-approve shortcut for admins anymore:** The prior "admin/supervisor submit → APPROVED in one step" path skipped the visible Pending tab and the audit distinction between submission and approval. It also hid cert-send failures because the send happened inside the same try/except as the state change. Forcing every record through `SUBMITTED → APPROVED` gives every calibration the same two-step paper trail and makes failures easier to diagnose.
 
 **Cert recipients — narrow vs broad:** We considered copying all site admins/supervisors on every cert (previous behaviour) but dropped it. Reasoning: the technician needs it for the work order, the approver needs it as their signed artefact, and anyone else who wants a copy can pull the PDF from the instrument's history tab. Broad CC lists turned into noise that users filtered to trash.
+
+---
+
+## Mobile App: Capacitor Wrapper over a Native Rewrite — April 2026
+
+**Decision:** Ship iOS + Android as a Capacitor 6 wrapper around the same React build that runs on the web. App ID `com.calcheq.app`. No separate mobile codebase.
+
+**Why Capacitor over React Native:**
+- 95%+ code reuse with the web app — calibration form, drift charts, smart diagnostics, PDF generation all work as-is. A React Native rewrite would have meant maintaining two implementations of every screen forever, which doesn't earn its keep at a 1-pilot scale.
+- Native features we actually need (camera, QR scan, secure JWT storage) are all available as Capacitor plugins. WebView performance is non-issue for a forms-and-tables app.
+- One language (JS), one router, one auth flow, one state model. Bug fixed once = fixed everywhere.
+
+**Why Capacitor over Cordova or a pure PWA:**
+- Cordova's plugin ecosystem is in maintenance mode; Capacitor 6 is the actively-maintained successor with first-class TypeScript bindings and native ES modules.
+- Pure PWA can't access ML Kit's native scanner UI (which is materially better than `getUserMedia` + a JS QR library on cheap Android tablets), and store presence (App Store / Play Store) is a real distribution + trust signal for industrial customers buying calibration software.
+
+**Trade-offs accepted:**
+- Heavier app binary than RN (WebView is bundled). Acceptable — install size isn't a sales objection for a B2B work tool.
+- App Store reviewers occasionally push back on "wrapped websites." Mitigated by genuine native features (camera, scanner, native splash, native nav chrome on mobile breakpoint) and store-listing copy that frames it as a field tool, not a website.
+
+### 1. Photo storage — Supabase Storage with prefix-based RLS
+
+**Decision:** Calibration evidence photos go to a private Supabase Storage bucket `calibration-photos`, path-keyed `{site_name}/{uploadSessionId}/{filename}`. The 4 RLS policies (select/insert/update/delete) check `split_part(name, '/', 1) IN (SELECT s.name FROM sites s JOIN site_members sm ON sm.site_id = s.id WHERE sm.user_id = auth.uid())`.
+
+**Why path-prefix RLS over a separate `photos` table with FK to `calibration_records`:**
+- Storage already enforces tenant isolation in the database, with no extra row to keep in sync. The bucket IS the access-control surface.
+- Reads use signed URLs (30-min TTL) generated on demand — the client never gets a long-lived URL, and a leaked URL stops working in 30 minutes. Good enough for a B2B tool; we can shorten the TTL later if customers ask.
+- A `photos` table would have meant another model, another migration, another join, and a chicken-and-egg around "the photo exists before the calibration record does."
+
+**Why a UUID upload session in the path instead of `record_id`:**
+- The calibration record doesn't exist when the user starts attaching photos — the form is still being filled out. We can't put `record_id` in the path because there's no ID to put.
+- A client-generated `uploadSessionId` UUID groups one form's worth of uploads and makes the path deterministic. RLS only cares about the first segment (site name); the second segment is purely organisational.
+- Side benefit: if the user abandons the form, the bucket can be GC'd by `uploadSessionId` prefix later without touching the records table.
+
+**Why TEXT[] on `calibration_records` instead of a join table:**
+- Photos belong to exactly one calibration record. There's no many-to-many. A junction table would just be a `photo_id → record_id` lookup with no second relation worth tracking.
+- Postgres TEXT[] is queryable enough for our needs (`unnest`, `cardinality`) and a Pydantic `List[str]` round-trips cleanly through SQLAlchemy + FastAPI.
+
+### 2. Barcode scanner as a utility, not a component
+
+**Decision:** `frontend/src/utils/barcodeScanner.js` exports `scanBarcode()`, `isScanSupported()`, and a `CameraPermissionDeniedError`. Nothing renders in React.
+
+**Why:** `@capacitor-mlkit/barcode-scanning`'s `scan()` opens its own fullscreen native UI — there is no React surface to put a `<Scanner />` component into. The caller awaits a Promise and gets either a string or an error. Modelling that as a component would have required either a dummy invisible component (confusing) or a portal (pointless) — a function is the right primitive.
+
+**Why we lookup by tag, not by encoded payload:** The scanned string IS the tag number — no JSON, no URL scheme, no signed payload. Sites print plain QR codes with their existing tag numbers; we don't make them re-print labels. The new endpoint `GET /api/instruments/by-tag/{tag_number}` resolves that to an instrument within the caller's site (composite uniqueness on `(tag_number, created_by)` means the same tag at different sites doesn't collide).
+
+**Path ordering matters:** `/by-tag/{tag_number}` is registered BEFORE `/{instrument_id}` in `routes/instruments.py` so FastAPI doesn't try to coerce the literal string "by-tag" into a UUID and 404 the request before the by-tag handler even runs.
+
+### 3. JWT storage on native — `@capacitor/preferences`, with a localStorage fallback for web
+
+**Decision:** Supabase Auth's storage adapter is wired to `@capacitor/preferences` when `Capacitor.isNativePlatform()` is true, and to `window.localStorage` otherwise.
+
+**Why:**
+- `@capacitor/preferences` writes to the iOS Keychain and Android EncryptedSharedPreferences — both OS-level encrypted stores, which is the right home for a long-lived auth token.
+- `localStorage` is fine on the web (it's already the Supabase default) and survives page reloads. We didn't want to introduce a separate web token store just because native needed one.
+- One adapter swap point, no per-call branching in our app code — Supabase handles the rest.
+
+**Trade-off:** Preferences is async; localStorage is sync. The Supabase storage adapter interface accepts async, so this is invisible — but it does mean `getUser()` callers must `await`, which they already did anyway.
+
+### 4. Brand assets generated, not hand-edited
+
+**Decision:** Two SVG sources live in `frontend/assets/` (`icon-only.svg`, `splash.svg`). All platform variants are generated by `npm run icons` (`@capacitor/assets`). Generated PNGs are committed but never hand-edited.
+
+**Why commit generated PNGs:** Native projects need them present at build time, and Codemagic CI (planned for iOS) shouldn't have to install Node + run a generator before xcodebuild. Cost is ~1 MB of binary churn per regeneration — acceptable for a 1× per quarter change.
+
+**Why iOS icons aren't pre-rounded:** iOS applies its own corner mask. Pre-rounding would produce a double-rounded or weirdly-cropped icon on certain devices. The source SVG has square corners on a full-bleed navy fill.
