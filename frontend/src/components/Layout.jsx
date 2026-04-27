@@ -6,9 +6,11 @@ import ScanFab from './ScanFab'
 import Header from './Header'
 import DemoBlockModal from './DemoBlockModal'
 import ImpersonationBanner from './ImpersonationBanner'
+import BiometricLockOverlay from './BiometricLockOverlay'
 import { calibrations as calsApi } from '../utils/api'
-import { useIsMobile } from '../utils/platform'
+import { isNative, useIsMobile } from '../utils/platform'
 import { getUser } from '../utils/userContext'
+import { isBiometricEnabled } from '../utils/biometricLock'
 
 export default function Layout() {
   const navigate = useNavigate()
@@ -39,6 +41,42 @@ export default function Layout() {
     return () => window.removeEventListener('caltrack-subscription-required', handler)
   }, [navigate])
 
+  // ── Biometric re-lock on app resume (native only) ────────────────────────
+  // Lock immediately on first mount if biometric is enabled, and re-lock
+  // whenever the app returns from the background. The OS already pauses the
+  // WebView while we're backgrounded, so all we need is the resume signal.
+  const [locked, setLocked] = useState(false)
+
+  useEffect(() => {
+    if (!isNative()) return
+    let cancelled = false
+    let removeListener = null
+
+    isBiometricEnabled().then((enabled) => {
+      if (cancelled || !enabled) return
+      setLocked(true)
+      // Lazy import so the web bundle never pulls Capacitor App.
+      import('@capacitor/app').then(({ App }) => {
+        if (cancelled) return
+        const sub = App.addListener('appStateChange', ({ isActive }) => {
+          if (isActive) {
+            // Returned to foreground — re-prompt.
+            isBiometricEnabled().then((stillEnabled) => {
+              if (stillEnabled) setLocked(true)
+            })
+          }
+        })
+        // Capacitor 6 returns either a sync handle or a Promise<handle>.
+        Promise.resolve(sub).then((s) => { removeListener = () => s.remove() })
+      })
+    })
+
+    return () => {
+      cancelled = true
+      if (removeListener) removeListener()
+    }
+  }, [])
+
   const role         = user?.role ?? 'readonly'
   const isSuperadmin = user?.isSuperadmin === true
 
@@ -62,6 +100,7 @@ export default function Layout() {
         />
         <ScanFab />
         <DemoBlockModal />
+        {locked && <BiometricLockOverlay onUnlock={() => setLocked(false)} />}
       </div>
     )
   }
@@ -85,6 +124,7 @@ export default function Layout() {
       </div>
 
       <DemoBlockModal />
+      {locked && <BiometricLockOverlay onUnlock={() => setLocked(false)} />}
     </div>
   )
 }

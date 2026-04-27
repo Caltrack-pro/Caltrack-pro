@@ -8,6 +8,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getUser, signOut, ROLES, DEMO_SITE } from '../utils/userContext'
 import { supabase } from '../utils/supabase'
 import { auth as authApi, billing as billingApi } from '../utils/api'
+import { isNative } from '../utils/platform'
+import {
+  isBiometricAvailable,
+  isBiometricEnabled,
+  enableBiometric,
+  disableBiometric,
+  getBiometryName,
+} from '../utils/biometricLock'
 
 // ── Role colours ──────────────────────────────────────────────────────────────
 
@@ -100,6 +108,82 @@ function ProfileSection({ user }) {
             : 'To update your display name or role, contact your site administrator.'}
         </p>
       </div>
+    </Card>
+  )
+}
+
+// ── Section: Security (biometric unlock — native only) ───────────────────────
+
+function SecuritySection() {
+  const [available, setAvailable] = useState(false)
+  const [enabled, setEnabled] = useState(false)
+  const [biometryName, setBiometryName] = useState('Biometric')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState(null)
+
+  useEffect(() => {
+    if (!isNative()) return
+    let cancelled = false
+    Promise.all([isBiometricAvailable(), isBiometricEnabled(), getBiometryName()])
+      .then(([avail, en, name]) => {
+        if (cancelled) return
+        setAvailable(avail)
+        setEnabled(en)
+        setBiometryName(name)
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  if (!isNative() || !available) return null
+
+  async function handleToggle() {
+    if (busy) return
+    setBusy(true)
+    setMsg(null)
+    try {
+      if (enabled) {
+        await disableBiometric()
+        setEnabled(false)
+        setMsg({ type: 'success', text: `${biometryName} unlock disabled.` })
+      } else {
+        const ok = await enableBiometric()
+        if (ok) {
+          setEnabled(true)
+          setMsg({ type: 'success', text: `${biometryName} unlock enabled. You'll be prompted on app resume.` })
+        } else {
+          setMsg({ type: 'error', text: `${biometryName} prompt was cancelled or failed.` })
+        }
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card title="Security" emoji="🔒">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-slate-700">Unlock with {biometryName}</p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Re-prompt {biometryName} every time the app comes back to the foreground.
+            You can still sign out from the lock screen.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleToggle}
+          disabled={busy}
+          aria-pressed={enabled}
+          className={`relative inline-flex h-7 w-12 flex-shrink-0 rounded-full transition-colors disabled:opacity-50 ${enabled ? 'bg-blue-600' : 'bg-slate-300'}`}
+        >
+          <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform mt-0.5 ${enabled ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+        </button>
+      </div>
+      {msg && (
+        <div className="mt-3">
+          <InlineAlert type={msg.type} message={msg.text} onDismiss={() => setMsg(null)} />
+        </div>
+      )}
     </Card>
   )
 }
@@ -597,6 +681,7 @@ export default function AppSettings() {
 
       <ProfileSection user={user} />
       <PasswordSection isDemo={isDemo} />
+      <SecuritySection />
       {isAdmin && <TeamSection currentUserId={user.userId} isDemo={isDemo} />}
       {isAdmin && <BillingSection isDemo={isDemo} />}
 

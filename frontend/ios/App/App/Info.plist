@@ -51,5 +51,7 @@
 	<string>CalCheq attaches calibration photos from your library to instrument records.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>CalCheq saves captured calibration photos to your library.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>CalCheq uses Face ID to keep your calibration data secure when you return to the app.</string>
 </dict>
 </plist>

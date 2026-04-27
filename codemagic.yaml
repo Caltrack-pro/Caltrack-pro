@@ -1,0 +1,95 @@
+## Codemagic CI/CD — CalCheq iOS build (TestFlight + App Store)
+##
+## This file lives at the repo root and is auto-detected by Codemagic when the
+## project is connected. Android is built locally on the Windows dev machine
+## (Android Studio + cap sync); we only use Codemagic for iOS because we don't
+## have a Mac.
+##
+## Before the first iOS build, set up in the Codemagic UI:
+##   1. Connect this GitHub repo to Codemagic.
+##   2. Team Integrations → App Store Connect → upload an API key (Issuer ID,
+##      Key ID, .p8 file). This handles signing + TestFlight upload.
+##   3. Code signing identities → enable "automatic code signing" using that
+##      App Store Connect key. Bundle ID: com.calcheq.app.
+##   4. Create the app record in App Store Connect first (same bundle ID).
+##
+## Trigger: pushed manually from the Codemagic UI, OR uncomment the
+## `triggering` block below to build every push to main.
+
+workflows:
+  ios-testflight:
+    name: iOS — TestFlight build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: CalCheq App Store Connect   # name of the integration created in Codemagic UI
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.calcheq.app
+      vars:
+        XCODE_WORKSPACE: "frontend/ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+        APP_STORE_APPLE_ID: 0000000000   # replace with the Apple ID of the app record in App Store Connect
+      node: 20
+      xcode: latest
+      cocoapods: default
+
+    # triggering:
+    #   events:
+    #     - push
+    #   branch_patterns:
+    #     - pattern: main
+    #       include: true
+
+    scripts:
+      - name: Install frontend dependencies
+        script: |
+          cd frontend
+          npm ci
+
+      - name: Build web bundle
+        script: |
+          cd frontend
+          # The Vite build inlines VITE_* env vars at build time — make sure
+          # the Codemagic env group "calcheq-prod" provides VITE_SUPABASE_URL,
+          # VITE_SUPABASE_ANON_KEY, VITE_DEMO_EMAIL, VITE_DEMO_PASSWORD.
+          npm run build
+
+      - name: Capacitor sync iOS
+        script: |
+          cd frontend
+          npx cap sync ios
+
+      - name: Install CocoaPods dependencies
+        script: |
+          cd frontend/ios/App
+          pod install
+
+      - name: Set build number from Codemagic counter
+        script: |
+          cd frontend/ios/App
+          # Codemagic exposes BUILD_NUMBER (monotonic per-workflow). Marketing
+          # version stays as set in Xcode; we only bump the build number so
+          # TestFlight always accepts the upload.
+          agvtool new-version -all "$BUILD_NUMBER"
+
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - frontend/ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app.dSYM
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # submit_to_app_store: false   # flip on when ready for full review
+        beta_groups:
+          - Internal Testers          # create this group in App Store Connect → TestFlight
