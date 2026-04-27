@@ -5,8 +5,15 @@
  */
 
 import { supabase } from './supabase'
+import { isNative } from './platform'
 
-const BASE_URL = '/api'
+// Web build: relative '/api' lets the SPA hit whatever origin served it
+// (Railway in prod, Vite proxy in dev). Native build: the WebView is loaded
+// from `https://localhost`, so '/api' resolves to a non-existent localhost
+// server. Force the production origin in that case. Override at build time
+// via VITE_API_BASE_URL if you need to point a native build at staging.
+const NATIVE_API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://calcheq.com'
+const BASE_URL = isNative() ? `${NATIVE_API_BASE}/api` : '/api'
 
 // Header name the backend (auth.py) expects for platform-admin impersonation.
 // We read sessionStorage directly here rather than importing userContext to

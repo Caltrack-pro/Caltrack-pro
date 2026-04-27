@@ -17,10 +17,17 @@ app = FastAPI(
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
+# Capacitor WebViews load from a fixed origin (https://localhost on Android,
+# capacitor://localhost on iOS) — both must be allow-listed or the native app
+# can't talk to the backend. In dev we keep '*' for convenience.
 origins = (
     ["*"]
     if ENVIRONMENT == "development"
-    else [os.getenv("FRONTEND_URL", "")]
+    else [
+        os.getenv("FRONTEND_URL", ""),
+        "https://localhost",
+        "capacitor://localhost",
+    ]
 )
 
 app.add_middleware(
