@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="CalCheq icon">
+  <title>CalCheq</title>
+  <defs>
+    <linearGradient id="iArc" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#0D2250" stop-opacity="0"/>
+      <stop offset="20%"  stop-color="#2E8ED8" stop-opacity=".7"/>
+      <stop offset="60%"  stop-color="#1FCAD8"/>
+      <stop offset="100%" stop-color="#3FF2DC"/>
+    </linearGradient>
+    <linearGradient id="iCheck" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#6DFBB0"/>
+      <stop offset="100%" stop-color="#0F8A4A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background — brand navy. Full-bleed; iOS rounded-corner mask is applied
+       by the platform so we do not pre-round here. -->
+  <rect width="1024" height="1024" fill="#0B1F3A"/>
+
+  <!-- Mark scaled to occupy ~640px of the 1024 canvas, centered.
+       Source mark used radius 36 from cx (~56,60); we re-position to centre. -->
+  <g transform="translate(192,192) scale(6.4)">
+    <!-- Faint background track -->
+    <path d="M16 60 A36 36 0 1 1 96 60" fill="none" stroke="#1864C8" stroke-width="4" stroke-linecap="round" opacity=".18"/>
+    <!-- Main gradient arc -->
+    <path d="M16 60 A36 36 0 1 1 96 60" fill="none" stroke="url(#iArc)" stroke-width="4" stroke-linecap="round"/>
+    <!-- Tick marks -->
+    <g stroke-linecap="round">
+      <line x1="22" y1="48" x2="26" y2="46" stroke="#1864C8" stroke-width="1.2" opacity=".5"/>
+      <line x1="34" y1="32" x2="38" y2="34" stroke="#2E8ED8" stroke-width="1.2" opacity=".7"/>
+      <line x1="56" y1="22" x2="56" y2="26" stroke="#2E8ED8" stroke-width="1.4" opacity=".9"/>
+      <line x1="78" y1="32" x2="74" y2="34" stroke="#1FCAD8" stroke-width="1.2"/>
+      <line x1="90" y1="48" x2="86" y2="46" stroke="#3FF2DC" stroke-width="1.4"/>
+    </g>
+    <!-- Endpoint cap -->
+    <circle cx="96" cy="60" r="3.5" fill="#3FF2DC"/>
+    <circle cx="96" cy="60" r="1.8" fill="#FFFFFF"/>
+    <!-- Checkmark -->
+    <path d="M34 50 L46 62 L80 28" fill="none" stroke="url(#iCheck)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35.5 49 L46 60 L79 27" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity=".35"/>
+  </g>
+</svg>

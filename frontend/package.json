@@ -13,7 +13,8 @@
     "sync:android": "cap sync android",
     "sync:ios": "cap sync ios",
     "open:android": "cap open android",
-    "open:ios": "cap open ios"
+    "open:ios": "cap open ios",
+    "icons": "capacitor-assets generate --assetPath assets"
   },
   "dependencies": {
     "@capacitor-mlkit/barcode-scanning": "^6.2.0",
@@ -37,6 +38,7 @@
     "recharts": "^2.12.7"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.2",

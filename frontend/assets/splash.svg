@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2732" height="2732" viewBox="0 0 2732 2732" role="img" aria-label="CalCheq splash">
+  <title>CalCheq</title>
+  <defs>
+    <linearGradient id="sArc" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#0D2250" stop-opacity="0"/>
+      <stop offset="20%"  stop-color="#2E8ED8" stop-opacity=".7"/>
+      <stop offset="60%"  stop-color="#1FCAD8"/>
+      <stop offset="100%" stop-color="#3FF2DC"/>
+    </linearGradient>
+    <linearGradient id="sCheck" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#6DFBB0"/>
+      <stop offset="100%" stop-color="#0F8A4A"/>
+    </linearGradient>
+    <linearGradient id="sWord" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#2E8ED8"/>
+      <stop offset="100%" stop-color="#3FF2DC"/>
+    </linearGradient>
+    <radialGradient id="sGlow" cx="50%" cy="50%" r="55%">
+      <stop offset="0%"   stop-color="#13305C" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0B1F3A" stop-opacity="1"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Brand navy background with subtle radial glow toward centre -->
+  <rect width="2732" height="2732" fill="#0B1F3A"/>
+  <rect width="2732" height="2732" fill="url(#sGlow)"/>
+
+  <!-- Horizontal lockup, scaled 3.4x and centred on the canvas.
+       Source lockup is 400x80 → rendered as 1360x272.
+       Translate so its centre lands at (1366, 1366):
+         x = 1366 - 1360/2 = 686
+         y = 1366 - 272/2  = 1230 -->
+  <g transform="translate(686,1230) scale(3.4)">
+    <!-- Faint background track -->
+    <path d="M16 60 A36 36 0 1 1 96 60" fill="none" stroke="#1864C8" stroke-width="4" stroke-linecap="round" opacity=".18"/>
+    <!-- Main gradient arc -->
+    <path d="M16 60 A36 36 0 1 1 96 60" fill="none" stroke="url(#sArc)" stroke-width="4" stroke-linecap="round"/>
+    <!-- Graduated tick marks -->
+    <g stroke-linecap="round">
+      <line x1="22" y1="48" x2="26" y2="46" stroke="#1864C8" stroke-width="1" opacity=".5"/>
+      <line x1="34" y1="32" x2="38" y2="34" stroke="#2E8ED8" stroke-width="1" opacity=".7"/>
+      <line x1="56" y1="22" x2="56" y2="26" stroke="#2E8ED8" stroke-width="1.2" opacity=".9"/>
+      <line x1="78" y1="32" x2="74" y2="34" stroke="#1FCAD8" stroke-width="1"/>
+      <line x1="90" y1="48" x2="86" y2="46" stroke="#3FF2DC" stroke-width="1.2"/>
+    </g>
+    <!-- Endpoint cap -->
+    <circle cx="96" cy="60" r="3" fill="#3FF2DC"/>
+    <circle cx="96" cy="60" r="1.5" fill="#FFFFFF"/>
+    <!-- Checkmark -->
+    <path d="M34 50 L46 62 L80 28" fill="none" stroke="url(#sCheck)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35.5 49 L46 60 L79 27" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity=".3"/>
+
+    <!-- Wordmark -->
+    <text x="120" y="52" font-family="'Inter','SF Pro Display',-apple-system,BlinkMacSystemFont,system-ui,sans-serif" font-size="36" font-weight="700" letter-spacing="-1">
+      <tspan fill="#FFFFFF">Cal</tspan><tspan fill="url(#sWord)" font-weight="300">Cheq</tspan>
+    </text>
+
+    <!-- Divider -->
+    <line x1="120" y1="62" x2="340" y2="62" stroke="#3A5683" stroke-width="0.5"/>
+
+    <!-- Tagline -->
+    <text x="120" y="74" font-family="-apple-system,BlinkMacSystemFont,system-ui,sans-serif" font-size="8" font-weight="500" letter-spacing="2.5" fill="#7AA8D8">CALIBRATION · INTELLIGENCE · RELIABILITY</text>
+  </g>
+</svg>
