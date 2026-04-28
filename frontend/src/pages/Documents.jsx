@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { documents as docsApi, instruments as instrApi } from '../utils/api'
 import { getUser } from '../utils/userContext'
+import { uploadDocumentFile, signDocumentUrl, deleteDocumentFiles } from '../utils/documentUpload'
 // Simple inline toast — the shared Toast component uses a hook pattern (useToast/ToastContainer)
 // so we use a lightweight inline version here for simplicity.
 function InlineToast({ type, message, onClose }) {
@@ -45,8 +46,11 @@ function Documents() {
     notes: '',
     instrument_ids: [],
   })
+  const [selectedFile, setSelectedFile] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [downloadingId, setDownloadingId] = useState(null)
+  const fileInputRef = useRef(null)
 
   // Fetch documents and instruments
   useEffect(() => {
@@ -72,6 +76,8 @@ function Documents() {
 
   // Open form for new or edit
   const handleOpenForm = useCallback((doc = null) => {
+    setSelectedFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
     if (doc) {
       setEditingDoc(doc)
       setFormData({
@@ -98,6 +104,8 @@ function Documents() {
   const handleCloseForm = useCallback(() => {
     setShowForm(false)
     setEditingDoc(null)
+    setSelectedFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
     setFormData({
       title: '',
       doc_type: 'procedure',
@@ -126,7 +134,10 @@ function Documents() {
     })
   }, [])
 
-  // Save document (create or update)
+  // Save document (create or update). When a file is picked we upload it to the
+  // 'documents' Supabase Storage bucket FIRST under a fresh UUID prefix, then
+  // pass the resulting path through as file_url. On replace, the previous file
+  // is removed best-effort after the API write succeeds.
   const handleSave = async () => {
     try {
       if (!formData.title.trim()) {
@@ -135,18 +146,57 @@ function Documents() {
       }
 
       setFormLoading(true)
+
+      // For new docs without a file, file_name is required by the API.
+      if (!editingDoc && !selectedFile && !formData.file_name.trim()) {
+        setToast({ type: 'error', message: 'Choose a file or enter a file name' })
+        setFormLoading(false)
+        return
+      }
+
+      let payload = { ...formData }
+      let oldPathToCleanup = null
+
+      if (selectedFile) {
+        if (!user?.siteName) {
+          setToast({ type: 'error', message: 'Site context not loaded — sign in again' })
+          setFormLoading(false)
+          return
+        }
+        const documentId = crypto.randomUUID()
+        const uploaded = await uploadDocumentFile({
+          file: selectedFile,
+          siteName: user.siteName,
+          documentId,
+        })
+        payload = {
+          ...payload,
+          file_name: uploaded.fileName,
+          file_size: uploaded.fileSize,
+          file_url: uploaded.path,
+        }
+        if (editingDoc?.file_url && editingDoc.file_url !== uploaded.path) {
+          oldPathToCleanup = editingDoc.file_url
+        }
+      }
+
       let response
       if (editingDoc) {
-        response = await docsApi.update(editingDoc.id, formData)
+        response = await docsApi.update(editingDoc.id, payload)
         setDocuments((prev) =>
           prev.map((d) => (d.id === editingDoc.id ? response : d))
         )
         setToast({ type: 'success', message: 'Document updated' })
       } else {
-        response = await docsApi.create(formData)
+        response = await docsApi.create(payload)
         setDocuments((prev) => [...prev, response])
         setToast({ type: 'success', message: 'Document created' })
       }
+
+      if (oldPathToCleanup) {
+        await deleteDocumentFiles(oldPathToCleanup)
+      }
+
       handleCloseForm()
     } catch (err) {
       setToast({ type: 'error', message: `Failed to save: ${err.message}` })
@@ -155,12 +205,33 @@ function Documents() {
     }
   }
 
-  // Delete document (with confirmation)
+  // Download — open a signed URL for the selected document.
+  const handleDownload = async (doc) => {
+    if (!doc?.file_url) return
+    setDownloadingId(doc.id)
+    try {
+      const url = await signDocumentUrl(doc.file_url)
+      if (!url) {
+        setToast({ type: 'error', message: 'Could not generate download link' })
+        return
+      }
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } catch (err) {
+      setToast({ type: 'error', message: `Download failed: ${err.message}` })
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
+  // Delete document (with confirmation). API call goes first; storage cleanup
+  // is best-effort afterwards so a stale storage object never blocks the UX.
   const handleDelete = async () => {
     if (!deleteConfirm) return
+    const storagePath = deleteConfirm.file_url
     try {
       await docsApi.delete(deleteConfirm.id)
       setDocuments((prev) => prev.filter((d) => d.id !== deleteConfirm.id))
+      if (storagePath) await deleteDocumentFiles(storagePath)
       setToast({ type: 'success', message: 'Document deleted' })
       setDeleteConfirm(null)
     } catch (err) {
@@ -314,6 +385,15 @@ function Documents() {
                       {uploadedDate}
                     </td>
                     <td className="px-4 py-3 text-sm space-x-2">
+                      {doc.file_url && (
+                        <button
+                          onClick={() => handleDownload(doc)}
+                          disabled={downloadingId === doc.id}
+                          className="text-emerald-700 hover:text-emerald-800 font-medium disabled:opacity-50"
+                        >
+                          {downloadingId === doc.id ? 'Opening…' : 'Download'}
+                        </button>
+                      )}
                       {!user?.isDemoMode && (
                         <>
                           <button
@@ -330,7 +410,7 @@ function Documents() {
                           </button>
                         </>
                       )}
-                      {user?.isDemoMode && (
+                      {user?.isDemoMode && !doc.file_url && (
                         <span className="text-slate-400 text-xs">View only</span>
                       )}
                     </td>
@@ -386,23 +466,52 @@ function Documents() {
                 </select>
               </div>
 
-              {/* File Name */}
+              {/* File upload */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">
-                  File Name
+                  {editingDoc?.file_url ? 'Replace File (optional)' : 'File'}
                 </label>
                 <input
-                  type="text"
-                  name="file_name"
-                  value={formData.file_name}
-                  onChange={handleInputChange}
-                  placeholder="e.g. Procedure_XYZ_v2.pdf"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,image/jpeg,image/png,image/webp,image/heic,image/heif"
+                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  className="w-full text-sm text-slate-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
+                {selectedFile && (
+                  <p className="text-xs text-slate-600 mt-1">
+                    Selected: <strong>{selectedFile.name}</strong> ({(selectedFile.size / 1024).toFixed(0)} KB)
+                  </p>
+                )}
+                {!selectedFile && editingDoc?.file_url && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Current file: {editingDoc.file_name} — leave blank to keep
+                  </p>
+                )}
                 <p className="text-xs text-slate-500 mt-1">
-                  Metadata reference to your locally stored document
+                  PDF, Word, Excel, PowerPoint, text, or images. 25 MB max.
                 </p>
               </div>
+
+              {/* Manual file name (only when no file picked — fallback to notes-only mode) */}
+              {!selectedFile && !editingDoc?.file_url && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    File Name (notes only)
+                  </label>
+                  <input
+                    type="text"
+                    name="file_name"
+                    value={formData.file_name}
+                    onChange={handleInputChange}
+                    placeholder="e.g. Procedure_XYZ_v2.pdf"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Reference name only — use this when the file lives elsewhere.
+                  </p>
+                </div>
+              )}
 
               {/* Notes */}
               <div>
