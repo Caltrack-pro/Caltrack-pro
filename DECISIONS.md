@@ -48,7 +48,7 @@ site_members (id UUID PK, site_id FK→sites, user_id UUID, role TEXT, display_n
 
 **Why:** Simpler than a foreign key at this stage. Avoids migration complexity. The site name from JWT is trusted and verified server-side.
 
-**Note:** The `sites` table now exists. Renaming `created_by` → `site_id` FK is deferred to the Stripe integration phase (requires schema migration + backfill).
+**Status (April 2026):** Working as designed. The `sites` table also exists (used by Stripe billing + super-admin). Renaming `created_by` → `site_id` FK is no longer planned — the string-keyed isolation has held up across Stripe integration, super-admin impersonation, and the storage-bucket RLS shape. Revisit only if a customer renames their site (would currently require a backfill update across the instruments table).
 
 ---
 

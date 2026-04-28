@@ -1,5 +1,7 @@
 # Calcheq — Project Master Reference
 
+This file describes the **current technical state** — file map, routes, models, env vars, conventions. The human-readable counterpart is `docs/OPERATIONS.md` (runbook, troubleshooting, where things live, business ops). The dated changelog of what shipped when lives in `ROADMAP.md`. The "why" behind architectural choices lives in `DECISIONS.md`.
+
 ## Local Development Path (Windows)
 - Project folder: `C:\Users\nfish\OneDrive\Documents\AI Projects\Caltrack-pro`
 - GitHub remote: `https://github.com/Caltrack-pro/Caltrack-pro.git` (branch: main)
@@ -49,13 +51,13 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - InstrumentForm.jsx     — create and edit instrument (shared form)
 - InstrumentDetail.jsx   — single instrument view: calibration history, trend charts, drift analysis, audit trail tabs
 - CalibrationForm.jsx    — enter calibration results (as-found / as-left test points, 1–20 points)
-- ImportCalibratorCSV.jsx — 3-step Beamex/Fluke CSV import: Upload → Review → Confirm; route: /app/calibrations/import-csv
+- ImportCalibratorCSV.jsx — 3-step Beamex/Fluke CSV import: Upload → Review → Confirm; route: /app/instruments/import-calibrations (legacy /app/calibrations/import-csv redirects)
 - ImportInstruments.jsx  — bulk instrument CSV import UI; route: /app/import
 - Schedule.jsx           — 2 tabs: Technician Queue / Planner; default tab is role-aware (planner role → Planner tab); route: /app/schedule
 - Calibrations.jsx       — 2 tabs: Activity Log / Pending Approvals (with live count badge); auto-switches to Pending Approvals tab for every user when items exist; Approve/Reject buttons visible to all site members (no role gate); route: /app/calibrations
 - SmartDiagnostics.jsx   — 3 tabs: Recommendations (critical/advisory/optimisation, 9-rule engine — each card shows a "Recommended action" solution box, category-coloured styling, View-instrument / Calibrate-now / Dismiss actions, and metric tile for projections) / Drift Alerts (sparklines, projected failure dates) / Repeat Failures (bad actors); route: /app/diagnostics
 - Documents.jsx          — document library: file upload (direct browser → Supabase Storage `documents` bucket, 25 MB cap), Download via signed URL, link to instruments, notes-only fallback; CRUD via /api/documents; route: /app/documents
-- AppSettings.jsx        — 5 sections: Site info / Profile / Change Password / Team Members (admin) / Billing & Subscription (admin); route: /app/settings
+- AppSettings.jsx        — 6 sections: Site info / Profile / Change Password / Security (Face ID / Touch ID toggle, native-only — hidden on web and where biometric hardware is unavailable) / Team Members (admin) / Billing & Subscription (admin); route: /app/settings
 - Reports.jsx            — export centre: quick export bar (overdue/failed/compliance CSV), 4 report tabs (overdue/upcoming/failed/history); route: /app/reports
 - Support.jsx            — FAQ accordion (5 sections, 20 Q&As), tutorial placeholders, contact email; route: /app/support
 - Onboarding.jsx         — 3-step welcome wizard (site setup → add instruments → invite team); route: /app/onboarding; no sidebar, full-page
@@ -103,13 +105,14 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 - models.py             — SQLAlchemy ORM models (Instrument, CalibrationRecord, CalTestPoint, AuditLog, CalibrationQueue, Document, DocumentInstrument, Site, SiteMember)
 - schemas.py            — Pydantic v2 request/response schemas
 - database.py           — Supabase/PostgreSQL connection via SQLAlchemy
-- auth.py               — ES256 JWT verification via JWKS; get_current_user / get_optional_user / resolve_site / assert_writable_site / assert_active_subscription
+- auth.py               — ES256 JWT verification via JWKS; get_current_user / get_optional_user / get_real_user / get_superadmin_user / resolve_site / assert_writable_site / assert_active_subscription
 - calibration_engine.py — server-side pass/fail calculation (source of truth)
-- notifications.py      — Resend email: submit/approve/reject alerts + daily overdue digest + weekly due-soon digest + member invite email
+- pdf_generator.py      — fpdf2 server-side calibration certificate generator (used by the cert email on approval)
+- notifications.py      — Resend email: submit/approve/reject alerts + daily overdue digest + weekly due-soon digest + member invite email + cert PDF on approval
 - routes/auth.py        — GET /api/auth/check-site, POST /api/auth/register, GET /api/auth/me, GET /api/auth/members, POST /api/auth/invite
 - routes/contact.py     — POST /api/contact; saves to pilot_requests table with token; emails notification (with Approve/Deny links) to CONTACT_NOTIFY_EMAIL; sends confirmation to lead; always returns 200
 - routes/admin.py      — GET /api/admin/pilot/approve?token=X (creates Supabase user + site, sends welcome email, 30-day trial); GET /api/admin/pilot/deny?token=X (marks denied, sends denial email); returns branded HTML pages
-- routes/instruments.py — CRUD; site derived from JWT via resolve_site
+- routes/instruments.py — CRUD; site derived from JWT via resolve_site; also exposes GET /api/instruments/by-tag/{tag_number} (registered BEFORE /{instrument_id} so the literal "by-tag" doesn't get coerced to a UUID lookup)
 - routes/calibrations.py — CRUD + submit/approve/reject; ownership checks
 - routes/dashboard.py   — stats, alerts, compliance-by-area, upcoming, bad-actors, recommendations (9-rule smart engine)
 - routes/queue.py       — GET/POST/DELETE/PATCH /api/queue; calibration work queue with auto-cleanup
@@ -126,12 +129,17 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 - scripts/calcheq_import_TEMPLATE.csv      — template CSV for bulk instrument import
 
 ### Project folders (non-code)
-- docs/business/     — Business Plan, Pilot Offer, Sales One-Pager, MEX migration guide
-- docs/specs/        — Compliance/criticality spec, Import wizard spec, Mobile field access report
-- docs/marketing/    — SEO Audit Report
-- assets/branding/   — Calcheq logo SVG
+- docs/business/     — Calcheq Business Plan
+- docs/info/         — Compliance/criticality spec, Import wizard guide, Mobile field access report, MEX migration guide
+- docs/marketing/    — SEO Audit Report, 30-Day Pilot Offer, LinkedIn Brand Growth System, Sales One-Pager (HTML), MARKETING AND IMPLEMENTATION (working notes)
+- docs/presentation/ — IXOM Laverton presenter script + HTML proposal deck + template
+- docs/prompts/      — reusable prompts (CLAUDE_WORKFLOW.md = how to start sessions, QA_TEST_PLAN.md = recurring browser-agent QA pass)
+- docs/archive/      — historical one-shot prompts kept for reference
+- docs/OPERATIONS.md — narrative operations manual: where things live, runbook, troubleshooting (the human-readable counterpart to this file)
+- assets/branding/   — CalCheq logo SVG
 - assets/screenshots/ — Real website screenshots for reference + marketing
 - assets/calibration-pdfs/ — IXOM upload plan and related calibration PDFs
+- mobile/store-metadata/ — App Store + Play Store listing copy, permission strings, screenshot capture plan
 
 ---
 
@@ -238,8 +246,8 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 
 ### Demo account
 - Email: demo@calcheq.com  |  Password: CalcheqDemo2026
-- Site: Demo, role: admin; all writes return HTTP 403
-- display_name in site_members set to "Demo User" (was null, showed "—" in Settings Team table)
+- Site: Demo, role: admin; all writes return HTTP 403 via `assert_writable_site`
+- display_name "Demo User"; the demo header shows "Riverdale Water Treatment Plant" instead of "Demo" so the demo feels like a real customer environment
 
 ### Required Railway env vars
 - `SUPABASE_URL`              — https://qdrgjjndwgrmmjvzzdhg.supabase.co
@@ -279,10 +287,12 @@ CalCheq ships as native iOS + Android apps via **Capacitor 6** wrapping the same
 
 ### Plugins
 - `@capacitor/core` + `@capacitor/cli` 6.x
-- `@capacitor/preferences` — JWT storage on native (encrypted), localStorage fallback on web
+- `@capacitor/preferences` — JWT storage on native (encrypted: iOS Keychain / Android EncryptedSharedPreferences); localStorage fallback on web
 - `@capacitor/camera` — photo capture (CameraSource.Prompt) for calibration evidence
 - `@capacitor/splash-screen` + `@capacitor/status-bar` — native chrome
+- `@capacitor/app` — `appStateChange` listener used to re-lock biometric on resume
 - `@capacitor-mlkit/barcode-scanning` — fullscreen native ML Kit scanner for instrument tags
+- `@aparajita/capacitor-biometric-auth` ^10 — Face ID / Touch ID re-auth gate (opt-in via Settings → Security)
 
 ### npm scripts (frontend/package.json)
 - `npm run build:mobile` — `vite build && cap sync` (always run before opening native IDE)
@@ -322,14 +332,24 @@ Supported formats: QR_CODE, CODE_128, CODE_39, CODE_93, DATA_MATRIX, EAN_13, EAN
 - Tailwind safe-area-inset utilities used in the bottom nav so it clears the iOS home indicator.
 - Tap targets ≥44 px square on touch surfaces; mobile drawer in `Layout.jsx` + `Header.jsx` for nav.
 
+### Biometric lock flow
+1. Opt-in toggle on `AppSettings` → Security (native-only; hidden when biometric hardware is unavailable). Flag stored in `@capacitor/preferences` as `biometric_enabled`.
+2. `frontend/src/utils/biometricLock.js` lazy-imports the plugin so the web bundle stays clean.
+3. `frontend/src/components/BiometricLockOverlay.jsx` is a full-screen lock with a sign-out escape hatch.
+4. `Layout.jsx` listens to `App.appStateChange` and re-locks on resume.
+5. Biometric is a re-auth gate, NOT a key-wrap — the JWT itself stays in OS-encrypted storage. Disabling biometric does not log the user out.
+
 ### Store metadata
 Pre-filled listing copy, permission strings, data-safety declarations, and the screenshot capture plan live in `mobile/store-metadata/`:
 - `app-store-listing.md` — Apple App Store
 - `play-store-listing.md` — Google Play
 - `screenshots/README.md` — required sizes per device, shot list, capture method (Riverdale demo account in the simulator/emulator)
 
+### iOS Codemagic CI
+`codemagic.yaml` at the repo root scaffolds a `mac_mini_m2` runner that builds the iOS app and publishes to TestFlight. First run is blocked on Apple Developer account + bundle ID provisioning + App Store Connect API key — Android-first ships first to IXOM; iOS waits.
+
 ### Out of v1 (do not build until clear customer signal)
-Offline mode + sync, push notifications, biometric auth, plan-gated mobile-only features, React Native rewrite. Web app already works on mobile browsers — these only earn their keep once we have field telemetry from the pilot.
+Offline mode + sync, push notifications, plan-gated mobile-only features, React Native rewrite. Web app already works on mobile browsers — these only earn their keep once we have field telemetry from the pilot.
 
 ---
 
@@ -469,86 +489,6 @@ Dropped April 2026: the old `LAST_CAL_FAIL` rule (misleading when as-left passed
 
 ---
 
-## Pending Work
+## Roadmap & shipped features
 
-### Completed (April 2026)
-- ✅ UX fix sprint (28 Apr 2026) — three small but high-touch improvements in three commits + a docs update:
-  - **pH + conductivity instrument types** — Postgres `instrument_type` enum extended via `ALTER TYPE … ADD VALUE`; SQLAlchemy `SAEnum(values_callable=…)` and Pydantic `InstrumentType` picked up the new values. `InstrumentForm` `TYPE_DEFAULTS` map seeds pH (2 buffer points 4.01/7.00, ±0.1 absolute, 0–14 pH) and conductivity (1 sample-comparison point at 2% reading, µS/cm ⇆ mS/cm dropdown); defaults only fill blank fields and only on type change (`lastAppliedTypeRef`) so existing instruments don't lose data. Flow type gained an "Include zero-flow check" checkbox that prepends a 0 point on save. `CalibrationForm` makes the nominal column editable for ph/conductivity only (`NOMINAL_EDITABLE_TYPES = {ph, conductivity}`) — `nominalOverrides` state seeded from `generateTestPoints`, asFoundCalc + buildPayload honour overrides; column label switches "Reference" vs "Expected". Pass/fail engine untouched — these types map cleanly onto existing `absolute` / `percent_reading` tolerance rules. See DECISIONS.md "Specialist analyser types — April 2026" for the why.
-  - **Document file uploads** — new private `documents` Supabase Storage bucket (25 MB cap, PDF/Office/text/image MIME whitelist) with the same 4-policy site-isolation RLS shape as `calibration-photos`. `frontend/src/utils/documentUpload.js` mirrors `photoCapture.js` (browser → Storage direct, never through FastAPI) — generates a UUID prefix at upload, signs 30-min download URLs, MIME + size precheck before the network round-trip. `Documents.jsx` upload modal now has a file picker with `accept` whitelist + selected-file preview; existing notes-only mode preserved as a fallback when no file is picked; replace-file flow during edit removes the previous storage object after the API write succeeds; delete flow does the same. Backend `routes/documents.py` untouched — storage cleanup runs from the browser under the user's JWT.
-  - **Import UX cleanup** — `scripts/caltrack_import_TEMPLATE.csv` renamed to `calcheq_import_TEMPLATE.csv` (file rename via `git mv`) plus download attribute, Support copy, backend docstring, and brand casing in `scripts/import_instruments.py`. Dashboard "Import CSV" quick action moved from the calibrator import page to `/app/import` (instrument bulk) and relabelled "Import Instruments". InstrumentList toolbar surfaces all three import paths side by side: Import Instruments CSV, Import Calibrator CSV, Add Instrument. Calibrator import route moved `/app/calibrations/import-csv` → `/app/instruments/import-calibrations` so the sidebar highlights Instruments (where users mentally group it); old path kept as a `Navigate` redirect. Internal `caltrack-*` event/storage-key names left alone — private API, renaming would churn many files for no user benefit.
-- ✅ Mobile app — Capacitor 6 wrapper for iOS + Android (27 Apr 2026), shipped in 5 phases (commits f16ff36 / cab69a2 / 761af63 + earlier scaffold/auth phases). Same React build powers web + native; no separate mobile codebase. Highlights:
-  - **Phase 1 scaffold** — Capacitor config, `frontend/android/` + `frontend/ios/` projects, `npm run build:mobile` / `sync` scripts, app ID `com.calcheq.app`
-  - **Phase 2 native auth + JWT** — `@capacitor/preferences` storage adapter for Supabase Auth (encrypted on native, localStorage fallback on web)
-  - **Phase 3 QR scanning** — `@capacitor-mlkit/barcode-scanning` with fullscreen ML Kit UI; new `frontend/src/utils/barcodeScanner.js` utility (not component); new backend endpoint `GET /api/instruments/by-tag/{tag_number}` placed before `/{instrument_id}` to avoid path collision; Scan FAB on mobile layouts; Phase 3 also added all camera + photo permission strings (iOS Info.plist + Android Manifest) so Phase 4 didn't need a second native rebuild
-  - **Phase 4 photo evidence** — `photo_urls TEXT[]` column on `calibration_records` (default `'{}'::text[]`); private `calibration-photos` Supabase Storage bucket (10 MB cap, image/* whitelist) with 4 RLS policies enforcing `split_part(name, '/', 1) IN (user's site names)`; `frontend/src/utils/photoCapture.js` with native `@capacitor/camera` + web file-input fallback; `PhotoAttachment` grid on `CalibrationForm`; signed thumbnail rendering on `InstrumentDetail`. Path convention `{site_name}/{uploadSessionId}/{filename}` — UUID generated at form mount because the calibration record doesn't exist yet at upload time
-  - **Phase 5 brand assets + store metadata** — `frontend/assets/icon-only.svg` (1024×1024 brand-navy bg + gauge mark) and `frontend/assets/splash.svg` (2732×2732 lockup centred on radial-glow navy); `@capacitor/assets` + `npm run icons` script regenerates all iOS/Android/PWA variants; `mobile/store-metadata/` holds App Store + Play Store listing copy, permission strings, data-safety declarations, and screenshot capture plan
-  - **Out of v1 (do NOT build):** offline mode/sync, push notifications, biometric auth, plan-gated mobile-only features, React Native rewrite. Web app already works on mobile browsers — these only earn their keep once we have field telemetry from the IXOM pilot
-- ✅ Approval flow: everyone submits to Pending, anyone can approve, cert goes to technician + approver (24 Apr 2026) — three changes:
-  - **Backend `calibrations.py` submit** — removed the admin/supervisor auto-approve branch. Every submission now goes to `SUBMITTED` regardless of role, guaranteeing a second-party approval step (MHF / safety-critical compliance requirement). Audit action is always `submit` — `submit_and_approve` is gone.
-  - **Backend `calibrations.py` approve** — cert recipients narrowed from `technician + all site admins/supervisors` to `technician + approver` (de-duplicated so a single email when the same user entered and approved, which is the intentional "entering on behalf of a contractor" workflow).
-  - **Frontend `Calibrations.jsx` Pending tab** — dropped the `canApprove()` role gate. Every authenticated site user sees Approve/Reject buttons; the old amber "your role cannot approve" banner is gone; the tab auto-defaults to Pending whenever `count > 0` for everyone, not just approvers.
-  - **Behavioural contract:** self-approval is explicitly allowed — a user can submit and approve the same record. The two-party control comes from the workflow (contractor entering → internal approver) rather than a role separation, because contractors don't have CalCheq seats.
-- ✅ Calibration cert auto-email hardening (23 Apr 2026) — three fixes so the PDF always reaches the technician who did the work:
-  - **Backend `calibrations.py` submit auto-approve path** now resolves the recipient via `_technician_email(rec.technician_id, db)` (same helper the approve path already used), with `current_user.email` as a fallback. Prior code sent the cert to whoever clicked Submit, which for admin/supervisor self-approval was the submitter — not the technician on the record.
-  - **Backend `routes/auth.py` `/api/auth/members`** — removed the admin/supervisor role gate (technicians need it for the dropdown; it's intra-site only so no tenant leakage) and added `user_id` to the response so the frontend can bind the Supabase user ID, not just the `site_members` row PK.
-  - **Frontend `CalibrationForm.jsx`** — replaced the free-text Technician input with a dropdown populated from `/api/auth/members`. Submitting now sets both `technician_id` (Supabase user_id) and `technician_name` (member's display_name) atomically, so they can't drift. Helper copy under the field tells the user the cert will be emailed to the selected technician.
-  - **Cert email flow, end state:** on approval (or on submit when submitter is admin/supervisor and auto-approval fires), backend generates the fpdf2 PDF, base64-encodes it, and sends via Resend to the email resolved from `rec.technician_id` → `SiteMember.email`. Audit action is `submit_and_approve` for the auto-path, `approve` for the normal path. If Resend shows no send attempt at all, the failure is upstream of `resend.Emails.send` — check Railway logs for an ERROR on PDF generation or import.
-- ✅ Super-admin / platform operator console (23 Apr 2026) — three phases shipped in one build:
-  - **Phase 1 gate:** `SUPERADMIN_EMAILS` env var (frozenset, case-insensitive); `UserContext.is_superadmin` + `is_impersonating` + `real_user_id` + `real_email`; `get_superadmin_user` dependency; `is_superadmin` added to `/api/auth/me`; `assert_active_subscription` bypass for super-admins on their own account
-  - **Phase 2 platform console:** new `backend/routes/superadmin.py` (7 endpoints + audit helper); list-sites uses grouped aggregate queries; extend-trial uses `days XOR new_end_date` Pydantic model_validator and extends from `max(now, trial_ends_at)`; delete refuses `calcheq`/`demo` via `UNDELETABLE_SITES` case-insensitive set, requires `?confirm=<name>` match, cascades instruments (by `created_by`) + documents + queue + members; new `frontend/src/pages/SuperAdmin.jsx` with sortable/searchable table and 3 modals; 👑 Platform Admin sidebar entry shown only when `is_superadmin`; `/app/admin` renders `<AppNotFound />` (not redirect) for non-super-admins
-  - **Phase 3 impersonation:** header-based (`X-Impersonate-Site-Id`) — no separate JWT; `_apply_impersonation` in `auth.py` rewrites UserContext at the single choke-point so every downstream helper (`resolve_site`, `assert_writable_site`, `assert_active_subscription`) respects it for free; `is_superadmin` flipped off on the impersonated context so subscription/demo gates still fire; writes audited via independent `SessionLocal()` (persists across 403 rollbacks); impersonate-start/end session markers; `ImpersonationBanner` sticky red banner + Exit button hard-reloads to `/app/admin`
-- ✅ Stripe payment integration — 3 plans ($199/$449/$899 AUD), checkout sessions, webhooks, customer portal, billing settings, 402 enforcement
-- ✅ Subscription enforcement — `assert_active_subscription` in auth.py; 402 → redirect to billing
-- ✅ Self-serve sign-up → Stripe checkout — full flow working
-- ✅ Role-based views — technician nav simplified, planner defaults to Planner tab, supervisor defaults to Approvals
-- ✅ Onboarding wizard — 3-step welcome wizard at /app/onboarding; Dashboard welcome banner for empty sites
-- ✅ Demo environment polish — Riverdale header, team seeded, friendly 403 modal, queue/docs/links seeded
-- ✅ Website overhaul — hero, pricing ($199/$449/$899), 14-day trial, social proof, SEO (robots.txt, sitemap, JSON-LD)
-- ✅ Blog/Resources merge — /blog → /resources, BlogPost served at /resources/:slug, nav shows Resources only
-- ✅ Plan-first sign-up — SignUp step 1 = plan selection, stores plan in Supabase user_metadata; AuthCallback (new) handles email confirm → Stripe checkout
-- ✅ Pilot approval system — pilot_requests table; contact form saves to DB with token; notification email has Approve/Deny links; admin routes create Supabase user + site + 30-day trial; welcome email with credentials; trial auto-expiry in assert_active_subscription
-- ✅ Trial abuse prevention — domain-based check in billing.py; personal email providers use exact match, company domains use domain-wide match
-- ✅ MarketingNav — "Start Free Trial" → /contact (30-day managed pilot); green "Sign Up" button → /auth/signup (self-serve plan selection)
-- ✅ Brand casing unified — "CalCheq" now consistent across all 16 frontend + backend files (was "Calcheq" in many places)
-- ✅ Minor-1: Compliance Rate KPI card shows "—" on empty sites instead of red "0.0%"
-- ✅ Polish-3: Planner "+ Add" refreshes queue panel — confirmed `handleAdd` calls `await loadQueue()` after queueApi.add()
-- ✅ Polish-7: Trial length unified to 30 days across all marketing copy (Landing, Pricing, FAQ, Contact, HowItWorks, DemoPage, SignUp, AppSettings, SignUp); backend billing.py already set trial_period_days=30 — now consistent everywhere
-- ✅ Smart Recommendations engine rewrite (22 Apr 2026) — dropped misleading `LAST_CAL_FAIL` rule; added 4 new rules (`CRIT_CANNOT_CALIBRATE`, `CRIT_LAST_CAL_OOT` >5% span, `CRIT_EST_OOT_NOW` drift projection, `ADV_EST_OOT_30_DAYS` drift projection); every card now carries a "Recommended action" solution box with category-coloured styling and metric tile for projections; new backend endpoint `GET /api/dashboard/recommendations` evaluates all 9 rules per active instrument; `scripts/seed_recommendations_examples.sql` reshapes 6 Riverdale demo instruments so public demo visitors see every rule fire
-- ✅ QA bug-fix sprint (20–21 Apr 2026) — 21 bugs resolved across 7 commits; DB migration applied via MCP:
-  - ✅ CRITICAL-1: tag_number uniqueness → composite (tag_number, created_by) per site; DB constraint swapped live
-  - ✅ CRITICAL-2: last_calibration_date uses calendar MAX not submission order; approval guard + DB recompute
-  - ✅ CRITICAL-3: canonical URL + og:url now set per-route by CanonicalManager in App.jsx
-  - ✅ Major-1: SignIn cross-checks typed company name against /api/auth/me after auth; signs out + errors on mismatch
-  - ✅ Major-2: Dashboard useDashboard depends on siteName/isDemoMode (not tick); guards fetch when site is null
-  - ✅ Major-3/4: Dashboard drift card + DriftAlertsTab now include exceeded (fail) instruments, not just marginal
-  - ✅ Major-5: Recommendations engine fetches fail instruments and surfaces each as a critical recommendation
-  - ✅ Major-6: bad_actors query requires ≥ 2 failures (matches UI copy)
-  - ✅ Major-7: InstrumentForm save errors now show toast regardless of scroll position
-  - ✅ Major-8: CriticalityBadge renders amber "Unclassified" for null; form defaults null, shows placeholder
-  - ✅ Major-9: Documents.jsx reads `results` from API response (was `.documents` / `.instruments`)
-  - ✅ Major-11: Document delete now explicitly removes document_instruments rows first (FK constraint fix)
-  - ✅ Major-13: AppNotFound component + catch-all Route inside /app AuthGuard layout
-  - ✅ Major-14: Mobile drawer already fully implemented in Layout.jsx + Header.jsx (confirmed, not deferred)
-  - ✅ Minor-2: status=all no longer returns 500 — treated as no filter
-  - ✅ Polish-5: Documents "Uploaded By" column reads `uploaded_by` field
-  - ✅ Polish-6: Billing "30-day free trial" copy corrected to "14-day"
-  - ✅ Polish-9: Resources cards link to /resources/:slug (canonical), not /blog/:slug
-
-### Known open items (low priority / design decisions)
-- Minor-3: DELETE /api/instruments is intentional soft-delete — preserves calibration history; returns 200 with decommissioned instrument. By design, no code change needed.
-- ✅ Minor-4: DELETE /api/calibrations/{id} hard-delete endpoint added (admin only); deletes CalTestPoint rows + writes audit entry + recomputes instrument cal state if the deleted record was approved
-- Major-12: Supabase JWT refresh blips — infra/CSP issue, no app-code fix; check Railway response headers for CSP
-
-### Phase 2 (30–90 days post-launch)
-- **Scheduled report delivery** — weekly/monthly compliance PDF by email (Resend + APScheduler already in place)
-- **Subscription plan enforcement** — gate specific features (drift prediction, imports) behind Professional+ plan
-
-### Phase 3 (post-launch with real customers)
-- CMMS integration (MEX first, then Maximo / SAP PM)
-- Printable QR / NFC labels per instrument (the scanner ships in v1; the label-printing pipeline does not)
-- Advanced analytics / statistical failure prediction
-- Public API + webhooks for Enterprise tier
-- Mobile follow-ups: offline calibration entry with replay-on-reconnect, push notifications for pending approvals, biometric unlock — only after pilot signal
-
-### Do not build yet
-- SIL / IEC 61511 functional safety module | HART hardware integration | SMS notifications | React Native rewrite | AI/ML prediction (rule-based drift engine covers this for now)
+This file describes **current state**. For the dated changelog of what shipped when, see `ROADMAP.md`. For the human-readable narrative (runbook, troubleshooting, where things live), see `docs/OPERATIONS.md`.

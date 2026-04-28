@@ -6,6 +6,8 @@ Industrial instrument calibration management — SaaS web application + native i
 
 **Live:** https://calcheq.com
 
+> **New here?** Read `docs/OPERATIONS.md` first — it's the plain-English narrative of how the whole thing runs (architecture, end-to-end flows, runbook, troubleshooting). This README only covers local dev setup.
+
 ---
 
 ## Prerequisites
@@ -146,7 +148,6 @@ Caltrack-pro/
         Onboarding.jsx     # 3-step welcome wizard
         Support.jsx        # FAQ accordion, tutorials, contact
         SuperAdmin.jsx     # Platform operator console (super-admin only)
-        # Legacy (redirect-only): Alerts, BadActors, PendingApprovals, Profile
       utils/
         api.js             # All API calls with JWT injection (incl. instruments.byTag for QR scan)
         supabase.js        # Supabase client init (Preferences storage adapter on native)

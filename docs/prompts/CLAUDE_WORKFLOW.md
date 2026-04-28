@@ -101,39 +101,38 @@ Each product loads CLAUDE.md on every turn. Current size is 360 lines; every lin
 
 ---
 
-## Credentials and secrets (quick reminder)
+## Credentials and secrets
 
-`Calcheq notepad.md` still contains live credentials (Supabase DB password, GitHub password, pooler URL). It's gitignored, so it isn't in the repo — but it's plaintext in OneDrive which is syncing to Microsoft's servers.
-
-**Recommended:** move all credentials into a password manager (1Password, Bitwarden, Apple Keychain, browser's password manager — any of them). Then delete `Calcheq notepad.md`. You'll still have CLAUDE.md for the non-secret env-var names, which is what Claude actually needs.
+Production credentials live in Railway env vars and a password manager — never in the repo. CLAUDE.md lists the env-var *names*; the values are in the password manager. If you find a plaintext credentials file anywhere in this folder, move the values to the password manager and delete the file.
 
 ---
 
-## Quick reference: the new folder map
+## Quick reference: the folder map
 
 ```
 Caltrack-pro/
-├── CLAUDE.md          ← read first every session
-├── DECISIONS.md       ← architecture decisions
-├── ROADMAP.md         ← what's done + what's next
+├── CLAUDE.md          ← read first every session — current state of the codebase
+├── DECISIONS.md       ← why each architectural choice was made
+├── ROADMAP.md         ← what's shipped (dated log) + what's next
 ├── README.md          ← setup for a new dev
-├── DOMAIN_SETUP.md    ← one-time ops record (can move to docs/ later)
+├── DOMAIN_SETUP.md    ← DNS / Cloudflare / Supabase URL ops record
 │
 ├── backend/           ← FastAPI + routes + alembic
-├── frontend/          ← React + Vite + Tailwind
+├── frontend/          ← React + Vite + Tailwind + Capacitor (mobile)
 │
-├── scripts/           ← seed + import scripts (moved from root)
-├── docs/              ← .docx specs, business plan, marketing reports
-│   ├── business/
-│   ├── specs/
-│   └── marketing/
-├── assets/            ← logos, screenshots, PDFs
-│   ├── branding/
-│   ├── screenshots/
-│   └── calibration-pdfs/
+├── scripts/           ← seed + import scripts
+├── docs/
+│   ├── OPERATIONS.md  ← narrative ops manual (runbook, troubleshooting)
+│   ├── business/      ← Business Plan
+│   ├── info/          ← compliance/criticality, import wizard, mobile field access, MEX migration
+│   ├── marketing/     ← SEO audit, pilot offer, LinkedIn growth, sales one-pager
+│   ├── presentation/  ← IXOM presenter script + HTML deck
+│   ├── prompts/       ← reusable prompts (this file, QA test plan)
+│   └── archive/       ← historical one-shot prompts
+├── mobile/store-metadata/  ← App Store + Play Store listing copy
+├── assets/            ← branding SVGs, screenshots, calibration PDFs
 │
+├── codemagic.yaml     ← iOS CI (Codemagic — blocked on App Store account)
 ├── nixpacks.toml      ← Railway build
 └── railway.json       ← Railway config
 ```
-
-Root-level noise removed: old session handoff, duplicate one-pager, superseded seed SQL, redundant prompt files, orphaned legacy page JSX files, pycache. See `ROADMAP.md` entry for 19 April 2026 for the full list.
