@@ -9,7 +9,9 @@ export default function MarketingFooter() {
     { to: '/pricing',     label: 'Pricing'     },
     { to: '/resources',   label: 'Resources'   },
     { to: '/faq',         label: 'FAQ'         },
+    { to: '/support',     label: 'Support'     },
     { to: '/contact',     label: 'Contact'     },
+    { to: '/privacy',     label: 'Privacy'     },
   ]
 
   return (

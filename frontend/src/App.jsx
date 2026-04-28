@@ -65,6 +65,8 @@ import HowItWorks  from './pages/marketing/HowItWorks'
 import Resources   from './pages/marketing/Resources'
 import FAQ         from './pages/marketing/FAQ'
 import Contact     from './pages/marketing/Contact'
+import Privacy     from './pages/marketing/Privacy'
+import MarketingSupport from './pages/marketing/Support'
 import BlogPost    from './pages/marketing/BlogPost'
 import DemoPage    from './pages/marketing/DemoPage'
 
@@ -119,6 +121,8 @@ export default function App() {
         <Route path="/resources/:slug" element={<NativeOrMarketing><BlogPost /></NativeOrMarketing>} />
         <Route path="/faq"             element={<NativeOrMarketing><FAQ /></NativeOrMarketing>} />
         <Route path="/contact"         element={<NativeOrMarketing><Contact /></NativeOrMarketing>} />
+        <Route path="/privacy"         element={<NativeOrMarketing><Privacy /></NativeOrMarketing>} />
+        <Route path="/support"         element={<NativeOrMarketing><MarketingSupport /></NativeOrMarketing>} />
         <Route path="/demo"            element={<NativeOrMarketing><DemoPage /></NativeOrMarketing>} />
         {/* /blog is now an alias for /resources; /blog/:slug still serves articles */}
         <Route path="/blog"            element={<Navigate to="/resources" replace />} />
