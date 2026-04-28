@@ -1,6 +1,6 @@
 # CalCheq — Forward Roadmap
 
-*Last updated: 27 April 2026*
+*Last updated: 28 April 2026*
 
 ---
 
@@ -33,6 +33,12 @@ Auth (Supabase ES256 JWT), custom domain (calcheq.com), immutable audit trail, C
 - Smart Analytics tab upgraded: Recharts AreaChart + tolerance bands + recommendation cards (was table only)
 - Activity Log default date range extended from 90 days → 365 days (historical CSV-imported records were falling outside the 90-day window)
 - Follow-up: 4 PT-9300 calibrations (IXOM pilot) still sitting in "submitted" — approve via Pending Approvals once deployed so Smart Analytics has data
+
+**Completed 28 April 2026:**
+- UX fix sprint — three small but high-touch improvements shipped in three commits:
+  - **P1: pH + conductivity instrument types** — extended the Postgres `instrument_type` enum (`ALTER TYPE … ADD VALUE`) and the SQLAlchemy/Pydantic enums; pH defaults to 2 buffer points (4.01 / 7.00, ±0.1 absolute, 0–14 pH), conductivity defaults to 1 sample-comparison point at 2% reading with a µS/cm ⇆ mS/cm dropdown; flow type gained an "Include zero-flow check" checkbox that prepends a 0 point on save; `CalibrationForm` makes the nominal column editable for ph/conductivity only (other types stay read-only so historical comparisons can't drift). See DECISIONS.md "Specialist analyser types — April 2026" for the full rationale. Pass/fail engine untouched — these types map cleanly onto existing `absolute` / `percent_reading` tolerance rules.
+  - **P2: real document file uploads** — new private `documents` Supabase Storage bucket (25 MB cap, PDF / Office / text / image MIME whitelist) with the same 4-policy site-isolation RLS shape as `calibration-photos`; `frontend/src/utils/documentUpload.js` mirrors `photoCapture.js` (browser → Storage direct, never through FastAPI); Documents.jsx grew a file picker + Download button (30-min signed URL) and keeps the notes-only mode as a fallback for users whose files live elsewhere; storage cleanup on document delete and on file replace runs from the browser under the user's JWT (RLS already permits it).
+  - **P3: import UX cleanup** — three nuisances fixed: template renamed `caltrack_import_TEMPLATE.csv` → `calcheq_import_TEMPLATE.csv` everywhere it appears (file, download attribute, Support copy, backend docstring, brand casing in `scripts/import_instruments.py`); Dashboard "Import CSV" quick action now points at `/app/import` (instrument bulk import) — previously it sent users to the calibrator import page; InstrumentList toolbar surfaces all three import paths side by side (Import Instruments CSV, Import Calibrator CSV, Add Instrument); calibrator import route moved from `/app/calibrations/import-csv` → `/app/instruments/import-calibrations` so the sidebar highlights the correct nav entry, with a `Navigate` redirect from the old path. Internal `caltrack-*` event/storage-key names left alone — they're private API and renaming would churn many files for no user benefit.
 
 **Completed 27 April 2026:**
 - Mobile app shipped — Capacitor 6 wrapper for iOS + Android, app ID `com.calcheq.app`. Same React build powers web + native. Five phases:

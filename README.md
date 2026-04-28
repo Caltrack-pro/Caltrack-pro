@@ -157,6 +157,7 @@ Caltrack-pro/
         calibratorCsvParser.js # Beamex/Fluke CSV parser
         barcodeScanner.js  # @capacitor-mlkit/barcode-scanning utility (fullscreen native UI)
         photoCapture.js    # @capacitor/camera + Supabase Storage upload (calibration evidence)
+        documentUpload.js  # File picker + Supabase Storage helpers for the documents bucket
         platform.js        # Capacitor.isNativePlatform() helper
 
   mobile/
@@ -166,7 +167,7 @@ Caltrack-pro/
       screenshots/         # Final PNGs go here (see screenshots/README.md for sizes)
 
   scripts/                 # seed_instruments.py, seed_riverdale_demo.sql, import_instruments.py,
-                           # caltrack_import_TEMPLATE.csv, seed_recommendations_examples.sql
+                           # calcheq_import_TEMPLATE.csv, seed_recommendations_examples.sql
   nixpacks.toml            # Railway build config
   railway.json             # Railway deployment config
 ```

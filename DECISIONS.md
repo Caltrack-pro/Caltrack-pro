@@ -312,3 +312,22 @@ Impersonation is implemented as a client-sent `X-Impersonate-Site-Id: <uuid>` he
 **Why commit generated PNGs:** Native projects need them present at build time, and Codemagic CI (planned for iOS) shouldn't have to install Node + run a generator before xcodebuild. Cost is ~1 MB of binary churn per regeneration — acceptable for a 1× per quarter change.
 
 **Why iOS icons aren't pre-rounded:** iOS applies its own corner mask. Pre-rounding would produce a double-rounded or weirdly-cropped icon on certain devices. The source SVG has square corners on a full-bleed navy fill.
+
+---
+
+## Specialist analyser types — April 2026
+
+**Decision:** pH and conductivity got their own values in the `instrument_type` enum (`ph`, `conductivity`) rather than staying lumped under `analyser`. The Postgres enum was extended via `ALTER TYPE … ADD VALUE` migration; SQLAlchemy's `SAEnum(values_callable=…)` and Pydantic's `InstrumentType` enum picked up the new values without further plumbing.
+
+**Why split them out:**
+- `analyser` is a generic catch-all — its calibration is span-derived (LRV/URV-based) like every other transmitter type.
+- pH calibration is *not* span-derived. It uses fixed buffer solutions (typically 4.01 / 7.00 / 10.01) and an absolute tolerance in pH units (e.g. ±0.1 pH). The "test point value" is the buffer's stated pH at the lab's temperature, not a fraction of a transmitter span.
+- Conductivity calibration is sample-comparison: the technician measures a sample with the field instrument and a reference probe, and the "expected" value isn't known until the reference reads it. Tolerance is typically a percent of reading, not of span.
+- Treating these as `analyser` made users reach past the type-driven defaults every time they created one, and meant every CSV import asked for an LRV/URV that the instrument doesn't really have a span in the traditional sense.
+
+**Why test points are editable at calibration time only for these two types** (`NOMINAL_EDITABLE_TYPES = {ph, conductivity}` in `CalibrationForm.jsx`):
+- pH buffers are seeded with sensible defaults (4.01, 7.00) but a given lab might use 6.86 / 9.18 NIST buffers, or may want to add a 10.01 point. The technician needs to record the buffer they actually used, not whatever was set when the instrument was created.
+- For conductivity the seeded test point is just a placeholder — the actual reference reading is unknown until the technician takes the comparison measurement. Editing nominal at calibration time matches the workflow.
+- For every other type the nominal column stays read-only, because the test points are derived from LRV/URV/span at instrument creation time and changing them at calibration would silently invalidate historical comparisons.
+
+**Engine impact:** zero. The pass/fail engine (`calibration_engine.py` and the mirrored `calEngine.js`) reads `tolerance_type` + `tolerance_value` and computes `error_pct = (error_abs / output_span) × 100`. No type-specific branches were added. pH/conductivity work because their default tolerance metadata maps cleanly onto the existing rules — `absolute` for pH (pH units), `percent_reading` for conductivity.

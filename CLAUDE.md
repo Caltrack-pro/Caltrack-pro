@@ -54,7 +54,7 @@ Router root. Two layout trees: marketing (no sidebar) and app (with sidebar + Au
 - Schedule.jsx           — 2 tabs: Technician Queue / Planner; default tab is role-aware (planner role → Planner tab); route: /app/schedule
 - Calibrations.jsx       — 2 tabs: Activity Log / Pending Approvals (with live count badge); auto-switches to Pending Approvals tab for every user when items exist; Approve/Reject buttons visible to all site members (no role gate); route: /app/calibrations
 - SmartDiagnostics.jsx   — 3 tabs: Recommendations (critical/advisory/optimisation, 9-rule engine — each card shows a "Recommended action" solution box, category-coloured styling, View-instrument / Calibrate-now / Dismiss actions, and metric tile for projections) / Drift Alerts (sparklines, projected failure dates) / Repeat Failures (bad actors); route: /app/diagnostics
-- Documents.jsx          — document library: upload/manage procedures, manuals, certificates; link to instruments; CRUD via /api/documents; route: /app/documents
+- Documents.jsx          — document library: file upload (direct browser → Supabase Storage `documents` bucket, 25 MB cap), Download via signed URL, link to instruments, notes-only fallback; CRUD via /api/documents; route: /app/documents
 - AppSettings.jsx        — 5 sections: Site info / Profile / Change Password / Team Members (admin) / Billing & Subscription (admin); route: /app/settings
 - Reports.jsx            — export centre: quick export bar (overdue/failed/compliance CSV), 4 report tabs (overdue/upcoming/failed/history); route: /app/reports
 - Support.jsx            — FAQ accordion (5 sections, 20 Q&As), tutorial placeholders, contact email; route: /app/support
@@ -95,6 +95,8 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 - formatting.js          — shared date and number formatting helpers
 - reportGenerator.js     — jsPDF: generateSingleCalibrationCert() + generateMultiCalibrationReport()
 - calibratorCsvParser.js — client-side CSV parser for Beamex MC6/MC4/MC2 and Fluke 754/729/726
+- photoCapture.js        — Capacitor camera + Supabase Storage helpers for the `calibration-photos` bucket
+- documentUpload.js      — file picker + Supabase Storage helpers for the `documents` bucket (signed download URLs, MIME/size precheck)
 
 ### Backend — backend/
 - main.py               — FastAPI app entry point, CORS, router registration
@@ -121,7 +123,7 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 - scripts/seed_riverdale_demo.sql          — 130-instrument Riverdale Water Treatment Plant demo dataset (run via Supabase)
 - scripts/seed_recommendations_examples.sql — supplementary seed that reshapes 6 demo instruments so every Smart Recommendations rule fires at least once (run AFTER seed_riverdale_demo.sql)
 - scripts/import_instruments.py            — CSV bulk import script
-- scripts/caltrack_import_TEMPLATE.csv     — template CSV for bulk instrument import
+- scripts/calcheq_import_TEMPLATE.csv      — template CSV for bulk instrument import
 
 ### Project folders (non-code)
 - docs/business/     — Business Plan, Pilot Offer, Sales One-Pager, MEX migration guide
@@ -170,7 +172,8 @@ Old paths (/app/alerts, /app/approvals, /app/bad-actors, /app/profile, /dashboar
 | /app/schedule                       | Schedule            | Technician Queue / Planner      |
 | /app/calibrations                   | Calibrations        | Activity Log / Pending Approvals |
 | /app/calibrations/new/:instrumentId | CalibrationForm     |                                 |
-| /app/calibrations/import-csv        | ImportCalibratorCSV |                                 |
+| /app/instruments/import-calibrations | ImportCalibratorCSV | Beamex/Fluke 3-step import      |
+| /app/calibrations/import-csv        | → /app/instruments/import-calibrations | legacy redirect |
 | /app/diagnostics                    | SmartDiagnostics    | Recommendations / Drift Alerts / Repeat Failures |
 | /app/documents                      | Documents           | Document library with instrument linking |
 | /app/reports                        | Reports             | Export centre: quick exports + 4 report tabs |
@@ -370,10 +373,27 @@ Offline mode + sync, push notifications, biometric auth, plan-gated mobile-only 
 
 ---
 
+## Supabase Storage
+
+Two private buckets, both site-isolated via RLS that compares the first path
+segment to the user's `site_members.site → sites.name`.
+
+| Bucket               | Cap   | MIME whitelist                                              | Path convention                              | Helper                                          |
+|----------------------|-------|-------------------------------------------------------------|----------------------------------------------|-------------------------------------------------|
+| `calibration-photos` | 10 MB | image/jpeg, png, webp, heic, heif                           | `{site_name}/{uploadSessionId}/{file}`       | `frontend/src/utils/photoCapture.js`            |
+| `documents`          | 25 MB | PDF, Word, Excel, PowerPoint, txt, csv, jpeg, png, webp, heic, heif | `{site_name}/{document_uuid}/{filename}` | `frontend/src/utils/documentUpload.js`          |
+
+Both buckets ship with 4 RLS policies (select/insert/update/delete) that share
+the same `split_part(name, '/', 1) IN (...)` predicate. Uploads go directly
+from the browser to Supabase Storage — never through FastAPI. The DB row
+stores only the storage path; reads use 30-min signed URLs.
+
+---
+
 ## Core Data Models
 
 ### Instrument (instruments table)
-tag_number (unique), description, area, unit, instrument_type (pressure/temperature/flow/level/analyser/switch/valve/other), manufacturer, model, serial_number, measurement_lrv, measurement_urv, engineering_units, output_type, calibration_interval_days, tolerance_type (percent_span/percent_reading/absolute), tolerance_value, num_test_points, test_point_values (JSON), criticality (safety_critical/process_critical/standard/non_critical), status (active/spare/out_of_service/decommissioned), procedure_reference, last_calibration_date, last_calibration_result, calibration_due_date, created_by (site name — isolation key), created_at, updated_at
+tag_number (unique), description, area, unit, instrument_type (pressure/temperature/flow/level/analyser/ph/conductivity/switch/valve/other), manufacturer, model, serial_number, measurement_lrv, measurement_urv, engineering_units, output_type, calibration_interval_days, tolerance_type (percent_span/percent_reading/absolute), tolerance_value, num_test_points, test_point_values (JSON), criticality (safety_critical/process_critical/standard/non_critical), status (active/spare/out_of_service/decommissioned), procedure_reference, last_calibration_date, last_calibration_result, calibration_due_date, created_by (site name — isolation key), created_at, updated_at
 
 ### Calibration Record (calibration_records table)
 instrument_id (FK), calibration_date, calibration_type (routine/corrective/post_repair/initial), technician_name, technician_id, reference_standard_description, reference_standard_serial, reference_standard_cert_number, reference_standard_cert_expiry, procedure_used, adjustment_made, adjustment_notes, technician_notes, defect_found, defect_description, return_to_service, as_found_result, as_left_result (pass/fail/marginal/not_required), max_as_found_error_pct, max_as_left_error_pct, record_status (draft/submitted/approved/rejected), work_order_reference, approved_by (name string), approved_at
@@ -452,6 +472,10 @@ Dropped April 2026: the old `LAST_CAL_FAIL` rule (misleading when as-left passed
 ## Pending Work
 
 ### Completed (April 2026)
+- ✅ UX fix sprint (28 Apr 2026) — three small but high-touch improvements in three commits + a docs update:
+  - **pH + conductivity instrument types** — Postgres `instrument_type` enum extended via `ALTER TYPE … ADD VALUE`; SQLAlchemy `SAEnum(values_callable=…)` and Pydantic `InstrumentType` picked up the new values. `InstrumentForm` `TYPE_DEFAULTS` map seeds pH (2 buffer points 4.01/7.00, ±0.1 absolute, 0–14 pH) and conductivity (1 sample-comparison point at 2% reading, µS/cm ⇆ mS/cm dropdown); defaults only fill blank fields and only on type change (`lastAppliedTypeRef`) so existing instruments don't lose data. Flow type gained an "Include zero-flow check" checkbox that prepends a 0 point on save. `CalibrationForm` makes the nominal column editable for ph/conductivity only (`NOMINAL_EDITABLE_TYPES = {ph, conductivity}`) — `nominalOverrides` state seeded from `generateTestPoints`, asFoundCalc + buildPayload honour overrides; column label switches "Reference" vs "Expected". Pass/fail engine untouched — these types map cleanly onto existing `absolute` / `percent_reading` tolerance rules. See DECISIONS.md "Specialist analyser types — April 2026" for the why.
+  - **Document file uploads** — new private `documents` Supabase Storage bucket (25 MB cap, PDF/Office/text/image MIME whitelist) with the same 4-policy site-isolation RLS shape as `calibration-photos`. `frontend/src/utils/documentUpload.js` mirrors `photoCapture.js` (browser → Storage direct, never through FastAPI) — generates a UUID prefix at upload, signs 30-min download URLs, MIME + size precheck before the network round-trip. `Documents.jsx` upload modal now has a file picker with `accept` whitelist + selected-file preview; existing notes-only mode preserved as a fallback when no file is picked; replace-file flow during edit removes the previous storage object after the API write succeeds; delete flow does the same. Backend `routes/documents.py` untouched — storage cleanup runs from the browser under the user's JWT.
+  - **Import UX cleanup** — `scripts/caltrack_import_TEMPLATE.csv` renamed to `calcheq_import_TEMPLATE.csv` (file rename via `git mv`) plus download attribute, Support copy, backend docstring, and brand casing in `scripts/import_instruments.py`. Dashboard "Import CSV" quick action moved from the calibrator import page to `/app/import` (instrument bulk) and relabelled "Import Instruments". InstrumentList toolbar surfaces all three import paths side by side: Import Instruments CSV, Import Calibrator CSV, Add Instrument. Calibrator import route moved `/app/calibrations/import-csv` → `/app/instruments/import-calibrations` so the sidebar highlights Instruments (where users mentally group it); old path kept as a `Navigate` redirect. Internal `caltrack-*` event/storage-key names left alone — private API, renaming would churn many files for no user benefit.
 - ✅ Mobile app — Capacitor 6 wrapper for iOS + Android (27 Apr 2026), shipped in 5 phases (commits f16ff36 / cab69a2 / 761af63 + earlier scaffold/auth phases). Same React build powers web + native; no separate mobile codebase. Highlights:
   - **Phase 1 scaffold** — Capacitor config, `frontend/android/` + `frontend/ios/` projects, `npm run build:mobile` / `sync` scripts, app ID `com.calcheq.app`
   - **Phase 2 native auth + JWT** — `@capacitor/preferences` storage adapter for Supabase Auth (encrypted on native, localStorage fallback on web)
