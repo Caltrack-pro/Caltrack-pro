@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500" role="img" aria-label="CalCheq feature graphic">
+  <title>CalCheq — Industrial calibration management</title>
+
+  <defs>
+    <!-- Background radial glow (matches splash.svg) -->
+    <radialGradient id="fgBg" cx="35%" cy="50%" r="80%">
+      <stop offset="0%"   stop-color="#13325E"/>
+      <stop offset="60%"  stop-color="#0B1F3A"/>
+      <stop offset="100%" stop-color="#070F1F"/>
+    </radialGradient>
+
+    <!-- Gauge arc gradient (same palette as icon-only.svg) -->
+    <linearGradient id="fgArc" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#0D2250" stop-opacity="0"/>
+      <stop offset="20%"  stop-color="#2E8ED8" stop-opacity=".7"/>
+      <stop offset="60%"  stop-color="#1FCAD8"/>
+      <stop offset="100%" stop-color="#3FF2DC"/>
+    </linearGradient>
+
+    <!-- Checkmark gradient -->
+    <linearGradient id="fgCheck" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#6DFBB0"/>
+      <stop offset="100%" stop-color="#0F8A4A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="500" fill="url(#fgBg)"/>
+
+  <!-- Decorative grid lines (subtle, evokes data / engineering) -->
+  <g stroke="#FFFFFF" stroke-width="1" opacity="0.04">
+    <line x1="0"   y1="100" x2="1024" y2="100"/>
+    <line x1="0"   y1="200" x2="1024" y2="200"/>
+    <line x1="0"   y1="300" x2="1024" y2="300"/>
+    <line x1="0"   y1="400" x2="1024" y2="400"/>
+  </g>
+
+  <!-- Gauge mark on the left, vertically centred. Source mark uses 0..112 coord;
+       we translate then scale so the mark is ~360px tall on this 500px canvas. -->
+  <g transform="translate(80,80) scale(3.0)">
+    <path d="M16 60 A36 36 0 1 1 96 60" fill="none" stroke="#1864C8" stroke-width="4" stroke-linecap="round" opacity=".18"/>
+    <path d="M16 60 A36 36 0 1 1 96 60" fill="none" stroke="url(#fgArc)" stroke-width="4" stroke-linecap="round"/>
+    <g stroke-linecap="round">
+      <line x1="22" y1="48" x2="26" y2="46" stroke="#1864C8" stroke-width="1.2" opacity=".5"/>
+      <line x1="34" y1="32" x2="38" y2="34" stroke="#2E8ED8" stroke-width="1.2" opacity=".7"/>
+      <line x1="56" y1="22" x2="56" y2="26" stroke="#2E8ED8" stroke-width="1.4" opacity=".9"/>
+      <line x1="78" y1="32" x2="74" y2="34" stroke="#1FCAD8" stroke-width="1.2"/>
+      <line x1="90" y1="48" x2="86" y2="46" stroke="#3FF2DC" stroke-width="1.4"/>
+    </g>
+    <circle cx="96" cy="60" r="3.5" fill="#3FF2DC"/>
+    <circle cx="96" cy="60" r="1.8" fill="#FFFFFF"/>
+    <path d="M34 50 L46 62 L80 28" fill="none" stroke="url(#fgCheck)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35.5 49 L46 60 L79 27" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity=".35"/>
+  </g>
+
+  <!-- Wordmark + tagline on the right -->
+  <g font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <!-- CalCheq wordmark -->
+    <text x="470" y="200" font-size="92" font-weight="700" fill="#FFFFFF" letter-spacing="-2">CalCheq</text>
+
+    <!-- Accent underline -->
+    <rect x="470" y="220" width="80" height="4" rx="2" fill="#3FF2DC"/>
+
+    <!-- Tagline line 1 -->
+    <text x="470" y="290" font-size="34" font-weight="600" fill="#FFFFFF">Calibration management.</text>
+    <!-- Tagline line 2 -->
+    <text x="470" y="332" font-size="34" font-weight="600" fill="#FFFFFF">Instrument intelligence.</text>
+
+    <!-- Sub-tagline -->
+    <text x="470" y="395" font-size="22" font-weight="400" fill="#A8C0E0">Scan. Calibrate. Diagnose. From the field.</text>
+  </g>
+
+  <!-- Bottom-right corner accent badges (drift / compliance hints) -->
+  <g transform="translate(820,420)" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <rect x="0"  y="0" width="60" height="28" rx="14" fill="#22C55E" opacity="0.85"/>
+    <text x="30" y="19" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">PASS</text>
+
+    <rect x="68" y="0" width="60" height="28" rx="14" fill="#F59E0B" opacity="0.85"/>
+    <text x="98" y="19" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">DRIFT</text>
+
+    <rect x="136" y="0" width="60" height="28" rx="14" fill="#EF4444" opacity="0.85"/>
+    <text x="166" y="19" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">FAIL</text>
+  </g>
+</svg>

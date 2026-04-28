@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../utils/supabase'
+import { isNative } from '../../utils/platform'
+
+const API_BASE = isNative()
+  ? `${import.meta.env.VITE_API_BASE_URL || 'https://calcheq.com'}/api`
+  : '/api'
 
 // ---------------------------------------------------------------------------
 // Logo
@@ -42,7 +47,7 @@ export default function SignIn() {
     setError('')
     setLoading(true)
     try {
-      const res  = await fetch(`/api/auth/check-site?name=${encodeURIComponent(companyName.trim())}`)
+      const res  = await fetch(`${API_BASE}/auth/check-site?name=${encodeURIComponent(companyName.trim())}`)
       const data = await res.json()
       if (!data.exists) {
         setError(`No account found for "${companyName}". Check the spelling or sign up.`)
@@ -70,7 +75,7 @@ export default function SignIn() {
       }
       // Cross-check the typed company name against the user's actual site
       try {
-        const meRes = await fetch('/api/auth/me', {
+        const meRes = await fetch(`${API_BASE}/auth/me`, {
           headers: { Authorization: `Bearer ${data.session.access_token}` },
         })
         if (meRes.ok) {

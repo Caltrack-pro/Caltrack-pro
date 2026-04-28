@@ -25,6 +25,11 @@
  */
 
 import { supabase } from './supabase'
+import { isNative } from './platform'
+
+const API_BASE = isNative()
+  ? `${import.meta.env.VITE_API_BASE_URL || 'https://calcheq.com'}/api`
+  : '/api'
 
 export const DEMO_SITE = 'Demo'
 
@@ -98,7 +103,7 @@ let _initialised   = false                       // true once the first session 
 
 async function _fetchUserContext(session) {
   try {
-    const res = await fetch('/api/auth/me', {
+    const res = await fetch(`${API_BASE}/auth/me`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
 
@@ -133,7 +138,7 @@ async function _autoRegister(session) {
   if (!meta.site_name) return   // nothing to register without a site name
 
   try {
-    await fetch('/api/auth/register', {
+    await fetch(`${API_BASE}/auth/register`, {
       method:  'POST',
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
