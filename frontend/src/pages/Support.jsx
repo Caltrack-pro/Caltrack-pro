@@ -253,7 +253,7 @@ const TUTORIALS = [
         <p>This is the fastest way to get started when you have more than a handful of instruments.</p>
         <ol className="list-decimal list-outside ml-5 space-y-2 mt-2">
           <li><strong>Open the importer.</strong> In the sidebar click <strong>🔧 Instruments</strong>, then the <strong>Import</strong> button (top-right), or go directly to <code className="px-1 py-0.5 bg-slate-100 rounded">/app/import</code>.</li>
-          <li><strong>Download the template.</strong> Click <strong>Download CSV template</strong>. The file <code className="px-1 py-0.5 bg-slate-100 rounded">caltrack_import_TEMPLATE.csv</code> includes every field with example rows.</li>
+          <li><strong>Download the template.</strong> Click <strong>Download CSV template</strong>. The file <code className="px-1 py-0.5 bg-slate-100 rounded">calcheq_import_TEMPLATE.csv</code> includes every field with example rows.</li>
           <li><strong>Fill it in.</strong> Required columns: <em>tag_number, description, instrument_type, measurement_lrv, measurement_urv, engineering_units, tolerance_type, tolerance_value, calibration_interval_days</em>. Recommended extras: <em>area, criticality, manufacturer, model, serial_number, last_calibration_date, last_calibration_result</em>.</li>
           <li><strong>Upload.</strong> Drag the file onto the upload zone. CalCheq validates every row before importing — you'll see a green/red summary showing how many rows will be created, skipped, or updated.</li>
           <li><strong>Confirm.</strong> Review any warnings (duplicates, missing ranges, bad tolerance types). Click <strong>Import</strong> to write the records.</li>

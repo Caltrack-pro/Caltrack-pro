@@ -667,7 +667,7 @@ def _process_import_row(row: dict, row_num: int, existing_tags: set, site_name: 
 
 @router.post("/bulk-import", response_model=BulkImportResponse, status_code=status.HTTP_200_OK)
 async def bulk_import(
-    file:         UploadFile     = File(..., description="CSV file in caltrack_import_TEMPLATE.csv format"),
+    file:         UploadFile     = File(..., description="CSV file in calcheq_import_TEMPLATE.csv format"),
     dry_run:      bool           = Query(False, description="Validate without creating (true = preview only)"),
     current_user: UserContext    = Depends(get_current_user),
     db:           Session        = Depends(get_db),

@@ -38,7 +38,7 @@ function EmptyState({ filtered }) {
             </p>
             <div className="flex gap-3 justify-center">
               <Link to="/app/import" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">
-                📥 Import CSV
+                📥 Import Instruments CSV
               </Link>
               <Link to="/app/instruments/new" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50">
                 ✏️ Add Manually
@@ -280,7 +280,7 @@ export default function InstrumentList() {
 
         {/* Add / Import buttons */}
         {userCanEdit && (
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
             <Link
               to="/app/import"
               className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
@@ -289,7 +289,17 @@ export default function InstrumentList() {
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
-              Import CSV
+              Import Instruments CSV
+            </Link>
+            <Link
+              to="/app/instruments/import-calibrations"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Import Calibrator CSV
             </Link>
             <Link
               to="/app/instruments/new"

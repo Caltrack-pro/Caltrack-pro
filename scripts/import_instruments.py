@@ -1,7 +1,7 @@
 """
-Calcheq — MEX Instrument Import Script
+CalCheq — MEX Instrument Import Script
 ==========================================
-Reads a prepared CSV file and creates instruments via the Calcheq API.
+Reads a prepared CSV file and creates instruments via the CalCheq API.
 
 Usage:
     python import_instruments.py
@@ -25,11 +25,11 @@ from datetime import datetime
 # CONFIGURATION — edit these before running
 # ─────────────────────────────────────────────────────────────────────────────
 
-API_URL   = "http://localhost:8000"   # Your Calcheq backend URL
+API_URL   = "http://localhost:8000"   # Your CalCheq backend URL
                                        # e.g. "https://caltrack-backend.up.railway.app"
 
 SITE_NAME = "Admin"                    # Your site name — must match exactly what you
-                                       # used when signing into Calcheq
+                                       # used when signing into CalCheq
 
 # ─────────────────────────────────────────────────────────────────────────────
 # VALID VALUES — do not change these
@@ -56,7 +56,7 @@ VALID_CAL_RESULTS = {
     "pass", "fail", "marginal", "not_calibrated"
 }
 
-# Common MEX → Calcheq type mappings (extend as needed)
+# Common MEX → CalCheq type mappings (extend as needed)
 INSTRUMENT_TYPE_MAP = {
     # pressure
     "pressure transmitter": "pressure",
@@ -105,7 +105,7 @@ INSTRUMENT_TYPE_MAP = {
     "tcv": "valve",
 }
 
-# Common MEX status → Calcheq status mappings
+# Common MEX status → CalCheq status mappings
 STATUS_MAP = {
     "active":          "active",
     "in service":      "active",
@@ -134,7 +134,7 @@ def clean(val):
 
 
 def map_instrument_type(raw):
-    """Map a free-text MEX type to a CalTrack instrument_type value."""
+    """Map a free-text MEX type to a CalCheq instrument_type value."""
     if not raw:
         return "other"
     lower = raw.strip().lower()
@@ -152,7 +152,7 @@ def map_instrument_type(raw):
 
 
 def map_status(raw):
-    """Map a MEX status string to a CalTrack status value."""
+    """Map a MEX status string to a CalCheq status value."""
     if not raw:
         return "active"
     lower = raw.strip().lower()
@@ -294,7 +294,7 @@ def process_row(row, row_num, existing_tags, dry_run=False):
 
     # ── Skip duplicates ────────────────────────────────────────────────────
     if tag in existing_tags:
-        return "skipped", tag, "already exists in Calcheq"
+        return "skipped", tag, "already exists in CalCheq"
 
     if errors:
         return "failed", tag, "; ".join(errors)
@@ -404,8 +404,8 @@ def process_row(row, row_num, existing_tags, dry_run=False):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Import instruments from CSV into Calcheq")
-    parser.add_argument("--csv",     default="caltrack_import.csv", help="Path to the import CSV file")
+    parser = argparse.ArgumentParser(description="Import instruments from CSV into CalCheq")
+    parser.add_argument("--csv",     default="calcheq_import.csv", help="Path to the import CSV file")
     parser.add_argument("--dry-run", action="store_true",           help="Validate CSV without creating instruments")
     args = parser.parse_args()
 
@@ -413,7 +413,7 @@ def main():
     dry_run  = args.dry_run
 
     print("=" * 60)
-    print("  Calcheq — Instrument Import Script")
+    print("  CalCheq — Instrument Import Script")
     print("=" * 60)
     print(f"  API URL  : {API_URL}")
     print(f"  Site     : {SITE_NAME}")
@@ -454,7 +454,7 @@ def main():
                     print("OK")
             except urllib.error.URLError as e:
                 print(f"FAILED\n\nERROR: Cannot connect to {API_URL}\n{e.reason}")
-                print("\nCheck that your Calcheq backend is running and API_URL is correct.")
+                print("\nCheck that your CalCheq backend is running and API_URL is correct.")
                 sys.exit(1)
             except Exception as e:
                 print(f"OK (ignoring: {e})")
@@ -497,7 +497,7 @@ def main():
     if log_lines:
         log_path = "import_errors.log"
         with open(log_path, "w", encoding="utf-8") as f:
-            f.write(f"Calcheq Import Errors — {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
+            f.write(f"CalCheq Import Errors — {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
             f.write(f"CSV: {csv_path}\n")
             f.write(f"Site: {SITE_NAME}\n\n")
             f.write("\n".join(log_lines))

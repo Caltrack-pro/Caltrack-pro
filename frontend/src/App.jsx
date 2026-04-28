@@ -147,7 +147,9 @@ export default function App() {
           {/* Calibrations — pending approvals + activity log */}
           <Route path="calibrations"             element={<Calibrations />} />
           <Route path="calibrations/new/:instrumentId" element={<CalibrationForm />} />
-          <Route path="calibrations/import-csv"  element={<ImportCalibratorCSV />} />
+          <Route path="instruments/import-calibrations" element={<ImportCalibratorCSV />} />
+          {/* Legacy redirect: old calibrator import path (Apr 2026 reshuffle) */}
+          <Route path="calibrations/import-csv"  element={<Navigate to="/app/instruments/import-calibrations" replace />} />
 
           {/* Reports */}
           <Route path="reports"                  element={<Reports />} />

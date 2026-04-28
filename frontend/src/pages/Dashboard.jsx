@@ -471,7 +471,7 @@ function UpcomingList({ instruments }) {
 function QuickActionsBar() {
   const actions = [
     { emoji: '📋', label: 'Record Calibration', to: '/app/instruments' },
-    { emoji: '📥', label: 'Import CSV', to: '/app/calibrations/import-csv' },
+    { emoji: '📥', label: 'Import Instruments', to: '/app/import' },
     { emoji: '🔧', label: 'Add Instrument', to: '/app/instruments/new' },
     { emoji: '📄', label: 'Export Report', to: '/app/reports' },
     { emoji: '📅', label: 'View Schedule', to: '/app/schedule' },
