@@ -5,7 +5,7 @@ import { CalStatusBadge, ResultBadge, CriticalityBadge } from '../components/Bad
 import { fmtDate, humanise } from '../utils/formatting'
 import { getUser, canEdit, canCalibrate } from '../utils/userContext'
 
-const INSTRUMENT_TYPES = ['pressure','temperature','flow','level','analyser','switch','valve','other']
+const INSTRUMENT_TYPES = ['pressure','temperature','flow','level','analyser','ph','conductivity','switch','valve','other']
 const CAL_STATUSES     = ['overdue','due_soon','current','not_calibrated']
 const LAST_RESULTS     = ['pass','fail','marginal']
 const PAGE_SIZE        = 50

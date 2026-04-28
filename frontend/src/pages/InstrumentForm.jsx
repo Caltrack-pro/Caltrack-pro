@@ -7,9 +7,33 @@ import { getUser } from '../utils/userContext'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const INSTRUMENT_TYPES = ['pressure','temperature','flow','level','analyser','switch','valve','other']
+const INSTRUMENT_TYPES = ['pressure','temperature','flow','level','analyser','ph','conductivity','switch','valve','other']
 const OUTPUT_TYPES     = ['4_20ma','hart','digital','pulse','other']
 const STATUS_OPTIONS   = ['active','spare','out_of_service']
+const CONDUCTIVITY_UNITS = ['µS/cm', 'mS/cm']
+
+// Per-type defaults applied when the user selects a specialist analyser type
+// on a fresh form. We only overwrite blank/zero fields so editing an existing
+// instrument never loses data, and changing the type later doesn't clobber
+// values the user has typed.
+const TYPE_DEFAULTS = {
+  ph: {
+    numPoints:        2,
+    testPointValues:  [4.01, 7.00],
+    engUnits:         'pH',
+    tolType:          'absolute',
+    tolValue:         '0.1',
+    lrv:              '0',
+    urv:              '14',
+  },
+  conductivity: {
+    numPoints:        1,
+    testPointValues:  [null],
+    engUnits:         'µS/cm',
+    tolType:          'percent_reading',
+    tolValue:         '2.0',
+  },
+}
 const CRITICALITY_OPTS = [
   {
     value: 'safety_critical',
@@ -295,6 +319,11 @@ export default function InstrumentForm() {
   const [tolType,        setTolType]        = useState('percent_span')
   const [tolValue,       setTolValue]       = useState('')
   const [procedureRef,   setProcedureRef]   = useState('')
+  // Editable test-point values (only surfaced for ph / conductivity today;
+  // backend stores in instruments.test_point_values JSONB for all types).
+  const [testPointValues, setTestPointValues] = useState([])
+  // Optional zero-flow check for flow instruments — prepends a 0 point on save.
+  const [includeZeroFlow, setIncludeZeroFlow] = useState(false)
 
   // Section 4 — Initial status
   const [lastCalDate,    setLastCalDate]    = useState('')
@@ -336,6 +365,7 @@ export default function InstrumentForm() {
         setNumPoints(inst.num_test_points ?? 5)
         setTolType(inst.tolerance_type ?? 'percent_span')
         setTolValue(inst.tolerance_value != null ? String(inst.tolerance_value) : '')
+        if (Array.isArray(inst.test_point_values)) setTestPointValues(inst.test_point_values)
         if (inst.calibration_interval_days) {
           const { value, unit: u } = fromDays(inst.calibration_interval_days)
           setCalInterval(value)
@@ -369,6 +399,45 @@ export default function InstrumentForm() {
     return () => clearTimeout(timer)
   }, [tagNumber, origTagNumber, isEdit, id])
 
+  // ── Apply per-type defaults when user picks a specialist analyser type ───
+  // Only fires when the type changes AND the relevant fields are blank/zero,
+  // so editing existing data doesn't get clobbered.
+  const lastAppliedTypeRef = useRef(null)
+  useEffect(() => {
+    if (loading) return
+    const defaults = TYPE_DEFAULTS[instrType]
+    // Only apply once per type-change event
+    if (!defaults || lastAppliedTypeRef.current === instrType) {
+      lastAppliedTypeRef.current = instrType
+      return
+    }
+    lastAppliedTypeRef.current = instrType
+
+    if (!engUnits) setEngUnits(defaults.engUnits)
+    if (!tolValue) setTolValue(defaults.tolValue)
+    if (tolType === 'percent_span' && defaults.tolType) setTolType(defaults.tolType)
+    if (defaults.lrv != null && lrv === '') setLrv(defaults.lrv)
+    if (defaults.urv != null && urv === '') setUrv(defaults.urv)
+    // Test-point seed: only when the user hasn't already entered values for this type
+    if (testPointValues.length === 0) {
+      setNumPoints(defaults.numPoints)
+      setTestPointValues(defaults.testPointValues.slice())
+    }
+  }, [instrType, loading])  // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep the editable test-point grid length in sync with numPoints
+  // (only relevant when the user is configuring a ph/conductivity instrument).
+  useEffect(() => {
+    if (instrType !== 'ph' && instrType !== 'conductivity') return
+    setTestPointValues(prev => {
+      if (prev.length === numPoints) return prev
+      if (prev.length < numPoints) {
+        return [...prev, ...Array(numPoints - prev.length).fill(null)]
+      }
+      return prev.slice(0, numPoints)
+    })
+  }, [numPoints, instrType])
+
   // ── Validate ──────────────────────────────────────────────────────────────
   function validate() {
     const e = {}
@@ -392,6 +461,24 @@ export default function InstrumentForm() {
     setSaving(true)
 
     const currentUser = getUser()
+
+    // Build the test_point_values array we want to persist.
+    // - ph / conductivity: use the editable grid (drop nulls/blanks so the
+    //   technician can leave a conductivity sample value blank at setup
+    //   time and fill it in at calibration time).
+    // - flow with zero-check: prepend 0 if not already there.
+    // - Other types: leave null and let the backend / frontend generate
+    //   evenly-spaced points from LRV..URV at calibration time.
+    let testPointPayload = null
+    if (instrType === 'ph' || instrType === 'conductivity') {
+      const cleaned = testPointValues
+        .map(v => (v === '' || v === null || v === undefined ? null : Number(v)))
+        .filter(v => v !== null && !Number.isNaN(v))
+      testPointPayload = cleaned.length ? cleaned : null
+    } else if (instrType === 'flow' && includeZeroFlow) {
+      testPointPayload = [0]
+    }
+
     const payload = {
       tag_number:                   tagNumber.toUpperCase().trim(),
       description:                  description.trim(),
@@ -411,6 +498,7 @@ export default function InstrumentForm() {
       num_test_points:              numPoints,
       tolerance_type:               tolType,
       tolerance_value:              tolValue !== '' ? parseFloat(tolValue) : null,
+      test_point_values:            testPointPayload,
       procedure_reference:          procedureRef || null,
       last_calibration_date:        lastCalDate || null,
       last_calibration_result:      lastCalResult || null,
@@ -568,8 +656,15 @@ export default function InstrumentForm() {
         </Field>
 
         <Field label="Engineering Units">
-          <input type="text" value={engUnits} onChange={e => setEngUnits(e.target.value)}
-            placeholder="e.g. kPa, degC, m3/h" className={inputCls(false)} />
+          {instrType === 'conductivity' ? (
+            <select value={engUnits} onChange={e => setEngUnits(e.target.value)} className={inputCls(false)}>
+              {CONDUCTIVITY_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+            </select>
+          ) : (
+            <input type="text" value={engUnits} onChange={e => setEngUnits(e.target.value)}
+              placeholder={instrType === 'ph' ? 'pH' : 'e.g. kPa, degC, m3/h'}
+              className={inputCls(false)} />
+          )}
         </Field>
 
         <Field label="Measurement LRV" hint="Lower range value">
@@ -606,7 +701,9 @@ export default function InstrumentForm() {
 
         <Field label="Number of Test Points">
           <select value={numPoints} onChange={e => setNumPoints(+e.target.value)} className={inputCls(false)}>
-            {TEST_POINT_OPTS.map(n => <option key={n} value={n}>{n} points</option>)}
+            {TEST_POINT_OPTS
+              .filter(n => (instrType === 'ph' || instrType === 'conductivity') ? n <= 5 : true)
+              .map(n => <option key={n} value={n}>{n} points</option>)}
           </select>
         </Field>
 
@@ -627,6 +724,65 @@ export default function InstrumentForm() {
           <input type="text" value={procedureRef} onChange={e => setProcedureRef(e.target.value)}
             placeholder="e.g. CAL-PROC-001, Rev 3" className={inputCls(false)} />
         </Field>
+
+        {/* Flow zero-check option — only meaningful for flow instruments */}
+        {instrType === 'flow' && (
+          <div className="sm:col-span-2 pt-2 border-t border-slate-100">
+            <label className="flex items-start gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={includeZeroFlow}
+                onChange={e => setIncludeZeroFlow(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <div>
+                <span className="text-sm font-medium text-slate-700">Include zero-flow check point</span>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Adds a 0-flow reading as the first test point (verifies the transmitter reads true zero with no flow).
+                </p>
+              </div>
+            </label>
+          </div>
+        )}
+
+        {/* Editable test-point list — pH and conductivity calibrate against
+            fixed buffers / sample comparisons, not span-derived points. */}
+        {(instrType === 'ph' || instrType === 'conductivity') && (
+          <div className="sm:col-span-2 pt-2 border-t border-slate-100">
+            <label className="block text-sm font-medium text-slate-600 mb-1">
+              Test Point Values
+            </label>
+            <p className="text-xs text-slate-500 mb-3">
+              {instrType === 'ph'
+                ? 'Buffer pH values used at calibration. Defaults to 4.01 / 7.00 — change per the buffers used at your site (e.g. 7.00 / 10.01).'
+                : 'Reference conductivity values for each calibration point. Leave blank if the technician will record the sample value at calibration time.'}
+            </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {Array.from({ length: numPoints }).map((_, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-slate-400 w-6">#{i + 1}</span>
+                  <input
+                    type="number"
+                    step="any"
+                    value={testPointValues[i] ?? ''}
+                    onChange={e => {
+                      const v = e.target.value
+                      setTestPointValues(prev => {
+                        const next = [...prev]
+                        while (next.length <= i) next.push(null)
+                        next[i] = v === '' ? null : v
+                        return next
+                      })
+                    }}
+                    placeholder={instrType === 'ph' ? 'e.g. 7.00' : 'e.g. 1250'}
+                    className={inputCls(false)}
+                  />
+                  <span className="text-xs text-slate-400 whitespace-nowrap">{engUnits || ''}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Tolerance reference table */}
         <div className="sm:col-span-2">

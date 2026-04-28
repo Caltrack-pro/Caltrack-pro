@@ -291,7 +291,7 @@ export default function ImportInstruments() {
               ['description','Instrument service description'],
               ['area','Plant area or location'],
               ['unit','Plant unit'],
-              ['instrument_type','pressure / temperature / flow / level / analyser / switch / valve / other'],
+              ['instrument_type','pressure / temperature / flow / level / analyser / ph / conductivity / switch / valve / other'],
               ['status','active / spare / out_of_service (default: active)'],
               ['criticality','safety_critical / process_critical / standard / non_critical'],
               ['calibration_interval_days','Number (default: 365 if blank)'],

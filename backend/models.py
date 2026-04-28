@@ -15,14 +15,16 @@ from database import Base
 # ---------------------------------------------------------------------------
 
 class InstrumentType(str, enum.Enum):
-    PRESSURE    = "pressure"
-    TEMPERATURE = "temperature"
-    FLOW        = "flow"
-    LEVEL       = "level"
-    ANALYSER    = "analyser"
-    SWITCH      = "switch"
-    VALVE       = "valve"
-    OTHER       = "other"
+    PRESSURE     = "pressure"
+    TEMPERATURE  = "temperature"
+    FLOW         = "flow"
+    LEVEL        = "level"
+    ANALYSER     = "analyser"
+    PH           = "ph"
+    CONDUCTIVITY = "conductivity"
+    SWITCH       = "switch"
+    VALVE        = "valve"
+    OTHER        = "other"
 
 
 class ToleranceType(str, enum.Enum):

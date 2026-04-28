@@ -28,8 +28,17 @@ export function fmtNum(val, dp = 3) {
   return Number(val).toFixed(dp)
 }
 
-/** Capitalise + replace underscores */
+/** Display-name overrides for tokens whose default title-case form is wrong
+ *  (e.g. "ph" → "pH" not "Ph"). Lookup is case-insensitive on the raw key. */
+const LABEL_OVERRIDES = {
+  ph: 'pH',
+  conductivity: 'Conductivity',
+}
+
+/** Capitalise + replace underscores. Honours LABEL_OVERRIDES first. */
 export function humanise(str) {
   if (!str) return '—'
+  const key = String(str).toLowerCase()
+  if (LABEL_OVERRIDES[key]) return LABEL_OVERRIDES[key]
   return str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }

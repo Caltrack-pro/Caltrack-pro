@@ -530,7 +530,7 @@ def get_drift_analysis(
 # ---------------------------------------------------------------------------
 
 # Re-use the row-processing logic from the CLI import script.
-_VALID_TYPES      = {"pressure","temperature","flow","level","analyser","switch","valve","other"}
+_VALID_TYPES      = {"pressure","temperature","flow","level","analyser","ph","conductivity","switch","valve","other"}
 _VALID_TOL_TYPES  = {"percent_span","percent_reading","absolute"}
 _VALID_CRITICALITY= {"safety_critical","process_critical","standard","non_critical"}
 _VALID_STATUSES   = {"active","spare","out_of_service","decommissioned"}
@@ -543,6 +543,8 @@ _TYPE_MAP = {
     "flow transmitter":"flow","flow meter":"flow","flow indicator":"flow","ft":"flow","fit":"flow",
     "level transmitter":"level","level indicator":"level","lt":"level","lit":"level",
     "analyser":"analyser","analyzer":"analyser","at":"analyser",
+    "ph":"ph","ph probe":"ph","ph sensor":"ph","ph transmitter":"ph","ait-ph":"ph",
+    "conductivity":"conductivity","conductivity sensor":"conductivity","conductivity transmitter":"conductivity","ct":"conductivity",
     "pressure switch":"switch","level switch":"switch","temperature switch":"switch","flow switch":"switch",
     "psh":"switch","psl":"switch","lsh":"switch","lsl":"switch","tsh":"switch",
     "control valve":"valve","valve":"valve","cv":"valve","pcv":"valve","lcv":"valve","tcv":"valve",

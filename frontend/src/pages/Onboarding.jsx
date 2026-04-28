@@ -240,7 +240,7 @@ function StepAddInstruments({ onNext, onSkip }) {
     }
   }
 
-  const instrTypes = ['pressure', 'temperature', 'flow', 'level', 'analyser', 'switch', 'valve', 'other']
+  const instrTypes = ['pressure', 'temperature', 'flow', 'level', 'analyser', 'ph', 'conductivity', 'switch', 'valve', 'other']
 
   return (
     <div style={{ maxWidth: 560, margin: '0 auto' }}>

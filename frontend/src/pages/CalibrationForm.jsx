@@ -56,20 +56,39 @@ const RESULT_COLORS = { pass: 'text-green-600', marginal: 'text-amber-600', fail
 
 // ── Test points table ────────────────────────────────────────────────────────
 
-function TestPointsTable({ instrument, readings, onChange, label = 'Actual Output' }) {
+// pH and conductivity calibrate against operator-supplied reference values
+// (buffer solutions; sample tested with a calibrated reference meter), so the
+// nominal/expected column is editable per-record. Other types stay derived
+// from the instrument's stored test points.
+const NOMINAL_EDITABLE_TYPES = new Set(['ph', 'conductivity'])
+
+function TestPointsTable({ instrument, readings, onChange, nominals, onNominalChange, label = 'Actual Output' }) {
   if (!instrument) return null
 
-  const { tolerance_type, tolerance_value, measurement_lrv: lrv, measurement_urv: urv, engineering_units } = instrument
+  const { tolerance_type, tolerance_value, measurement_lrv: lrv, measurement_urv: urv, engineering_units, instrument_type } = instrument
   const outputSpan = (urv ?? 0) - (lrv ?? 0)
+  const nominalEditable = NOMINAL_EDITABLE_TYPES.has(instrument_type)
 
   const points = useMemo(() => generateTestPoints(instrument), [instrument])
 
+  // Effective expected value per row: user override (when editable + provided)
+  // falls back to the instrument's generated test point.
+  const effectivePoints = useMemo(() => points.map((pt, i) => {
+    if (nominalEditable && nominals && nominals[i] !== '' && nominals[i] != null) {
+      const v = parseFloat(nominals[i])
+      if (!Number.isNaN(v)) {
+        return { ...pt, nominal_input: v, expected_output: v }
+      }
+    }
+    return pt
+  }), [points, nominals, nominalEditable])
+
   const calculated = useMemo(() =>
-    points.map((pt, i) => {
+    effectivePoints.map((pt, i) => {
       const actual = readings[i]
       return calcPoint(actual, pt.expected_output, tolerance_type, tolerance_value, outputSpan)
     }),
-    [points, readings, tolerance_type, tolerance_value, outputSpan]
+    [effectivePoints, readings, tolerance_type, tolerance_value, outputSpan]
   )
 
   const results    = calculated.map(c => c?.result ?? null)
@@ -84,7 +103,7 @@ function TestPointsTable({ instrument, readings, onChange, label = 'Actual Outpu
             <tr className="bg-slate-50 border-b border-slate-200">
               <th className="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide w-10">#</th>
               <th className="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Expected ({engineering_units || 'EU'})
+                {nominalEditable ? `Reference (${engineering_units || 'EU'})` : `Expected (${engineering_units || 'EU'})`}
               </th>
               <th className="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 {label} ({engineering_units || 'EU'})
@@ -95,12 +114,25 @@ function TestPointsTable({ instrument, readings, onChange, label = 'Actual Outpu
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {points.map((pt, i) => {
+            {effectivePoints.map((pt, i) => {
               const calc = calculated[i]
               return (
                 <tr key={i} className="hover:bg-slate-50">
                   <td className="px-3 py-2 text-slate-500 font-mono text-xs">{pt.point_number}</td>
-                  <td className="px-3 py-2 font-mono text-slate-700">{fmtNum(pt.expected_output, 4)}</td>
+                  <td className="px-3 py-2">
+                    {nominalEditable ? (
+                      <input
+                        type="number"
+                        step="any"
+                        value={(nominals && nominals[i]) ?? ''}
+                        onChange={e => onNominalChange?.(i, e.target.value)}
+                        placeholder={instrument_type === 'ph' ? 'e.g. 7.00' : 'e.g. 1250'}
+                        className="w-full px-2 py-1 font-mono text-sm border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      />
+                    ) : (
+                      <span className="font-mono text-slate-700">{fmtNum(pt.expected_output, 4)}</span>
+                    )}
+                  </td>
                   <td className="px-3 py-2">
                     <input
                       type="number"
@@ -171,6 +203,9 @@ export default function CalibrationForm() {
 
   // Section 4 — As-Found readings (array of strings, index = point index)
   const [asFoundReadings, setAsFoundReadings] = useState([])
+  // Per-record nominal/expected overrides — only surfaced for ph/conductivity
+  // where the reference value comes from the buffer / sample, not the instrument.
+  const [nominalOverrides, setNominalOverrides] = useState([])
 
   // Section 5 — Adjustment
   const [adjustmentMade, setAdjustmentMade] = useState(false)
@@ -203,6 +238,10 @@ export default function CalibrationForm() {
         const pts = generateTestPoints(inst)
         setAsFoundReadings(Array(pts.length).fill(''))
         setAsLeftReadings(Array(pts.length).fill(''))
+        // Seed the editable nominal column with whatever's stored on the
+        // instrument (will be the pH buffers / conductivity references the
+        // user configured at setup; blank for conductivity-at-cal-time).
+        setNominalOverrides(pts.map(p => (p.nominal_input != null ? String(p.nominal_input) : '')))
         if (inst.procedure_reference) setProcedureUsed(inst.procedure_reference)
         setLoading(false)
       })
@@ -220,14 +259,22 @@ export default function CalibrationForm() {
   const asFoundCalc = useMemo(() => {
     if (!instrument) return { overall: null, maxErr: null }
     const pts = generateTestPoints(instrument)
-    const { tolerance_type, tolerance_value, measurement_lrv: lrv, measurement_urv: urv } = instrument
+    const { tolerance_type, tolerance_value, measurement_lrv: lrv, measurement_urv: urv, instrument_type } = instrument
     const span = (urv ?? 0) - (lrv ?? 0)
-    const calcs = pts.map((pt, i) => calcPoint(asFoundReadings[i], pt.expected_output, tolerance_type, tolerance_value, span))
+    const editable = NOMINAL_EDITABLE_TYPES.has(instrument_type)
+    const calcs = pts.map((pt, i) => {
+      let expected = pt.expected_output
+      if (editable && nominalOverrides[i] !== '' && nominalOverrides[i] != null) {
+        const v = parseFloat(nominalOverrides[i])
+        if (!Number.isNaN(v)) expected = v
+      }
+      return calcPoint(asFoundReadings[i], expected, tolerance_type, tolerance_value, span)
+    })
     return {
       overall: overallResult(calcs.map(c => c?.result ?? null)),
       maxErr:  maxErrorPct(calcs),
     }
-  }, [instrument, asFoundReadings])
+  }, [instrument, asFoundReadings, nominalOverrides])
 
   // ── Expiry warning ────────────────────────────────────────────────────────
   const refExpired = useMemo(() => {
@@ -242,6 +289,10 @@ export default function CalibrationForm() {
 
   const updateAsLeft = useCallback((i, val) => {
     setAsLeftReadings(prev => { const n = [...prev]; n[i] = val; return n })
+  }, [])
+
+  const updateNominal = useCallback((i, val) => {
+    setNominalOverrides(prev => { const n = [...prev]; n[i] = val; return n })
   }, [])
 
   // ── Validation ────────────────────────────────────────────────────────────
@@ -263,15 +314,24 @@ export default function CalibrationForm() {
   // ── Build payload ─────────────────────────────────────────────────────────
   function buildPayload() {
     const pts = generateTestPoints(instrument)
-    const test_points = pts.map((pt, i) => ({
-      point_number:    pt.point_number,
-      nominal_input:   pt.nominal_input,
-      expected_output: pt.expected_output,
-      as_found_output: asFoundReadings[i] !== '' ? parseFloat(asFoundReadings[i]) : null,
-      as_left_output:  adjustmentMade && asLeftReadings[i] !== ''
-                         ? parseFloat(asLeftReadings[i])
-                         : null,
-    }))
+    const editable = NOMINAL_EDITABLE_TYPES.has(instrument?.instrument_type)
+    const test_points = pts.map((pt, i) => {
+      let nominal  = pt.nominal_input
+      let expected = pt.expected_output
+      if (editable && nominalOverrides[i] !== '' && nominalOverrides[i] != null) {
+        const v = parseFloat(nominalOverrides[i])
+        if (!Number.isNaN(v)) { nominal = v; expected = v }
+      }
+      return {
+        point_number:    pt.point_number,
+        nominal_input:   nominal,
+        expected_output: expected,
+        as_found_output: asFoundReadings[i] !== '' ? parseFloat(asFoundReadings[i]) : null,
+        as_left_output:  adjustmentMade && asLeftReadings[i] !== ''
+                           ? parseFloat(asLeftReadings[i])
+                           : null,
+      }
+    })
 
     return {
       instrument_id:                   instrument.id,
@@ -499,6 +559,8 @@ export default function CalibrationForm() {
           instrument={instrument}
           readings={asFoundReadings}
           onChange={updateAsFound}
+          nominals={nominalOverrides}
+          onNominalChange={updateNominal}
           label="As-Found Output"
         />
       </SectionCard>
@@ -547,6 +609,8 @@ export default function CalibrationForm() {
             instrument={instrument}
             readings={asLeftReadings}
             onChange={updateAsLeft}
+            nominals={nominalOverrides}
+            onNominalChange={updateNominal}
             label="As-Left Output"
           />
         </SectionCard>
